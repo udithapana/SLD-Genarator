@@ -23,7 +23,8 @@ input{width:100%;margin-top:2px;padding:6px 8px;border:1px solid var(--bd);borde
 .paper svg{display:block;width:100%;height:auto}
 button.alt.on{background:var(--ac);color:#fff}
 #msg{font-size:12px;color:var(--mu)}
-@media print{header,.side{display:none}main{display:block;padding:0}.dwg{border:0;padding:0}.paper{min-width:0}@page{size:A3 landscape;margin:8mm}}
+@media print{header,.side{display:none}main{display:block;padding:0}.dwg{border:0;padding:0}.paper{min-width:0}@page{size:A4 landscape;margin:6mm}}
+input[readonly]{background:var(--bg);color:var(--mu)}
 .tag{font-size:10px;color:var(--ac);border:1px solid var(--ac);border-radius:8px;padding:0 5px;margin-left:4px}
 input.man{border-color:#d9822b}
 select{width:100%;margin-top:2px;padding:6px 8px;border:1px solid var(--bd);border-radius:5px;background:var(--card);color:var(--tx);font:inherit}
@@ -36,3 +37,11 @@ fieldset>button{margin-top:10px}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .seg button{padding:7px 4px;font-size:12.5px}
 .hint{font-size:11px;color:var(--mu);margin-top:8px}
+#out3{background:#fff;border-radius:4px;padding:18px;min-height:200px}
+.hist-empty{color:var(--mu);padding:30px;text-align:center}
+.hist-item{border:1px solid var(--bd);border-radius:8px;padding:10px 14px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.hist-item b{display:block;font-size:14px}
+.hist-item span{font-size:12px;color:var(--mu)}
+.hist-item .btns{display:flex;gap:6px}
+.hist-item .btns button{padding:5px 10px;font-size:12px}
+@media print{#out3{display:none!important}}
