@@ -74,7 +74,23 @@
     $('t1').classList.toggle('on', o == 'out'); $('t2').classList.toggle('on', o == 'out2'); $('t3').classList.toggle('on', o == 'out3');
     $('dl').hidden = $('pr').hidden = o == 'out3'; if (o == 'out3') drawHistory();
   });
-  $('pr').onclick = () => window.print();
+  $('pr').onclick = () => {
+    const svgEl = $(cur).querySelector('svg'); if (!svgEl) return;
+    const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svgEl));
+    const img = new Image();
+    img.onload = () => {
+      const W = 3508, H = 2481; // A4 landscape @ 300dpi, for a crisp raster
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, 0, 0, W, H);
+      try {
+        const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        pdf.addImage(cv.toDataURL('image/png', 1), 'PNG', 0, 0, 297, 210);
+        pdf.save(($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.pdf');
+      } catch (err) { alert('PDF export failed (' + err.message + '). Try "Download SVG" instead, or print to PDF from your browser.'); }
+    };
+    img.onerror = () => alert('PDF export failed — your browser blocked rendering the drawing (this needs an internet connection the first time, to load the PDF library). Try "Download SVG" instead.');
+    img.src = svgUrl;
+  };
   $('dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$(cur).innerHTML], { type: 'image/svg+xml' })); a.download = ($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.svg'; a.click(); URL.revokeObjectURL(a.href); };
 
   // ---- History: saved revisions kept in this browser (localStorage), so a project's past states can be reopened later ----

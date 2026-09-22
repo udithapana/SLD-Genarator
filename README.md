@@ -20,12 +20,16 @@ Edit `data/Supporting_file.xlsx`, then run:
 
 This regenerates `js/inverter-data.js`. Duplicate model names are skipped. Empty cable/earth cells are derived from the inverter current.
 
+## PDF export
+"Download PDF (A4)" renders the currently visible diagram straight to a one-page A4-landscape PDF (via a small canvas render + [jsPDF](https://github.com/parallax/jsPDF), loaded from cdnjs) — no browser print dialog, no margin/scaling guesswork. It needs an internet connection the first time a page loads (to fetch that library); "Download SVG" still works fully offline as a fallback.
+
 ## Selection rules (`js/rules.js`)
 - Inverter MCCB = next standard size ≥ 1.25 × inverter current. Each BESS unit's MCCB is sized the same way from its PCS kW.
 - Isolator / main panel = next standard size ≥ 1.25 × total current (every inverter + every BESS unit); busbar = next standard busbar size ≥ that.
 - Main / utility cable and earth bus feeder are sized from total current (parallel sets above 250 A). Tables are at the top of the file.
 - **DC cable is not auto-selected.** It depends on the physical run length between the array (or battery) and its inverter/PCS, so each inverter and each BESS unit has its own free-text DC cable field — fill it in per unit.
 - Check every result against your design standards before issuing a drawing.
+- Both diagrams now also draw a **main breaker (MCCB)** for the main switchgear/combiner panel itself, sized from the panel's total current — separate from each inverter/BESS unit's own MCCB.
 
 ## Multiple inverters / batteries
 "Add inverter" and "Add battery" add more units, each independently selectable and removable. Totals (panel count, kWp, kW, busbar/isolator/cable sizing) update automatically across all units. **Total DC capacity (kWp)** in the Drawing section is computed automatically from every inverter's PV module count and can't be typed over; use `{kW}` inside the Project title to insert that same total automatically (e.g. `PROPOSED {kW} kW SOLAR POWER SYSTEM FOR ...`).
