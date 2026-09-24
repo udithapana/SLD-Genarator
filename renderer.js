@@ -48,7 +48,7 @@ ln(210,yc,340,yc,B?'#b35a00':'#c00',2);t(275,yc-8*sv,u.dc||'DC cable',fz(9));
 bx(340,y0,140,90*sv);
 if(!B){t(410,yy(i,22),(INV.length>1?'INVERTER '+(i+1):'INVERTER'),fz(12),'middle','bold');t(410,yy(i,42),u.name,fz(u.name.length>18?9:11));t(410,yy(i,58),u.kw+' kW',fz(11));t(410,yy(i,76),'Integrated DC/AC SPD',fz(9))}
 else{t(410,yy(i,24),'BESS PCS'+(BESS.length>1?' '+(i-INV.length+1):''),fz(12),'middle','bold');t(410,yy(i,45),u.kw+' kW',fz(11));t(410,yy(i,62),'Bi-directional',fz(10))}
-ln(380,yy(i,90),380,yy(i,105),GR,1.5,'5 3');ln(380,yy(i,105),300,yy(i,105),GR,1.5,'5 3');t(306,yy(i,117),u.earth,fz(9),'start');
+ln(380,yy(i,90),380,yy(i,105),GR,1.5,'5 3');ln(380,yy(i,105),300,yy(i,105),GR,1.5,'5 3');t(306,yy(i,117),u.earth+(B?' (PCS earth)':''),fz(9),'start');
 if(!B){ln(125,yy(i,90),125,yy(i,105)+14,GR,1.5,'5 3');ln(125,yy(i,105)+14,300,yy(i,105)+14,GR,1.5,'5 3');t(190,yy(i,105)+26,'4mm² Cu (PV array earth)',fz(8),'start')}
 if(!B&&u.hybrid&&+u.battKwh>0){bx(365,yy(i,130),90,55*sv);ln(410,yy(i,90),410,yy(i,130),'#1f6fd0',2);
 t(410,yy(i,145),'BATTERY',fz(9),'middle','bold');t(410,yy(i,159),u.battKwh+' kWh',fz(9),'middle');t(410,yy(i,172),u.battDc||'DC cable',fz(7),'middle');
@@ -104,7 +104,7 @@ if(!B){inv(x,400,(INV.length>1?'INVERTER '+(i+1):'INVERTER'),u.name,u.kw+' kW');
 ln(x,470,x,505,BL,2);tc(x-8*sh,492,u.dc||'DC cable',9,'end');
 for(let r=0;r<2;r++)for(let c=0;c<3;c++)bx(x-36*sh+c*24*sh,505+r*20,24*sh,20);
 tc(x,568,'PV ARRAY',11,'middle','bold');tc(x,581,`${u.mods} × ${wp} Wp`,10,'middle');tc(x,594,'Strings: '+u.cfg,9,'middle');tc(x,607,(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle');
-ln(x,616,x,yE,GR,1.5,'5 3');tc(x+6*sh,675,'4mm² Cu (PV array earth)',7,'start');
+ln(x-36*sh,545,x-65*sh,545,GR,1.5,'5 3');ln(x-65*sh,545,x-65*sh,yE,GR,1.5,'5 3');tc(x-59*sh,675,'4mm² Cu (PV array earth)',7,'start');
 if(u.hybrid&&+u.battKwh>0){const bl=x+75*sh;ln(x+40*sh,470,x+40*sh,478,BL,2);ln(x+40*sh,478,bl,478,BL,2);ln(bl,478,bl,505,BL,2);
 tc(bl+6*sh,470,u.battDc||'Battery DC cable',6,'start');
 bx(bl-25*sh,505,50*sh,45);
@@ -115,7 +115,7 @@ else{inv(x,400,'BESS PCS'+(BESS.length>1?' '+(i-INV.length+1):''),u.kw+' kW','Bi
 ln(x,470,x,505,BL,2);tc(x+8*sh,492,u.dc||'DC cable',9);bx(x-45*sh,505,90*sh,70);
 [[522,18],[530,9],[538,18],[546,9]].forEach(([y,w],k)=>ln(x-w*sh,y,x+w*sh,y,'#000',k%2?4:1.5));
 tc(x,566,u.kwh+' kWh',10,'middle');tc(x,592,u.model,11,'middle','bold')}
-ln(x-45*sh,435,x-65*sh,435,GR,1.5,'5 3');ln(x-65*sh,435,x-65*sh,yE,GR,1.5,'5 3');tc(x-68*sh,yE-30,u.earth,9,'end')});
+ln(x-45*sh,435,x-95*sh,435,GR,1.5,'5 3');ln(x-95*sh,435,x-95*sh,yE,GR,1.5,'5 3');tc(x-98*sh,yE-30,u.earth+(B?' (PCS earth)':''),9,'end')});
 const spdX=Xc(cnt-1)+150,busEnd=Math.max(spdX+60,A4W-500);
 ln(spdX,300,spdX,335,MG);bx(spdX-9,335,18,34,'',MG);ln(spdX-4,343,spdX+4,352,MG);ln(spdX+4,352,spdX-4,361,MG);ln(spdX,369,spdX,395,MG);es(spdX,395,MG);t(spdX+16,356,'SPD Type 1+2',9);
 ln(90,300,busEnd,300,OR,5);t((300+busEnd)/2,289,`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`,10,'middle');
