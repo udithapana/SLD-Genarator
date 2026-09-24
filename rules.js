@@ -19,7 +19,7 @@
   // it depends on the physical run length between the array and the inverter, so it stays a manual, per-inverter field in the UI.
   S.info = e => {
     const I = e.current, c = cabFor(I), b = e.brand.split(' ')[0];
-    return { name: e.model.startsWith(b) ? e.model : b + ' ' + e.model, kw: kwOf(e.model, I), I,
+    return { name: e.model.startsWith(b) ? e.model : b + ' ' + e.model, kw: kwOf(e.model, I), I, hybrid: e.type == 'hybrid',
              ac: e.ac ? fmt(e.ac) : `${c[1]}mm²/4C/${c[2]}`, earth: fmt(e.earth || `${earFor(I)}mm2 Cu/ PVc Earth Cable`),
              mccb: up(MARGIN * I, STD), derived: !e.ac };
   };
@@ -27,9 +27,12 @@
   S.cableFor = I => { const c = cabFor(+I || 0); return `${c[1]}mm² 4C/Cu/XLPE/PVC`; };
   // Per-BESS-unit electrical info, derived from its PCS kW rating (no parts-database entry for batteries).
   S.bessInfo = kw => { const I = +kw * AC_V, c = cabFor(I); return { I, mccb: up(MARGIN * I, STD), ac: `${c[1]}mm²/4C/${c[2]}`, earth: `${earFor(I)}mm² Cu` }; };
-  // System-level sizing from the combined current of every inverter + every BESS unit.
-  S.derive = (currents, mode) => {
-    const T = currents.reduce((a, c) => a + c, 0), iso = up(MARGIN * T, STD), sets = Math.ceil(T / 250) || 1, c = cabFor(T / sets);
+  // System-level sizing. Main breaker/panel/busbar/main cable are sized on whichever is larger of the total
+  // solar-inverter current or the total standalone-BESS-PCS current — NOT their sum — because the battery only
+  // discharges through the panel while the solar inverters are off (night / outage), so the two never add together.
+  S.derive = (invCurrents, bessCurrents, mode) => {
+    const Ti = invCurrents.reduce((a, c) => a + c, 0), Tb = bessCurrents.reduce((a, c) => a + c, 0), T = Math.max(Ti, Tb);
+    const iso = up(MARGIN * T, STD), sets = Math.ceil(T / 250) || 1, c = cabFor(T / sets);
     return { iso, panel: iso, bus: up(iso, BUS), isoBus: up(iso, BUS),
       meterLbl: { nm: 'BI-DIRECTIONAL METER', na: 'IMPORT / EXPORT METER', np: 'GENERATION METER' }[mode] || '',
       mainCable: `${c[1]}mm² 1C/Cu/XLPE/PVC (4 Runs${sets > 1 ? ' × ' + sets + ' sets' : ''})`,

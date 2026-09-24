@@ -35,8 +35,10 @@ const ln=(a,b,c,d,col='#000',w=1.5,da='')=>s.push(`<line x1="${a}" y1="${b}" x2=
 const bx=(x,y,w,h,da='',sw=1.5)=>s.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#000" stroke-width="${sw}"${da?` stroke-dasharray="${da}"`:''}/>`);
 // --- fixed page geometry: these never move, regardless of how many units there are ---
 const top=90,TBh=120,yT=A4H-8-TBh,yE=yT-90,rowsBudget=(yE-170)-top;
+// rows carrying a hybrid inverter's integrated battery need extra height for the battery sub-box below the inverter
+const RH=U.some(u=>u.kind=='inv'&&u.hybrid&&+u.battKwh>0)?225:150;
 // --- repeating-row geometry: compress (sv<1) once natural spacing would overflow the budget, else centre ---
-const lastNat=(R-1)*150+45,sv=lastNat<=rowsBudget?1:rowsBudget/lastNat,rowTop=lastNat<=rowsBudget?top+(rowsBudget-lastNat)/2:top,rhUsed=150*sv;
+const lastNat=(R-1)*RH+45,sv=lastNat<=rowsBudget?1:rowsBudget/lastNat,rowTop=lastNat<=rowsBudget?top+(rowsBudget-lastNat)/2:top,rhUsed=RH*sv;
 const yy=(i,v)=>rowTop+i*rhUsed+v*sv,fz=v=>Math.max(6,+(v*sv).toFixed(2));
 U.forEach((u,i)=>{const y0=yy(i,0),yc=yy(i,45),B=u.kind=='bess';
 bx(40,y0,170,90*sv);
@@ -47,6 +49,10 @@ bx(340,y0,140,90*sv);
 if(!B){t(410,yy(i,22),(INV.length>1?'INVERTER '+(i+1):'INVERTER'),fz(12),'middle','bold');t(410,yy(i,42),u.name,fz(u.name.length>18?9:11));t(410,yy(i,58),u.kw+' kW',fz(11));t(410,yy(i,76),'Integrated DC/AC SPD',fz(9))}
 else{t(410,yy(i,24),'BESS PCS'+(BESS.length>1?' '+(i-INV.length+1):''),fz(12),'middle','bold');t(410,yy(i,45),u.kw+' kW',fz(11));t(410,yy(i,62),'Bi-directional',fz(10))}
 ln(380,yy(i,90),380,yy(i,105),GR,1.5,'5 3');ln(380,yy(i,105),300,yy(i,105),GR,1.5,'5 3');t(306,yy(i,117),u.earth,fz(9),'start');
+if(!B){ln(125,yy(i,90),125,yy(i,105)+14,GR,1.5,'5 3');ln(125,yy(i,105)+14,300,yy(i,105)+14,GR,1.5,'5 3');t(190,yy(i,105)+26,'4mm² Cu (PV array earth)',fz(8),'start')}
+if(!B&&u.hybrid&&+u.battKwh>0){bx(365,yy(i,130),90,55*sv);ln(410,yy(i,90),410,yy(i,130),'#1f6fd0',2);
+t(410,yy(i,145),'BATTERY',fz(9),'middle','bold');t(410,yy(i,159),u.battKwh+' kWh',fz(9),'middle');t(410,yy(i,172),u.battDc||'DC cable',fz(7),'middle');
+ln(410,yy(i,185),410,yy(i,197),GR,1.5,'5 3');ln(410,yy(i,197),300,yy(i,197),GR,1.5,'5 3');t(320,yy(i,197)+11,'4mm² Cu (battery earth)',fz(7),'start')}
 ln(480,yc,580,yc);t(530,yc-8*sv,u.ac,fz(8));
 bx(580,yc-20*sv,60,40*sv);t(610,yc-3*sv,`4P ${u.mccb}A`,fz(11));t(610,yc+12*sv,'MCCB',fz(9));
 ln(640,yc,820,yc)});
@@ -84,8 +90,9 @@ const t=(x,y,str,sz=11,a='start',w='normal')=>s.push(`<text xml:space="preserve"
 const ln=(a,b,c,d,col='#000',w=1.5,da='')=>s.push(`<line x1="${a}" y1="${(b*fy).toFixed(1)}" x2="${c}" y2="${(d*fy).toFixed(1)}" stroke="${col}" stroke-width="${w}"${da?` stroke-dasharray="${da}"`:''}/>`);
 const bx=(x,y,w,h,da='',col='#000',sw=1.5)=>s.push(`<rect x="${x}" y="${(y*fy).toFixed(1)}" width="${w}" height="${(h*fy).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw}"${da?` stroke-dasharray="${da}"`:''}/>`);
 // --- column geometry: compress (sh<1) once natural pitch would overflow the fixed width budget, else centre ---
-const LEFT0=400,BUDGET=A4W-500,natSpan=(cnt-1)*230,sh=natSpan<=BUDGET-LEFT0?1:(BUDGET-LEFT0)/natSpan,
-  colStart=natSpan<=BUDGET-LEFT0?LEFT0+(BUDGET-LEFT0-natSpan)/2:LEFT0,colPitch=230*sh;
+const PITCH=U.some(u=>u.kind=='inv'&&u.hybrid&&+u.battKwh>0)?290:230; // hybrid units with a battery need extra column width for the battery sub-box
+const LEFT0=400,BUDGET=A4W-500,natSpan=(cnt-1)*PITCH,sh=natSpan<=BUDGET-LEFT0?1:(BUDGET-LEFT0)/natSpan,
+  colStart=natSpan<=BUDGET-LEFT0?LEFT0+(BUDGET-LEFT0-natSpan)/2:LEFT0,colPitch=PITCH*sh;
 const Xc=i=>colStart+i*colPitch,tc=(x,y,str,sz,a,w)=>t(x,y,str,sz*sh,a,w);
 const brk=(x,y,l1,l2,mc)=>{ln(x,y,x,y+16,OR);ln(x,y+34,x,y+52,OR);ln(x,y+34,x+10,y+16);ln(x-4,y+12,x+4,y+20);ln(x-4,y+20,x+4,y+12);if(mc)bx(x+1,y+22,7,7,'','#000',1);tc(x+18,y+22,l1,11);tc(x+18,y+35,l2,9)};
 const inv=(x,y,l1,l2,l3)=>{bx(x-45*sh,y,90*sh,70);ln(x-45*sh,y+70,x+45*sh,y,'#000',1);t(x-28*sh,y+22,'~',15,'middle');t(x+28*sh,y+62,'=',15,'middle');tc(x+52*sh,y+16,l1,11,'start','bold');tc(x+52*sh,y+31,l2,10);tc(x+52*sh,y+45,l3,10)};
@@ -94,9 +101,16 @@ const yE=690;
 U.forEach((u,i)=>{const x=Xc(i),B=u.kind=='bess';
 ln(x,300,x,320,OR);brk(x,320,`4P ${u.mccb}A`,'MCCB',1);ln(x,372,x,400,OR);tc(x+8*sh,392,u.ac,9);
 if(!B){inv(x,400,(INV.length>1?'INVERTER '+(i+1):'INVERTER'),u.name,u.kw+' kW');tc(x+52*sh,459,'Integrated DC/AC SPD',9);
-ln(x,470,x,505,BL,2);tc(x+8*sh,492,u.dc||'DC cable',9);
+ln(x,470,x,505,BL,2);tc(x-8*sh,492,u.dc||'DC cable',9,'end');
 for(let r=0;r<2;r++)for(let c=0;c<3;c++)bx(x-36*sh+c*24*sh,505+r*20,24*sh,20);
-tc(x,568,'PV ARRAY',11,'middle','bold');tc(x,581,`${u.mods} × ${wp} Wp`,10,'middle');tc(x,594,'Strings: '+u.cfg,9,'middle');tc(x,607,(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle')}
+tc(x,568,'PV ARRAY',11,'middle','bold');tc(x,581,`${u.mods} × ${wp} Wp`,10,'middle');tc(x,594,'Strings: '+u.cfg,9,'middle');tc(x,607,(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle');
+ln(x,616,x,yE,GR,1.5,'5 3');tc(x+6*sh,675,'4mm² Cu (PV array earth)',7,'start');
+if(u.hybrid&&+u.battKwh>0){const bl=x+75*sh;ln(x+40*sh,470,x+40*sh,478,BL,2);ln(x+40*sh,478,bl,478,BL,2);ln(bl,478,bl,505,BL,2);
+tc(bl+6*sh,470,u.battDc||'Battery DC cable',6,'start');
+bx(bl-25*sh,505,50*sh,45);
+[[516,10],[521,5],[526,10],[531,5]].forEach(([by,bw],k)=>ln(bl-bw*sh,by,bl+bw*sh,by,'#000',k%2?4:1.5));
+tc(bl,545,u.battKwh+' kWh',7,'middle');tc(bl,565,'BATTERY',8,'middle','bold');
+ln(bl+25*sh,505,bl+25*sh,yE,GR,1.5,'5 3');tc(bl+31*sh,620,'4mm² Cu (battery earth)',7,'start')}}
 else{inv(x,400,'BESS PCS'+(BESS.length>1?' '+(i-INV.length+1):''),u.kw+' kW','Bi-directional','');
 ln(x,470,x,505,BL,2);tc(x+8*sh,492,u.dc||'DC cable',9);bx(x-45*sh,505,90*sh,70);
 [[522,18],[530,9],[538,18],[546,9]].forEach(([y,w],k)=>ln(x-w*sh,y,x+w*sh,y,'#000',k%2?4:1.5));
@@ -106,7 +120,8 @@ const spdX=Xc(cnt-1)+150,busEnd=Math.max(spdX+60,A4W-500);
 ln(spdX,300,spdX,335,MG);bx(spdX-9,335,18,34,'',MG);ln(spdX-4,343,spdX+4,352,MG);ln(spdX+4,352,spdX-4,361,MG);ln(spdX,369,spdX,395,MG);es(spdX,395,MG);t(spdX+16,356,'SPD Type 1+2',9);
 ln(90,300,busEnd,300,OR,5);t((300+busEnd)/2,289,`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`,10,'middle');
 bx(80,250,busEnd-70,128,'8 4');t(busEnd,245,`MAIN SWITCHGEAR PANEL ${g('panel')}A`,10,'end','bold');
-ln(260,378,260,yE,GR,1.5,'5 3');t(268,534,'Switchgear panel earth',9);
+ln(200,364,320,364,GR,3);t(260,350,'PANEL EARTH BUS',7,'middle','bold');
+ln(260,364,260,yE,GR,1.5,'5 3');t(268,534,'Switchgear panel earth',9);
 const hl=md()!='np';
 if(hl){ln(90,125,640,125,OR,5);t(365,113,`ISOLATION PANEL BUSBAR ${g('isoBus')}A`,10,'middle');brk(400,125,`4P ${g('loadBrk')}A`,'MCCB',1);ln(400,177,400,205,OR);t(408,184,g('loadCable'),8);
 s.push(`<polygon points="386,${(205*fy).toFixed(1)} 414,${(205*fy).toFixed(1)} 400,${(233*fy).toFixed(1)}" fill="#000"/>`);t(422,224,g('loadName'),11,'start','bold');

@@ -252,7 +252,7 @@ window.SLD_INVERTERS = [
   "brand": "Huawei",
   "model": "Sun2000-100KTL-M2",
   "current": 160.4,
-  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "ac": "95mm2/4C/Al/XLPE/PVC",
   "earth": "25mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
@@ -337,27 +337,139 @@ window.SLD_INVERTERS = [
   "type": "string"
  },
  {
-  "brand": "Huawei",
+  "brand": "Sungrow",
   "model": "Sungrow-SG150CX",
   "current": 240.6,
-  "ac": null,
-  "earth": null,
+  "ac": "240mm2/4C/Al/XLPE/PVC",
+  "earth": "50mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
  {
-  "brand": "Huawei",
+  "brand": "Sungrow",
   "model": "Sungrow-SG125CX-P2",
   "current": 189.9,
-  "ac": null,
-  "earth": null,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": "35mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
  {
-  "brand": "Huawei",
+  "brand": "Sungrow",
   "model": "Sungrow-SG125CX-P3",
   "current": 181.1,
-  "ac": null,
-  "earth": null,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": "35mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG110CX-P2",
+  "current": 158.8,
+  "ac": "95mm2/4C/Al/XLPE/PVC",
+  "earth": "25mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG100CX-P2",
+  "current": 143.3,
+  "ac": "95mm2/4C/Al/XLPE/PVC",
+  "earth": "25mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG5.0RT-P2",
+  "current": 8.3,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG6.0RT-P2",
+  "current": 10,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG7.0RT-P2",
+  "current": 11.7,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG8.0RT-P2",
+  "current": 13.3,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG10.0RT-P2",
+  "current": 16.7,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG12.0RT-P2",
+  "current": 20,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG15RT-P2",
+  "current": 25,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG17RT-P2",
+  "current": 28.3,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG20RT-P2",
+  "current": 31.9,
+  "ac": "10mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG36CX-P2",
+  "current": 60.2,
+  "ac": "16mm2/4C/Cu/PVC/PVC",
+  "earth": "10mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG40CX-P2",
+  "current": 66.9,
+  "ac": "25mm2/4C/Al/PVC/PVC",
+  "earth": "10mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG50CX-P2",
+  "current": 83.6,
+  "ac": "35mm2/4C/Al/XLPE/PVC",
+  "earth": "16mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
  {
@@ -533,6 +645,30 @@ window.SLD_INVERTERS = [
   "model": "HPS-15KTL",
   "current": 21,
   "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": null,
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sungrow Hybrid",
+  "model": "Sungrow-SH50CX",
+  "current": 108.3,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": null,
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sungrow Hybrid",
+  "model": "Sungrow-SH80CX",
+  "current": 173.2,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": null,
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sungrow Hybrid",
+  "model": "Sungrow-SH125CX",
+  "current": 270.6,
+  "ac": "240mm2/4C/Al/XLPE/PVC",
   "earth": null,
   "type": "hybrid"
  }

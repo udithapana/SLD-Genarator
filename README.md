@@ -23,6 +23,21 @@ This regenerates `js/inverter-data.js`. Duplicate model names are skipped. Empty
 ## PDF export
 "Download PDF (A4)" renders the currently visible diagram straight to a one-page A4-landscape PDF (via a small canvas render + [jsPDF](https://github.com/parallax/jsPDF), loaded from cdnjs) — no browser print dialog, no margin/scaling guesswork. It needs an internet connection the first time a page loads (to fetch that library); "Download SVG" still works fully offline as a fallback.
 
+## Hybrid inverters (integrated battery)
+Selecting a "hybrid" model (Sunways Hybrid / ATESS Hybrid brands in the parts file) reveals an extra "Integrated battery" field on that inverter's card. This is for batteries wired straight into the hybrid unit's own DC input — no separate BESS PCS, no separate AC breaker — drawn as a small battery box hanging off that inverter on both diagrams. Use the separate "Battery (BESS)" section instead for a standalone battery with its own PCS and AC breaker. The hybrid battery is labelled plainly as "BATTERY" (not "integrated") and drawn with the same battery-cell symbol used for a standalone BESS. In the single-line diagram it's wired to its own dedicated DC point on the inverter, fully separate from the PV DC line — not a tap/junction on the PV cable — with each cable's size labelled on its own side (PV on the left, battery on the right) so they can't be confused. Earthing is also fully separated per component: the inverter's own earth is current-sized as before, while the PV array and the hybrid battery each get their own dashed 4mm² Cu earth conductor straight to the main earth bus — not bonded onto the inverter's earth run. A standalone BESS already had its own separate earth conductor; that's unchanged. The main switchgear panel also now shows its own internal earth bus bar, with the panel's earth conductor drawn starting from that bus rather than straight off the panel's outline. That panel earth bus is drawn as a single busbar line (not a ground-symbol glyph), feeding into the main earth bus bar below. The PV array itself is also earthed (frame/array earth), alongside the inverter's own earth — shown on both diagrams.
+
+## Main breaker sizing
+The main switchgear panel's own breaker (and the isolator/busbar/main cable downstream of it) is sized on **whichever is larger — total solar-inverter current or total standalone-BESS current — not their sum**, since the battery only discharges through the panel while the inverters are off (night / outage), so the two loads are never coincident. A hybrid inverter's integrated battery doesn't add to this at all — it shares the inverter's own AC breaker.
+
+## AC cable override
+Like the MCCB override, each inverter and BESS card now has an "AC cable override" field (blank = auto, sized from the parts database / current). Type an exact cable spec there to use it verbatim on both diagrams instead of the derived one.
+
+## Parts database
+`data/Supporting_file.xlsx` now has 84 inverters, including a new **Sungrow** (string) and **Sungrow Hybrid** range. Re-run `python tools/xlsx_to_data.py` any time the spreadsheet is updated.
+
+## Sticky header
+The top bar (title, diagram tabs, Save/Download/PDF buttons) now stays pinned to the top of the window while the (often long) form scrolls underneath it.
+
 ## Selection rules (`js/rules.js`)
 - Inverter MCCB = next standard size ≥ 1.25 × inverter current. Each BESS unit's MCCB is sized the same way from its PCS kW.
 - Isolator / main panel = next standard size ≥ 1.25 × total current (every inverter + every BESS unit); busbar = next standard busbar size ≥ that.

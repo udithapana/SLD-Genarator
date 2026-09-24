@@ -9,7 +9,7 @@ html{scroll-padding-top:env(safe-area-inset-top,0px)}
 :root[data-theme="dark"]{--bg:#12161b;--card:#1a2028;--tx:#e6e9ee;--mu:#98a3b1;--bd:#2f3844;--ac:#63a7f2;--in:#222a34}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 "IBM Plex Sans","Segoe UI",Arial,sans-serif}
-header{padding:14px 18px;border-bottom:1px solid var(--bd);background:var(--card);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;padding:14px 18px;border-bottom:1px solid var(--bd);background:var(--card);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 h1{font-size:18px;margin:0;font-weight:600;flex:1 1 auto}
 button{font:inherit;padding:7px 13px;border-radius:6px;border:1px solid var(--ac);background:var(--ac);color:#fff;cursor:pointer}
 button.alt{background:transparent;color:var(--ac)}
@@ -310,7 +310,7 @@ window.SLD_INVERTERS = [
   "brand": "Huawei",
   "model": "Sun2000-100KTL-M2",
   "current": 160.4,
-  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "ac": "95mm2/4C/Al/XLPE/PVC",
   "earth": "25mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
@@ -395,27 +395,139 @@ window.SLD_INVERTERS = [
   "type": "string"
  },
  {
-  "brand": "Huawei",
+  "brand": "Sungrow",
   "model": "Sungrow-SG150CX",
   "current": 240.6,
-  "ac": null,
-  "earth": null,
+  "ac": "240mm2/4C/Al/XLPE/PVC",
+  "earth": "50mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
  {
-  "brand": "Huawei",
+  "brand": "Sungrow",
   "model": "Sungrow-SG125CX-P2",
   "current": 189.9,
-  "ac": null,
-  "earth": null,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": "35mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
  {
-  "brand": "Huawei",
+  "brand": "Sungrow",
   "model": "Sungrow-SG125CX-P3",
   "current": 181.1,
-  "ac": null,
-  "earth": null,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": "35mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG110CX-P2",
+  "current": 158.8,
+  "ac": "95mm2/4C/Al/XLPE/PVC",
+  "earth": "25mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG100CX-P2",
+  "current": 143.3,
+  "ac": "95mm2/4C/Al/XLPE/PVC",
+  "earth": "25mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG5.0RT-P2",
+  "current": 8.3,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG6.0RT-P2",
+  "current": 10,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG7.0RT-P2",
+  "current": 11.7,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG8.0RT-P2",
+  "current": 13.3,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG10.0RT-P2",
+  "current": 16.7,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG12.0RT-P2",
+  "current": 20,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG15RT-P2",
+  "current": 25,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG17RT-P2",
+  "current": 28.3,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG20RT-P2",
+  "current": 31.9,
+  "ac": "10mm2/4C/Cu/PVC/PVC",
+  "earth": "6mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG36CX-P2",
+  "current": 60.2,
+  "ac": "16mm2/4C/Cu/PVC/PVC",
+  "earth": "10mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG40CX-P2",
+  "current": 66.9,
+  "ac": "25mm2/4C/Al/PVC/PVC",
+  "earth": "10mm2 Cu/ PVc Earth Cable",
+  "type": "string"
+ },
+ {
+  "brand": "Sungrow",
+  "model": "Sungrow-SG50CX-P2",
+  "current": 83.6,
+  "ac": "35mm2/4C/Al/XLPE/PVC",
+  "earth": "16mm2 Cu/ PVc Earth Cable",
   "type": "string"
  },
  {
@@ -593,6 +705,30 @@ window.SLD_INVERTERS = [
   "ac": "6mm2/4C/Cu/PVC/PVC",
   "earth": null,
   "type": "hybrid"
+ },
+ {
+  "brand": "Sungrow Hybrid",
+  "model": "Sungrow-SH50CX",
+  "current": 108.3,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": null,
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sungrow Hybrid",
+  "model": "Sungrow-SH80CX",
+  "current": 173.2,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": null,
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sungrow Hybrid",
+  "model": "Sungrow-SH125CX",
+  "current": 270.6,
+  "ac": "240mm2/4C/Al/XLPE/PVC",
+  "earth": null,
+  "type": "hybrid"
  }
 ];
 </script>
@@ -617,7 +753,7 @@ window.SLD_INVERTERS = [
   // it depends on the physical run length between the array and the inverter, so it stays a manual, per-inverter field in the UI.
   S.info = e => {
     const I = e.current, c = cabFor(I), b = e.brand.split(' ')[0];
-    return { name: e.model.startsWith(b) ? e.model : b + ' ' + e.model, kw: kwOf(e.model, I), I,
+    return { name: e.model.startsWith(b) ? e.model : b + ' ' + e.model, kw: kwOf(e.model, I), I, hybrid: e.type == 'hybrid',
              ac: e.ac ? fmt(e.ac) : `${c[1]}mm²/4C/${c[2]}`, earth: fmt(e.earth || `${earFor(I)}mm2 Cu/ PVc Earth Cable`),
              mccb: up(MARGIN * I, STD), derived: !e.ac };
   };
@@ -625,9 +761,12 @@ window.SLD_INVERTERS = [
   S.cableFor = I => { const c = cabFor(+I || 0); return `${c[1]}mm² 4C/Cu/XLPE/PVC`; };
   // Per-BESS-unit electrical info, derived from its PCS kW rating (no parts-database entry for batteries).
   S.bessInfo = kw => { const I = +kw * AC_V, c = cabFor(I); return { I, mccb: up(MARGIN * I, STD), ac: `${c[1]}mm²/4C/${c[2]}`, earth: `${earFor(I)}mm² Cu` }; };
-  // System-level sizing from the combined current of every inverter + every BESS unit.
-  S.derive = (currents, mode) => {
-    const T = currents.reduce((a, c) => a + c, 0), iso = up(MARGIN * T, STD), sets = Math.ceil(T / 250) || 1, c = cabFor(T / sets);
+  // System-level sizing. Main breaker/panel/busbar/main cable are sized on whichever is larger of the total
+  // solar-inverter current or the total standalone-BESS-PCS current — NOT their sum — because the battery only
+  // discharges through the panel while the solar inverters are off (night / outage), so the two never add together.
+  S.derive = (invCurrents, bessCurrents, mode) => {
+    const Ti = invCurrents.reduce((a, c) => a + c, 0), Tb = bessCurrents.reduce((a, c) => a + c, 0), T = Math.max(Ti, Tb);
+    const iso = up(MARGIN * T, STD), sets = Math.ceil(T / 250) || 1, c = cabFor(T / sets);
     return { iso, panel: iso, bus: up(iso, BUS), isoBus: up(iso, BUS),
       meterLbl: { nm: 'BI-DIRECTIONAL METER', na: 'IMPORT / EXPORT METER', np: 'GENERATION METER' }[mode] || '',
       mainCable: `${c[1]}mm² 1C/Cu/XLPE/PVC (4 Runs${sets > 1 ? ' × ' + sets + ' sets' : ''})`,
@@ -675,8 +814,10 @@ const ln=(a,b,c,d,col='#000',w=1.5,da='')=>s.push(`<line x1="${a}" y1="${b}" x2=
 const bx=(x,y,w,h,da='',sw=1.5)=>s.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#000" stroke-width="${sw}"${da?` stroke-dasharray="${da}"`:''}/>`);
 // --- fixed page geometry: these never move, regardless of how many units there are ---
 const top=90,TBh=120,yT=A4H-8-TBh,yE=yT-90,rowsBudget=(yE-170)-top;
+// rows carrying a hybrid inverter's integrated battery need extra height for the battery sub-box below the inverter
+const RH=U.some(u=>u.kind=='inv'&&u.hybrid&&+u.battKwh>0)?225:150;
 // --- repeating-row geometry: compress (sv<1) once natural spacing would overflow the budget, else centre ---
-const lastNat=(R-1)*150+45,sv=lastNat<=rowsBudget?1:rowsBudget/lastNat,rowTop=lastNat<=rowsBudget?top+(rowsBudget-lastNat)/2:top,rhUsed=150*sv;
+const lastNat=(R-1)*RH+45,sv=lastNat<=rowsBudget?1:rowsBudget/lastNat,rowTop=lastNat<=rowsBudget?top+(rowsBudget-lastNat)/2:top,rhUsed=RH*sv;
 const yy=(i,v)=>rowTop+i*rhUsed+v*sv,fz=v=>Math.max(6,+(v*sv).toFixed(2));
 U.forEach((u,i)=>{const y0=yy(i,0),yc=yy(i,45),B=u.kind=='bess';
 bx(40,y0,170,90*sv);
@@ -687,6 +828,10 @@ bx(340,y0,140,90*sv);
 if(!B){t(410,yy(i,22),(INV.length>1?'INVERTER '+(i+1):'INVERTER'),fz(12),'middle','bold');t(410,yy(i,42),u.name,fz(u.name.length>18?9:11));t(410,yy(i,58),u.kw+' kW',fz(11));t(410,yy(i,76),'Integrated DC/AC SPD',fz(9))}
 else{t(410,yy(i,24),'BESS PCS'+(BESS.length>1?' '+(i-INV.length+1):''),fz(12),'middle','bold');t(410,yy(i,45),u.kw+' kW',fz(11));t(410,yy(i,62),'Bi-directional',fz(10))}
 ln(380,yy(i,90),380,yy(i,105),GR,1.5,'5 3');ln(380,yy(i,105),300,yy(i,105),GR,1.5,'5 3');t(306,yy(i,117),u.earth,fz(9),'start');
+if(!B){ln(125,yy(i,90),125,yy(i,105)+14,GR,1.5,'5 3');ln(125,yy(i,105)+14,300,yy(i,105)+14,GR,1.5,'5 3');t(190,yy(i,105)+26,'4mm² Cu (PV array earth)',fz(8),'start')}
+if(!B&&u.hybrid&&+u.battKwh>0){bx(365,yy(i,130),90,55*sv);ln(410,yy(i,90),410,yy(i,130),'#1f6fd0',2);
+t(410,yy(i,145),'BATTERY',fz(9),'middle','bold');t(410,yy(i,159),u.battKwh+' kWh',fz(9),'middle');t(410,yy(i,172),u.battDc||'DC cable',fz(7),'middle');
+ln(410,yy(i,185),410,yy(i,197),GR,1.5,'5 3');ln(410,yy(i,197),300,yy(i,197),GR,1.5,'5 3');t(320,yy(i,197)+11,'4mm² Cu (battery earth)',fz(7),'start')}
 ln(480,yc,580,yc);t(530,yc-8*sv,u.ac,fz(8));
 bx(580,yc-20*sv,60,40*sv);t(610,yc-3*sv,`4P ${u.mccb}A`,fz(11));t(610,yc+12*sv,'MCCB',fz(9));
 ln(640,yc,820,yc)});
@@ -724,8 +869,9 @@ const t=(x,y,str,sz=11,a='start',w='normal')=>s.push(`<text xml:space="preserve"
 const ln=(a,b,c,d,col='#000',w=1.5,da='')=>s.push(`<line x1="${a}" y1="${(b*fy).toFixed(1)}" x2="${c}" y2="${(d*fy).toFixed(1)}" stroke="${col}" stroke-width="${w}"${da?` stroke-dasharray="${da}"`:''}/>`);
 const bx=(x,y,w,h,da='',col='#000',sw=1.5)=>s.push(`<rect x="${x}" y="${(y*fy).toFixed(1)}" width="${w}" height="${(h*fy).toFixed(1)}" fill="none" stroke="${col}" stroke-width="${sw}"${da?` stroke-dasharray="${da}"`:''}/>`);
 // --- column geometry: compress (sh<1) once natural pitch would overflow the fixed width budget, else centre ---
-const LEFT0=400,BUDGET=A4W-500,natSpan=(cnt-1)*230,sh=natSpan<=BUDGET-LEFT0?1:(BUDGET-LEFT0)/natSpan,
-  colStart=natSpan<=BUDGET-LEFT0?LEFT0+(BUDGET-LEFT0-natSpan)/2:LEFT0,colPitch=230*sh;
+const PITCH=U.some(u=>u.kind=='inv'&&u.hybrid&&+u.battKwh>0)?290:230; // hybrid units with a battery need extra column width for the battery sub-box
+const LEFT0=400,BUDGET=A4W-500,natSpan=(cnt-1)*PITCH,sh=natSpan<=BUDGET-LEFT0?1:(BUDGET-LEFT0)/natSpan,
+  colStart=natSpan<=BUDGET-LEFT0?LEFT0+(BUDGET-LEFT0-natSpan)/2:LEFT0,colPitch=PITCH*sh;
 const Xc=i=>colStart+i*colPitch,tc=(x,y,str,sz,a,w)=>t(x,y,str,sz*sh,a,w);
 const brk=(x,y,l1,l2,mc)=>{ln(x,y,x,y+16,OR);ln(x,y+34,x,y+52,OR);ln(x,y+34,x+10,y+16);ln(x-4,y+12,x+4,y+20);ln(x-4,y+20,x+4,y+12);if(mc)bx(x+1,y+22,7,7,'','#000',1);tc(x+18,y+22,l1,11);tc(x+18,y+35,l2,9)};
 const inv=(x,y,l1,l2,l3)=>{bx(x-45*sh,y,90*sh,70);ln(x-45*sh,y+70,x+45*sh,y,'#000',1);t(x-28*sh,y+22,'~',15,'middle');t(x+28*sh,y+62,'=',15,'middle');tc(x+52*sh,y+16,l1,11,'start','bold');tc(x+52*sh,y+31,l2,10);tc(x+52*sh,y+45,l3,10)};
@@ -734,9 +880,16 @@ const yE=690;
 U.forEach((u,i)=>{const x=Xc(i),B=u.kind=='bess';
 ln(x,300,x,320,OR);brk(x,320,`4P ${u.mccb}A`,'MCCB',1);ln(x,372,x,400,OR);tc(x+8*sh,392,u.ac,9);
 if(!B){inv(x,400,(INV.length>1?'INVERTER '+(i+1):'INVERTER'),u.name,u.kw+' kW');tc(x+52*sh,459,'Integrated DC/AC SPD',9);
-ln(x,470,x,505,BL,2);tc(x+8*sh,492,u.dc||'DC cable',9);
+ln(x,470,x,505,BL,2);tc(x-8*sh,492,u.dc||'DC cable',9,'end');
 for(let r=0;r<2;r++)for(let c=0;c<3;c++)bx(x-36*sh+c*24*sh,505+r*20,24*sh,20);
-tc(x,568,'PV ARRAY',11,'middle','bold');tc(x,581,`${u.mods} × ${wp} Wp`,10,'middle');tc(x,594,'Strings: '+u.cfg,9,'middle');tc(x,607,(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle')}
+tc(x,568,'PV ARRAY',11,'middle','bold');tc(x,581,`${u.mods} × ${wp} Wp`,10,'middle');tc(x,594,'Strings: '+u.cfg,9,'middle');tc(x,607,(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle');
+ln(x,616,x,yE,GR,1.5,'5 3');tc(x+6*sh,675,'4mm² Cu (PV array earth)',7,'start');
+if(u.hybrid&&+u.battKwh>0){const bl=x+75*sh;ln(x+40*sh,470,x+40*sh,478,BL,2);ln(x+40*sh,478,bl,478,BL,2);ln(bl,478,bl,505,BL,2);
+tc(bl+6*sh,470,u.battDc||'Battery DC cable',6,'start');
+bx(bl-25*sh,505,50*sh,45);
+[[516,10],[521,5],[526,10],[531,5]].forEach(([by,bw],k)=>ln(bl-bw*sh,by,bl+bw*sh,by,'#000',k%2?4:1.5));
+tc(bl,545,u.battKwh+' kWh',7,'middle');tc(bl,565,'BATTERY',8,'middle','bold');
+ln(bl+25*sh,505,bl+25*sh,yE,GR,1.5,'5 3');tc(bl+31*sh,620,'4mm² Cu (battery earth)',7,'start')}}
 else{inv(x,400,'BESS PCS'+(BESS.length>1?' '+(i-INV.length+1):''),u.kw+' kW','Bi-directional','');
 ln(x,470,x,505,BL,2);tc(x+8*sh,492,u.dc||'DC cable',9);bx(x-45*sh,505,90*sh,70);
 [[522,18],[530,9],[538,18],[546,9]].forEach(([y,w],k)=>ln(x-w*sh,y,x+w*sh,y,'#000',k%2?4:1.5));
@@ -746,7 +899,8 @@ const spdX=Xc(cnt-1)+150,busEnd=Math.max(spdX+60,A4W-500);
 ln(spdX,300,spdX,335,MG);bx(spdX-9,335,18,34,'',MG);ln(spdX-4,343,spdX+4,352,MG);ln(spdX+4,352,spdX-4,361,MG);ln(spdX,369,spdX,395,MG);es(spdX,395,MG);t(spdX+16,356,'SPD Type 1+2',9);
 ln(90,300,busEnd,300,OR,5);t((300+busEnd)/2,289,`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`,10,'middle');
 bx(80,250,busEnd-70,128,'8 4');t(busEnd,245,`MAIN SWITCHGEAR PANEL ${g('panel')}A`,10,'end','bold');
-ln(260,378,260,yE,GR,1.5,'5 3');t(268,534,'Switchgear panel earth',9);
+ln(200,364,320,364,GR,3);t(260,350,'PANEL EARTH BUS',7,'middle','bold');
+ln(260,364,260,yE,GR,1.5,'5 3');t(268,534,'Switchgear panel earth',9);
 const hl=md()!='np';
 if(hl){ln(90,125,640,125,OR,5);t(365,113,`ISOLATION PANEL BUSBAR ${g('isoBus')}A`,10,'middle');brk(400,125,`4P ${g('loadBrk')}A`,'MCCB',1);ln(400,177,400,205,OR);t(408,184,g('loadCable'),8);
 s.push(`<polygon points="386,${(205*fy).toFixed(1)} 414,${(205*fy).toFixed(1)} 400,${(233*fy).toFixed(1)}" fill="#000"/>`);t(422,224,g('loadName'),11,'start','bold');
@@ -777,8 +931,8 @@ S.renderSLD = (v, inv, bess) => { V = v; INV = inv; BESS = bess || []; return re
   const today = () => new Date().toISOString().slice(0, 10);
   let MODE = 'nm';
   const HINT = { nm: 'Solar feeds the site load; surplus is exported. Load sits on the isolation-panel busbar.', na: 'Same connection as net metering; only the metering / billing arrangement differs (edit the meter label if needed).', np: 'All solar generation is exported to the grid. No site load is connected.' };
-  let INVS = [{ m: Math.max(0, D.findIndex(d => d.model == 'STT-45KTL')), mods: 84, cfg: '18x2+15x2+9+9', ov: '', dc: '4mm² DC Cable' }];
-  let BESSU = []; // { kwh, kw, model, ov, dc }
+  let INVS = [{ m: Math.max(0, D.findIndex(d => d.model == 'STT-45KTL')), mods: 84, cfg: '18x2+15x2+9+9', ov: '', acOv: '', dc: '4mm² DC Cable', battKwh: '', battDc: 'Battery DC cable' }];
+  let BESSU = []; // { kwh, kw, model, ov, acOv, dc }
   // [group, [[id, label, default, flag]]]  flag: 1 = auto (overridable), 2 = auto (read-only, always computed)
   const SPEC = [
     ['Drawing', [['proj', 'Project title (use {kW} for the auto total)', 'PROPOSED {kW} kW SOLAR POWER SYSTEM FOR RODESHA ENTERPRISES MORATUWA'], ['loc', 'Location', '25 Lunawa Station Rd, Moratuwa'], ['dno', 'Drawing no', 'RR_2026_118'], ['rev', 'Revision', 'Preliminary'], ['date', 'Date', today(), 3], ['totalKw', 'Total DC capacity (kWp)', '', 2], ['opt', 'Option label', 'Option 1']]],
@@ -798,45 +952,49 @@ S.renderSLD = (v, inv, bess) => { V = v; INV = inv; BESS = bess || []; return re
     : `<fieldset><legend>${g}</legend>` + fs.map(fld).join('') + (g == 'Cables & switchgear' ? '<button type="button" class="alt" id="rst">↺ Reset all to auto</button>' : '') + '</fieldset>').join('');
   const RM = '<svg width="12" height="12" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   function drawInvs() {
-    $('invList').innerHTML = INVS.map((s, i) => { const b = D[s.m].brand; return `<div class="inv" data-i="${i}"><div class="ih"><b>Inverter ${i + 1}</b>${i ? `<button type="button" class="ic" data-a="rm" title="Remove inverter" aria-label="Remove inverter ${i + 1}">${RM}</button>` : ''}</div>
+    $('invList').innerHTML = INVS.map((s, i) => { const b = D[s.m].brand, hyb = D[s.m].type == 'hybrid'; return `<div class="inv" data-i="${i}"><div class="ih"><b>Inverter ${i + 1}</b>${i ? `<button type="button" class="ic" data-a="rm" title="Remove inverter" aria-label="Remove inverter ${i + 1}">${RM}</button>` : ''}</div>
 <label>Brand<select data-a="b">${brands.map(x => `<option${x == b ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
-<label>Model<select data-a="m">${D.map((d, j) => d.brand == b ? `<option value="${j}"${j == s.m ? ' selected' : ''}>${esc(d.model)} (${d.current} A)</option>` : '').join('')}</select></label>
+<label>Model<select data-a="m">${D.map((d, j) => d.brand == b ? `<option value="${j}"${j == s.m ? ' selected' : ''}>${esc(d.model)} (${d.current} A)${d.type == 'hybrid' ? ' — hybrid' : ''}</option>` : '').join('')}</select></label>
 <div class="two"><label>PV modules<input data-a="mods" type="number" min="0" value="${s.mods}"></label><label>Strings<input data-a="cfg" value="${esc(s.cfg)}"></label></div>
 <label>DC cable <span class="tag">site-specific</span><input data-a="dc" value="${esc(s.dc)}" placeholder="depends on array-to-inverter distance"></label>
-<label>MCCB override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label><div class="inf"></div></div>`; }).join('');
+${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</span><input data-a="battKwh" type="number" min="0" value="${esc(s.battKwh)}" placeholder="0 = none"></label>
+<label>Battery DC cable <span class="tag">site-specific</span><input data-a="battDc" value="${esc(s.battDc)}"></label>` : ''}
+<label>MCCB override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
+<label>AC cable override — blank = auto<input data-a="acOv" value="${esc(s.acOv || '')}" placeholder="e.g. 35mm²/4C/Cu/XLPE/PVC"></label><div class="inf"></div></div>`; }).join('');
   }
   function drawBess() {
     $('bessList').innerHTML = BESSU.map((s, i) => `<div class="inv" data-i="${i}"><div class="ih"><b>BESS ${i + 1}</b><button type="button" class="ic" data-a="rm" title="Remove battery" aria-label="Remove BESS ${i + 1}">${RM}</button></div>
 <div class="two"><label>Capacity (kWh)<input data-a="kwh" type="number" min="0" value="${s.kwh}"></label><label>PCS rating (kW)<input data-a="kw" type="number" min="0" value="${s.kw}"></label></div>
 <label>Model<input data-a="model" value="${esc(s.model)}"></label>
 <label>DC cable <span class="tag">site-specific</span><input data-a="dc" value="${esc(s.dc)}"></label>
-<label>MCCB override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label><div class="inf"></div></div>`).join('') || '<p class="hint">No battery added — off-grid or hybrid-only sites can skip this.</p>';
+<label>MCCB override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
+<label>AC cable override — blank = auto<input data-a="acOv" value="${esc(s.acOv || '')}" placeholder="e.g. 35mm²/4C/Cu/XLPE/PVC"></label><div class="inf"></div></div>`).join('') || '<p class="hint">No battery added — off-grid or hybrid-only sites can skip this.</p>';
   }
   $('invList').addEventListener('input', e => {
     const a = e.target.dataset.a, i = +e.target.closest('.inv').dataset.i;
-    if (a == 'b') { INVS[i].m = firstOf(e.target.value); drawInvs(); } else if (a == 'm') INVS[i].m = +e.target.value; else INVS[i][a] = e.target.value;
+    if (a == 'b') { INVS[i].m = firstOf(e.target.value); drawInvs(); } else if (a == 'm') { INVS[i].m = +e.target.value; drawInvs(); } else INVS[i][a] = e.target.value;
     update();
   });
   $('invList').addEventListener('click', e => { const b = e.target.closest('[data-a=rm]'); if (b) { INVS.splice(+b.closest('.inv').dataset.i, 1); drawInvs(); update(); } });
   $('addInv').onclick = () => { INVS.push({ ...INVS[INVS.length - 1] }); drawInvs(); update(); };
   $('bessList').addEventListener('input', e => { const a = e.target.dataset.a, i = +e.target.closest('.inv').dataset.i; BESSU[i][a] = e.target.value; update(); });
   $('bessList').addEventListener('click', e => { const b = e.target.closest('[data-a=rm]'); if (b) { BESSU.splice(+b.closest('.inv').dataset.i, 1); drawBess(); update(); } });
-  $('addBess').onclick = () => { BESSU.push(BESSU.length ? { ...BESSU[BESSU.length - 1] } : { kwh: 100, kw: 50, model: 'BESS', ov: '', dc: 'DC cable' }); drawBess(); update(); };
+  $('addBess').onclick = () => { BESSU.push(BESSU.length ? { ...BESSU[BESSU.length - 1] } : { kwh: 100, kw: 50, model: 'BESS', ov: '', acOv: '', dc: 'DC cable' }); drawBess(); update(); };
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { MODE = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x == b)); update(); });
   $('rst').onclick = () => { manual.clear(); update(); };
   $('form').addEventListener('input', e => { if (AUTO.has(e.target.id)) manual.add(e.target.id); update(); });
   function update() {
     const wp = +$('modWp').value || 0;
-    const invInfos = INVS.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb }; });
-    const bessInfos = BESSU.map(s => { const x = S.bessInfo(+s.kw || 0), o = parseFloat(s.ov); return { ...x, kwh: +s.kwh || 0, kw: +s.kw || 0, model: s.model, dc: s.dc, mccb: o > 0 ? o : x.mccb }; });
-    const d = S.derive(invInfos.map(i => i.I).concat(bessInfos.map(b => b.I)), MODE);
+    const invInfos = INVS.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv, battKwh: +s.battKwh || 0, battDc: s.battDc }; });
+    const bessInfos = BESSU.map(s => { const x = S.bessInfo(+s.kw || 0), o = parseFloat(s.ov); return { ...x, kwh: +s.kwh || 0, kw: +s.kw || 0, model: s.model, dc: s.dc, mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv }; });
+    const d = S.derive(invInfos.map(i => i.I), bessInfos.map(b => b.I), MODE);
     d.loadCable = S.cableFor($('loadBrk').value);
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = (invInfos.reduce((a, i) => a + i.mods, 0) * wp / 1000).toFixed(2);
     const V = { mode: MODE }; document.querySelectorAll('#form input[id]').forEach(el => V[el.id] = el.value);
     $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np');
     $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos);
-    document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}`; });
+    document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
     document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}`; });
   }
   let cur = 'out';
@@ -850,12 +1008,12 @@ S.renderSLD = (v, inv, bess) => { V = v; INV = inv; BESS = bess || []; return re
     const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svgEl));
     const img = new Image();
     img.onload = () => {
-      const W = 3508, H = 2481; // A4 landscape @ 300dpi, for a crisp raster
+      const W = 2245, H = 1587; // ~192dpi — sharp enough to read/print, far smaller file than a 300dpi raster
       const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
       const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, 0, 0, W, H);
       try {
-        const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        pdf.addImage(cv.toDataURL('image/png', 1), 'PNG', 0, 0, 297, 210);
+        const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+        pdf.addImage(cv.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, 297, 210, undefined, 'MEDIUM');
         pdf.save(($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.pdf');
       } catch (err) { alert('PDF export failed (' + err.message + '). Try "Download SVG" instead, or print to PDF from your browser.'); }
     };
