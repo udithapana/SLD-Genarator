@@ -5,7 +5,7 @@
   const firstOf = b => D.findIndex(d => d.brand == b);
   const today = () => new Date().toISOString().slice(0, 10);
   let MODE = 'nm';
-  const HINT = { nm: 'Solar feeds the site load; surplus is exported. Load sits on the isolation-panel busbar.', na: 'Same connection as net metering; only the metering / billing arrangement differs (edit the meter label if needed).', np: 'All solar generation is exported to the grid. No site load is connected.' };
+  const HINT = { nm: 'Solar feeds the site load; surplus is exported. Load sits on the isolation-panel busbar.', na: 'Same connection as net metering; only the metering / billing arrangement differs (edit the meter label if needed).', np: 'All solar generation is exported to the grid. No site load is connected.', og: 'No utility connection. The main panel feeds the site load directly through a Load Distribution Board (LOAD DB) — no isolator, meter, or grid.' };
   let INVS = [{ m: Math.max(0, D.findIndex(d => d.model == 'STT-45KTL')), mods: 84, cfg: '18x2+15x2+9+9', ov: '', acOv: '', dc: '4mm² DC Cable', battKwh: '', battDc: 'Battery DC cable' }];
   let BESSU = []; // { kwh, kw, model, ov, acOv, dc }
   // [group, [[id, label, default, flag]]]  flag: 1 = auto (overridable), 2 = auto (read-only, always computed)
@@ -21,7 +21,7 @@
     if (flag == 3) return `<label>${l}<input type="date" id="${k}" value="${esc(v)}"></label>`;
     return `<label>${l}${tag}<input id="${k}" value="${esc(v)}"${flag == 2 ? ' readonly' : ''}></label>`;
   };
-  $('form').innerHTML = '<fieldset><legend>System configuration</legend><div class="seg">' + [['nm', 'Net metering'], ['na', 'Net accounting'], ['np', 'Net plus']].map(([k, l]) => `<button type="button" class="alt${k == MODE ? ' on' : ''}" data-mode="${k}">${l}</button>`).join('') + '</div><div class="hint" id="modeHint"></div></fieldset>' + SPEC.map(([g, fs]) => g == 'INV'
+  $('form').innerHTML = '<fieldset><legend>System configuration</legend><div class="seg">' + [['nm', 'Net metering'], ['na', 'Net accounting'], ['np', 'Net plus'], ['og', 'Off-grid']].map(([k, l]) => `<button type="button" class="alt${k == MODE ? ' on' : ''}" data-mode="${k}">${l}</button>`).join('') + '</div><div class="hint" id="modeHint"></div></fieldset>' + SPEC.map(([g, fs]) => g == 'INV'
     ? '<fieldset><legend>Inverters</legend><div id="invList"></div><button type="button" class="alt" id="addInv"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add inverter</button></fieldset>'
     : g == 'BESS' ? '<fieldset><legend>Battery (BESS)</legend><div id="bessList"></div><button type="button" class="alt" id="addBess"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add battery</button></fieldset>'
     : `<fieldset><legend>${g}</legend>` + fs.map(fld).join('') + (g == 'Cables & switchgear' ? '<button type="button" class="alt" id="rst">↺ Reset all to auto</button>' : '') + '</fieldset>').join('');
@@ -67,7 +67,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = (invInfos.reduce((a, i) => a + i.mods, 0) * wp / 1000).toFixed(2);
     const V = { mode: MODE }; document.querySelectorAll('#form input[id]').forEach(el => V[el.id] = el.value);
-    $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np');
+    $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || MODE == 'og');
     $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos);
     document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
     document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}`; });
@@ -83,12 +83,12 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svgEl));
     const img = new Image();
     img.onload = () => {
-      const W = 2245, H = 1587; // ~192dpi — sharp enough to read/print, far smaller file than a 300dpi raster
+      const W = 4134, H = 2925; // ~354dpi A4 landscape — pushed further for maximum sharpness
       const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
       const ctx = cv.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, 0, 0, W, H);
       try {
         const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
-        pdf.addImage(cv.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, 297, 210, undefined, 'MEDIUM');
+        pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, 297, 210);
         pdf.save(($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.pdf');
       } catch (err) { alert('PDF export failed (' + err.message + '). Try "Download SVG" instead, or print to PDF from your browser.'); }
     };

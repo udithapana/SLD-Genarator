@@ -38,6 +38,47 @@ Like the MCCB override, each inverter and BESS card now has an "AC cable overrid
 ## Sticky header
 The top bar (title, diagram tabs, Save/Download/PDF buttons) now stays pinned to the top of the window while the (often long) form scrolls underneath it.
 
+## Earth bonding refinements
+- A standalone BESS (or hybrid battery) now shows its **battery** and **PCS/inverter** earth points bonding together (a visible interconnect) before the combined run continues to the main earth bus — labelled "(PCS + battery earth)" — rather than each running as a fully separate conductor.
+- The **isolation panel** now also has its own labelled earth bus (SLD) / earth point (block diagram), separate from the main switchgear panel's earth bus and the per-unit inverter/PV/battery earths.
+- Fixed the SPD label overlapping the main panel's dashed border in the single-line diagram.
+
+## Isolation panel earth routing (SLD)
+The isolation panel's earth is a short local stub terminating in a ground symbol (matching the SPD's own earth symbol) right next to the panel — it does not run down to the main earth bus bar, so it can never be mistaken for feeding into the main switchgear panel's earth.
+
+## Legibility
+The smallest labels (earth conductor sizes, "Battery earth" call-outs, DC cable notes) are a point or two larger now, and the exported PDF renders at a slightly higher resolution — both aimed at keeping small text readable without bloating the file size.
+
+## Using the full page width (SLD)
+The single-line diagram used to reserve far more left/right margin than the layout actually needed, so even systems with 6–8 inverters left a lot of empty space on both sides. The margins are now sized correctly, and the inverter/PV/battery columns (and their text) grow to fill whatever room is left — up to 1.8× normal size for a single inverter — instead of leaving margin unused. The SPD's position (and the panel's right-hand edge) scales with that same growth and is now calculated so it can never run off the page however big the columns get. With enough inverters that they no longer fit at full size, it compresses smoothly, same as before. "Integrated DC/AC SPD" under each inverter wraps to two lines to help with this.
+
+## PDF quality
+Raised the exported PDF back up to a true 300dpi image at near-maximum JPEG quality — sized for clarity now rather than the smallest possible file (typically a few MB).
+
+## Off-grid mode
+A fourth system configuration, "Off-grid", is now available alongside Net metering / Net accounting / Net plus. It removes the isolator, meter, and grid connection entirely — the main switchgear panel feeds straight into a labelled "Load Distribution Board (LOAD DB)" box, on both diagrams. Use it for sites with no utility connection at all.
+
+## Earth pit alignment
+The main earth pit / grounding-rod symbol at the bottom of the single-line diagram is now aligned directly under the "Switchgear panel earth" line, instead of sitting a little to the side of it, so the panel's earth run reads as one continuous line down to the actual ground connection.
+
+## Panel earth bus repositioned
+With enough inverters growing large (3–6, before compression kicks back in), the main panel's earth bus used to sit near the middle of the page and could end up close to or crossing the first inverter's own PV array / earth line. It's now tucked into the panel's left corner — well clear of the inverter columns at any count — and the main earth pit at the bottom is aligned under it, same as before.
+
+## Off-grid Load DB now has its own AC bus
+The off-grid Load Distribution Board box now shows an actual AC busbar inside it (labelled with the panel's rating), fed by the main panel's own breaker — rather than just a plain wire passing through — on both diagrams.
+
+## MCB vs MCCB
+Every breaker rating in both diagrams now follows the standard convention automatically: under 63A it's labelled "MCB" (miniature circuit breaker), 63A and above it's "MCCB" (moulded-case) — including the main incomer, per-inverter/BESS breakers, and the load feeder breaker.
+
+## Bigger text for key labels
+The smaller labels that are easy to miss — earth cable sizes, "SPD Type 1+2", main cable sizes, and every "switchgear panel" / earth-bus heading — are all a point or two larger now, on both diagrams.
+
+## PDF quality raised again
+The exported PDF is now a lossless PNG at ~354dpi (up from a compressed JPEG at 300dpi) — sharper still, at the cost of a somewhat larger file.
+
+## Font size vs. number of units (SLD)
+Text in the inverter/PV/battery columns no longer keeps growing when there are only a few units. It is held at the size it has with 4 units for 1–4 units, follows the layout between 4 and 6 units, and is held at the 6-unit size for 7+ units so it stays readable in print. With 7+ units the columns get narrower than that text, so long labels (inverter title and model, cable sizes, DC cable, earth labels) wrap onto extra lines, the SPD gets more room, and with 10+ units the bottom earth labels alternate between two heights. Layouts beyond roughly 10 units become very crowded on a single A4 sheet.
+
 ## Selection rules (`js/rules.js`)
 - Inverter MCCB = next standard size ≥ 1.25 × inverter current. Each BESS unit's MCCB is sized the same way from its PCS kW.
 - Isolator / main panel = next standard size ≥ 1.25 × total current (every inverter + every BESS unit); busbar = next standard busbar size ≥ that.
