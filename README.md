@@ -67,8 +67,13 @@ With enough inverters growing large (3–6, before compression kicks back in), t
 ## Off-grid Load DB now has its own AC bus
 The off-grid Load Distribution Board box now shows an actual AC busbar inside it (labelled with the panel's rating), fed by the main panel's own breaker — rather than just a plain wire passing through — on both diagrams.
 
-## MCB vs MCCB
-Every breaker rating in both diagrams now follows the standard convention automatically: under 63A it's labelled "MCB" (miniature circuit breaker), 63A and above it's "MCCB" (moulded-case) — including the main incomer, per-inverter/BESS breakers, and the load feeder breaker.
+## Breaker ratings (MCB / MCCB / ACB)
+Only these standard ratings are used for every auto-selected breaker (inverter, BESS, main panel, Location 2 panel, isolator):
+- **MCB:** 32, 40, 63 A
+- **MCCB:** 100, 160, 250, 400, 630, 800, 1000, 1250, 1600 A
+- **ACB:** 2000, 2500, 3200, 4000 A
+
+The rating is the smallest one that is ≥ 1.25 × the load current. The family (MCB / MCCB / ACB) follows from the rating. If the load current is **below 20 % of a MCCB's or ACB's rating** (normally only when you override the rating, or the breaker is oversized), the breaker is labelled **ADJ.** (adjustable trip unit), e.g. "MCCB ADJ.". Edit `MCB / MCCB / ACB` and `S.brkType` in `js/rules.js` to change the lists or the 20 % threshold.
 
 ## Bigger text for key labels
 The smaller labels that are easy to miss — earth cable sizes, "SPD Type 1+2", main cable sizes, and every "switchgear panel" / earth-bus heading — are all a point or two larger now, on both diagrams.
@@ -154,3 +159,25 @@ All columns share a 230-unit pitch; only a hybrid column gets extra room on its 
 - A hybrid column's earth label sits to the right of its (left-shifted) earth line; its battery DC cable leaves the inverter's left side.
 - Very dense sheets (12+ columns): text scales down slightly with the geometry instead of overlapping.
 - Automated check used during development: text/text, text/line, text/panel-outline and symbol-box overlaps over 1–9 main inverters × Location 2 (main / isolation / off-grid / net-plus) × hybrid / BESS combinations — no overlaps reported (block diagram: clean up to ~12 rows).
+
+## CAD export (DXF)
+The **⬇ Download CAD (.dxf)** button (replaces the old SVG download) exports whichever drawing tab is showing (block diagram or SLD) as an AutoCAD **DXF (R12 / AC1009, ASCII)** — opens in every AutoCAD version, BricsCAD, DraftSight, LibreCAD, QCAD. Generated in the browser by `js/dxf.js` (`SLD.toDXF(svgElement)`); nothing is uploaded.
+- Millimetres on a real A4 landscape sheet (297 × 210), origin lower-left, Y up → plots 1:1.
+- Layers: `SLD-AC`, `SLD-DC`, `SLD-EARTH`, `SLD-SPD`, `SLD-SYMBOLS`, `TEXT`, `TITLEBLOCK`, `TITLEBLOCK-TEXT` (ACI colours match the screen). Dashed lines use DASH_* linetypes.
+- Entities: LINE, POLYLINE (boxes; heavy cables/earth bars carry a width), CIRCLE, SOLID (load arrow), TEXT (Arial / Arial Bold styles, real text — editable).
+- The raster logo can't be stored in R12, so the logo cell holds the text "REGEN". DWG can't be written in a browser; open the DXF in AutoCAD and Save As DWG.
+
+## Panels & protection (form section "Panels & protection")
+- **IP rating** per panel — main switchgear panel, isolation panel (Load DB in off-grid) and the second-location panel: *Indoor — IP54* / *Outdoor — IP66*. Shown on every drawing (badge inside the main/L2 panel outline in the block diagram and main-panel SLD; after the title for the isolation panel).
+- **EFR (earth fault relay)** — optional on the main switchgear panel and on the isolation panel (not on a Load DB). SLD: CBCT (circle on the conductor) + relay box (`EFR`, `50N/51N` or your own setting text) with a dashed trip link to the breaker / isolator, plus an "EFR trip signal" legend entry. Block diagram: EFR box with trip link.
+- **Indicators** — optional phase indicator lamps R-Y-B (IEC signal-lamp symbol: circle with cross) tapped off the busbar with a common neutral, on the main, isolation and (with a second location) the Location 2 panel.
+- Layout: with a main-panel EFR the panel contents sit a little lower so the CBCT + relay are inside the dashed panel outline; the isolation panel's earth bus bar sits low in the panel with its earth conductor leaving the enclosure; each panel (incl. Location 2 on the SLD) shows its IP rating. With an isolation-panel EFR the panel is drawn taller (busbar, breakers and meter sit lower) so the CBCT + relay have clear space above the busbar. The main panel (and Location 2's panel) also sit a little lower so the cable labels and panel titles between the panels have their own clear lines.
+- **DC side** — optional **DC isolator** (disconnector symbol cutting the DC cable) and **DC SPD** (tap to earth) on every PV-array → inverter DC cable, each with an editable rating text (defaults `1000V DC`, `Type 2 · 1000V DC`). The PV array moves down to make room; the block diagram shows them as two small boxes in the DC link.
+- Isolation-panel (and Load DB) earthing point now leaves the enclosure: the earth bus bar stays inside, the conductor and ground symbol sit below the panel outline.
+- Also: `[hidden]` CSS fix so fields that are meant to disappear (e.g. EFR setting when no EFR) really do.
+- All these options are saved/restored with "Save to history" and export to the DXF like the rest of the drawing.
+
+## Screen layout (laptop / desktop)
+- The drawing panel on the right stays fixed and is scaled so the whole A4 sheet fits the window; only the left settings panel scrolls.
+- The settings are grouped into tabs: **System** (metering mode, panel Wp, inverters, BESS), **Location 2**, **Cables & breakers**, **Protection** (IP ratings, EFR, indicators, DC isolator / SPD) and **Project** (drawing details, sign-off). The last tab used is remembered. "Location 2 ●" shows when a second location is on.
+- On phones / narrow windows the page scrolls normally (settings above, drawing below).

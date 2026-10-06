@@ -16,6 +16,7 @@
     ['INV'], ['BESS'], ['LOC2'],
     ['Solar array', [['modWp', 'Panel Wp', '620']]],
     ['Cables & switchgear', [['mainCable', 'Main cable to isolator', '', 1], ['utilCable', 'Utility cable', '', 1], ['earthMain', 'Earth bus feeder', '', 1], ['pvEarth', 'PV array main earth (roof)', '', 1], ['panel', 'Main switchgear panel (A)', '', 1], ['bus', 'Common coupling busbar (A)', '', 1], ['iso', 'Isolator (A)', '', 1], ['isoBus', 'Isolation panel busbar (A)', '', 1], ['meterLbl', 'Meter label', '', 1], ['earthR', 'Earth resistance (Ω max)', '10'], ['loadName', 'Load / DB name', 'LOAD'], ['loadBrk', 'Load feeder MCCB (A)', '100'], ['loadCable', 'Load feeder cable', '', 1]]],
+    ['PROT'],
     ['Sign-off', [['designed', 'Designed by', 'K.U.S.Panagoda'], ['drawn', 'Drawn by', 'K.U.S.Panagoda'], ['checked', 'Checked by', 'Kavish / Uditha'], ['director', 'Director / CTO', 'Champika Periyapperuma'], ['exec', 'Project executive', 'Kavish Weerasinghe']]]];
   const fld = ([k, l, v, flag]) => {
     if (flag == 1) AUTO.add(k); if (flag == 2) RO.add(k);
@@ -23,11 +24,46 @@
     if (flag == 3) return `<label>${l}<input type="date" id="${k}" value="${esc(v)}"></label>`;
     return `<label>${l}${tag}<input id="${k}" value="${esc(v)}"${flag == 2 ? ' readonly' : ''}></label>`;
   };
+  // Panels & protection: enclosure IP rating per panel, optional earth-fault relay (EFR) + phase indicator lamps, DC-side isolators / SPDs
+  const IPOPT = '<option value="IP54">Indoor — IP54</option><option value="IP66">Outdoor — IP66</option>', YN = (n, y) => `<option value="">${n}</option><option value="1">${y}</option>`;
+  const PROT_HTML = `<fieldset><legend>Panels &amp; protection</legend>
+<div class="sub"><b>Main switchgear panel</b>
+<label>Enclosure (IP rating)<select id="ipMain">${IPOPT}</select></label>
+<label>Earth fault relay (EFR)<select id="efrMain">${YN('Not fitted', 'EFR fitted — CBCT + relay trips main breaker')}</select></label>
+<label>EFR setting <span class="tag">optional</span><input id="efrMainSet" placeholder="e.g. 0.3 A / 0.1 s"></label>
+<label>Indicators<select id="indMain">${YN('None', 'Phase indicator lamps (R-Y-B)')}</select></label></div>
+<div class="sub"><b id="isoPanelTitle">Isolation panel</b>
+<label>Enclosure (IP rating)<select id="ipIso">${IPOPT}</select></label>
+<label>Earth fault relay (EFR)<select id="efrIso">${YN('Not fitted', 'EFR fitted — CBCT + relay trips isolator')}</select></label>
+<label>EFR setting <span class="tag">optional</span><input id="efrIsoSet" placeholder="e.g. 0.3 A / 0.1 s"></label>
+<label>Indicators<select id="indIso">${YN('None', 'Phase indicator lamps (R-Y-B)')}</select></label></div>
+<div class="sub" id="ipL2Box"><b>Second-location panel</b>
+<label>Enclosure (IP rating)<select id="ipL2">${IPOPT}</select></label>
+<label>Indicators<select id="indL2">${YN('None', 'Phase indicator lamps (R-Y-B)')}</select></label></div>
+<div class="sub"><b>DC side (PV array → inverter)</b>
+<label>DC isolator<select id="dcIso">${YN('Not shown (inverter built-in)', 'DC isolator on each PV array DC cable')}</select></label>
+<label>DC isolator rating text<input id="dcIsoTxt" value="1000V DC"></label>
+<label>DC surge protection (SPD)<select id="dcSpd">${YN('Not shown (inverter built-in)', 'DC SPD on each PV array DC cable')}</select></label>
+<label>DC SPD rating text<input id="dcSpdTxt" value="Type 2 · 1000V DC"></label></div></fieldset>`;
   $('form').innerHTML = '<fieldset><legend>System configuration</legend><div class="seg">' + [['nm', 'Net metering'], ['na', 'Net accounting'], ['np', 'Net plus'], ['og', 'Off-grid']].map(([k, l]) => `<button type="button" class="alt${k == MODE ? ' on' : ''}" data-mode="${k}">${l}</button>`).join('') + '</div><div class="hint" id="modeHint"></div></fieldset>' + SPEC.map(([g, fs]) => g == 'INV'
     ? '<fieldset><legend>Inverters</legend><div id="invList"></div><button type="button" class="alt" id="addInv"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add inverter</button></fieldset>'
     : g == 'BESS' ? '<fieldset><legend>Battery (BESS)</legend><div id="bessList"></div><button type="button" class="alt" id="addBess"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add battery</button></fieldset>'
     : g == 'LOC2' ? '<fieldset><legend>Second location</legend><div id="loc2Body"></div></fieldset>'
+    : g == 'PROT' ? PROT_HTML
     : `<fieldset><legend>${g}</legend>` + fs.map(fld).join('') + (g == 'Cables & switchgear' ? '<button type="button" class="alt" id="rst">↺ Reset all to auto</button>' : '') + '</fieldset>').join('');
+  // ---- Left panel tabs: the form's sections grouped into a few short tabs (all fields stay in the page, only hidden) ----
+  const TABS = [['sys', 'System', ['System configuration', 'Solar array', 'Inverters', 'Battery (BESS)']], ['loc2', 'Location 2', ['Second location']],
+    ['sw', 'Cables & breakers', ['Cables & switchgear']], ['prot', 'Protection', ['Panels & protection']], ['proj', 'Project', ['Drawing', 'Sign-off']]];
+  (() => {
+    const form = $('form'), fsets = [...form.querySelectorAll(':scope > fieldset')], byName = n => fsets.find(f => f.querySelector('legend').textContent.trim() == n);
+    const bar = document.createElement('div'); bar.className = 'tabs'; bar.setAttribute('role', 'tablist');
+    bar.innerHTML = TABS.map(([k, l]) => `<button type="button" class="alt" role="tab" data-tab="${k}" id="tab_${k}">${l}</button>`).join('');
+    form.prepend(bar);
+    TABS.forEach(([k, , names]) => { const p = document.createElement('div'); p.className = 'pane'; p.dataset.pane = k; p.setAttribute('role', 'tabpanel'); names.forEach(n => { const f = byName(n); if (f) p.appendChild(f); }); form.appendChild(p); });
+    const show = k => { form.querySelectorAll('.pane').forEach(p => p.hidden = p.dataset.pane != k); bar.querySelectorAll('button').forEach(b => { const on = b.dataset.tab == k; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); form.scrollTop = 0; try { localStorage.setItem('sld_tab', k); } catch (e) { } };
+    bar.addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) show(b.dataset.tab); });
+    let k0 = 'sys'; try { k0 = localStorage.getItem('sld_tab') || 'sys'; } catch (e) { } show(TABS.some(t => t[0] == k0) ? k0 : 'sys');
+  })();
   const RM = '<svg width="12" height="12" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   const AD = '<svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   const invCard = (s, i, canRemove) => { const b = D[s.m].brand, hyb = D[s.m].type == 'hybrid'; return `<div class="inv" data-i="${i}"><div class="ih"><b>Inverter ${i + 1}</b>${canRemove ? `<button type="button" class="ic" data-a="rm" title="Remove inverter" aria-label="Remove inverter ${i + 1}">${RM}</button>` : ''}</div>
@@ -37,13 +73,13 @@
 <label>DC cable <span class="tag">site-specific</span><input data-a="dc" value="${esc(s.dc)}" placeholder="depends on array-to-inverter distance"></label>
 ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</span><input data-a="battKwh" type="number" min="0" value="${esc(s.battKwh)}" placeholder="0 = none"></label>
 <label>Battery DC cable <span class="tag">site-specific</span><input data-a="battDc" value="${esc(s.battDc)}"></label>` : ''}
-<label>MCCB override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
+<label>Breaker override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
 <label>AC cable override — blank = auto<input data-a="acOv" value="${esc(s.acOv || '')}" placeholder="e.g. 35mm²/4C/Cu/XLPE/PVC"></label><div class="inf"></div></div>`; };
   const bessCard = (s, i) => `<div class="inv" data-i="${i}"><div class="ih"><b>BESS ${i + 1}</b><button type="button" class="ic" data-a="rm" title="Remove battery" aria-label="Remove BESS ${i + 1}">${RM}</button></div>
 <div class="two"><label>Capacity (kWh)<input data-a="kwh" type="number" min="0" value="${s.kwh}"></label><label>PCS rating (kW)<input data-a="kw" type="number" min="0" value="${s.kw}"></label></div>
 <label>Model<input data-a="model" value="${esc(s.model)}"></label>
 <label>DC cable <span class="tag">site-specific</span><input data-a="dc" value="${esc(s.dc)}"></label>
-<label>MCCB override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
+<label>Breaker override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
 <label>AC cable override — blank = auto<input data-a="acOv" value="${esc(s.acOv || '')}" placeholder="e.g. 35mm²/4C/Cu/XLPE/PVC"></label><div class="inf"></div></div>`;
   function drawInvs() { $('invList').innerHTML = INVS.map((s, i) => invCard(s, i, i > 0)).join(''); }
   function drawBess() { $('bessList').innerHTML = BESSU.map(bessCard).join('') || '<p class="hint">No battery added — off-grid or hybrid-only sites can skip this.</p>'; }
@@ -107,19 +143,22 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const allI = invInfos.concat(LOC2.on ? invInfos2 : []).map(i => i.I), allB = bessInfos.concat(LOC2.on ? bessInfos2 : []).map(b => b.I);
     const dMain = S.derive(invInfos.map(i => i.I), bessInfos.map(b => b.I), MODE), dTot = S.derive(allI, allB, MODE);
     const d = LOC2.on ? { ...dTot } : dMain;
-    if (LOC2.on && LOC2.to == 'iso') { d.panel = dMain.panel; d.bus = dMain.bus; d.mainCable = dMain.mainCable; }
+    if (LOC2.on && LOC2.to == 'iso') { d.panel = dMain.panel; d.bus = dMain.bus; d.mainCable = dMain.mainCable; d.T = dMain.T; }
     dMain.pvEarth = d.pvEarth = S.pvEarth(invInfos.length);
     d.loadCable = S.cableFor($('loadBrk').value);
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = ((invInfos.reduce((a, i) => a + i.mods, 0) + (LOC2.on ? invInfos2.reduce((a, i) => a + i.mods, 0) : 0)) * wp / 1000).toFixed(2);
-    const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2bus: d2 ? d2.bus : 0 }; document.querySelectorAll('#form input[id]').forEach(el => V[el.id] = el.value);
+    const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2panelI: d2 ? d2.T : 0, panelI: d.T, loc2bus: d2 ? d2.bus : 0 }; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => V[el.id] = el.value);
     $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || MODE == 'og');
+    $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = MODE == 'og'; $('isoPanelTitle').textContent = MODE == 'og' ? 'Load distribution board (Load DB)' : 'Isolation panel';
+    $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || MODE == 'og';
+    $('dcIsoTxt').parentElement.hidden = !$('dcIso').value; $('dcSpdTxt').parentElement.hidden = !$('dcSpd').value;
     $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos, invInfos2, bessInfos2);
-    document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
-    document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}`; });
+    document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
+    document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}`; });
     if (LOC2.on) {
-      document.querySelectorAll('#invList2 .inf').forEach((el, i) => { const x = invInfos2[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
-      document.querySelectorAll('#bessList2 .inf').forEach((el, i) => { const x = bessInfos2[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · MCCB ${x.mccb} A · ${x.earth}`; });
+      document.querySelectorAll('#invList2 .inf').forEach((el, i) => { const x = invInfos2[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
+      document.querySelectorAll('#bessList2 .inf').forEach((el, i) => { const x = bessInfos2[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}`; });
     }
   }
   let cur = 'out';
@@ -140,12 +179,18 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
         const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
         pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, 297, 210);
         pdf.save(($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.pdf');
-      } catch (err) { alert('PDF export failed (' + err.message + '). Try "Download SVG" instead, or print to PDF from your browser.'); }
+      } catch (err) { alert('PDF export failed (' + err.message + '). Print to PDF from your browser instead.'); }
     };
-    img.onerror = () => alert('PDF export failed — your browser blocked rendering the drawing (this needs an internet connection the first time, to load the PDF library). Try "Download SVG" instead.');
+    img.onerror = () => alert('PDF export failed — your browser blocked rendering the drawing (this needs an internet connection the first time, to load the PDF library). Print to PDF from your browser instead.');
     img.src = svgUrl;
   };
-  $('dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([$(cur).innerHTML], { type: 'image/svg+xml' })); a.download = ($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.svg'; a.click(); URL.revokeObjectURL(a.href); };
+  $('dl').onclick = () => {
+    const svgEl = $(cur).querySelector('svg'); if (!svgEl) return;
+    try {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([SLD.toDXF(svgEl)], { type: 'application/dxf' }));
+      a.download = ($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.dxf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch (err) { alert('CAD export failed (' + err.message + ').'); }
+  };
 
   // ---- History: saved revisions kept in this browser (localStorage), so a project's past states can be reopened later ----
   const HKEY = 'sld_history_v1', HMAX = 60;
@@ -153,7 +198,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   const hSave = list => { try { localStorage.setItem(HKEY, JSON.stringify(list.slice(0, HMAX))); } catch (e) { } };
   const flash = m => { $('msg').textContent = m; setTimeout(() => { if ($('msg').textContent == m) $('msg').textContent = ''; }, 2500); };
   $('sv').onclick = () => {
-    const fields = {}; document.querySelectorAll('#form input[id]').forEach(el => fields[el.id] = el.value);
+    const fields = {}; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => fields[el.id] = el.value);
     const def = (fields.dno || 'Drawing') + ' — ' + (fields.opt || '') + ' (' + MODE + ')';
     const label = prompt('Save this revision as:', def); if (label == null) return;
     const list = hLoad();

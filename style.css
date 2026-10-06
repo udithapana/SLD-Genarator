@@ -46,3 +46,18 @@ fieldset>button{margin-top:10px}
 .hist-item .btns{display:flex;gap:6px}
 .hist-item .btns button{padding:5px 10px;font-size:12px}
 @media print{#out3{display:none!important}}
+[hidden]{display:none!important}
+
+/* left-panel tabs */
+.tabs{position:sticky;top:-6px;z-index:5;display:flex;flex-wrap:wrap;gap:5px;margin:0 -14px 4px;padding:10px 14px 9px;background:var(--card);border-bottom:1px solid var(--bd)}
+.tabs button{flex:1 1 auto;padding:6px 8px;font-size:12px;white-space:nowrap}
+.pane>fieldset:first-child{border-top:0;margin-top:0}
+/* laptop / desktop: the drawing stays put on the right, only the left panel scrolls */
+@media screen and (min-width:861px){
+ html,body{height:100%}
+ body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+ main{flex:1 1 auto;min-height:0;grid-template-rows:minmax(0,1fr);align-items:stretch}
+ .side{overflow-y:auto;min-height:0;overscroll-behavior:contain}
+ .dwg{overflow:auto;min-height:0;container-type:size}
+ .paper{min-width:760px;max-width:calc((100cqh - 2px)*1.4133);margin:0 auto}
+}
