@@ -79,6 +79,15 @@ The exported PDF is now a lossless PNG at ~354dpi (up from a compressed JPEG at 
 ## Font size vs. number of units (SLD)
 Text in the inverter/PV/battery columns no longer keeps growing when there are only a few units. It is held at the size it has with 4 units for 1–4 units, follows the layout between 4 and 6 units, and is held at the 6-unit size for 7+ units so it stays readable in print. With 7+ units the columns get narrower than that text, so long labels (inverter title and model, cable sizes, DC cable, earth labels) wrap onto extra lines, the SPD gets more room, and with 10+ units the bottom earth labels alternate between two heights. Layouts beyond roughly 10 units become very crowded on a single A4 sheet.
 
+## Second location (SLD only)
+
+For sites with inverters/BESS split across two physical switchgear locations, there's now a "Second location" section (below Battery/BESS) in the form:
+
+- **+ Add second location** reveals: a "Connects to" choice (Main switchgear panel, or the Isolation panel / Load DB in off-grid mode), a location name, an interconnecting-cable override, and their own independent Inverters and Battery (BESS) lists — same cards, same fields, same MCB/MCCB and AC-cable-override behaviour as the main location.
+- The single-line diagram draws Location 2's panel directly below the main panel, left of the main inverters (the main panel does not move). Its inverters, PV arrays, BESS PCS/battery and hybrid units use exactly the same symbols and size as the main location. The dashed outline wraps only the busbar and its breakers (incomer + one per unit). Its feeder carries a breaker at **each** end, sized from Location 2's own current only (it does not change when main inverters/BESS are added). If it feeds the main panel, the main panel breaker/busbar is sized on both locations; if it feeds the isolation panel, the isolator/utility cable carry the total. Its panel earth joins the main panel's earth conductor, so no earth lines overlap.
+- Total kWp, the title and the title block include both locations. The block diagram also shows Location 2: its own rows (same box sizes), its own dashed switchgear panel and busbar, and the interconnecting cable with a breaker at each end (tapped from the main busbar or the isolation panel / LOAD DB).
+- With a lot of main-location inverters and a second location both present, the page gets dense; the layout has been tested up to 8 main inverters plus a Location 2 of its own, but very large combined systems will be tight on one A4 sheet.
+
 ## Selection rules (`js/rules.js`)
 - Inverter MCCB = next standard size ≥ 1.25 × inverter current. Each BESS unit's MCCB is sized the same way from its PCS kW.
 - Isolator / main panel = next standard size ≥ 1.25 × total current (every inverter + every BESS unit); busbar = next standard busbar size ≥ that.
@@ -108,3 +117,40 @@ Click **💾 Save to history** at any time to store a labelled snapshot of the c
 
 ## Switchgear panel earth
 Both diagrams now show a dedicated earthing connection from the main switchgear panel enclosure into the main earth bus/trunk, alongside the individual inverter/BESS earths.
+
+
+## Layout notes (block diagram)
+- The block diagram's switchgear panel has clear gaps between its outline, the row breakers, the busbar and the main breaker; the main cable label sits in the gap between the main panel and the isolation panel outlines.
+- A **second earth bus bar** (labelled with the second location's name) is drawn between the main and second-location inverter sets; the second location's earths bond there and continue to the main earth bus bar.
+- Labels were checked automatically for overlaps: clean up to ~10 rows in the block diagram and ~11 inverters in the SLD (about 9 main + second location). Beyond that the A4 sheet is simply too small for readable text.
+
+## Earthing of PV arrays and hybrid batteries
+- Module-side (roof) earths are no longer run one-by-one to the earth bus bar. All arrays of a location join one **PV array roof earth** line (solid), kept apart from the equipment earth (dashed), and a single "4mm² Cu — PV array main earth (from roof)" conductor lands on that location's earth bus bar. Block diagram: with a second location, Location 1's earth bus bar sits between the two inverter sets and Location 2's is at the bottom.
+- Block diagram: a hybrid inverter's row is taller (bigger battery box with its DC cable and earth); the rows below move down.
+
+## PV array main earth (roof) size
+The single conductor that collects the PV-module (roof) earths of a location is sized by the number of PV arrays (= inverters) bonded to it, using the step table `PVE` in `js/rules.js`:
+1 array → 4 mm² Cu, 2–3 → 6, 4–6 → 10, 7–10 → 16, 11–16 → 25, 17+ → 35 mm² Cu (practice following IEC 62548 / IEC 60364-5-54). This is an editable rule-of-thumb table — verify against your standard/project. Main location: field "PV array main earth (roof)" (AUTO, type to override). Second location: "PV array main earth (roof) override" in the Second location section. Both locations' roof earth collectors are drawn at the same position in the block diagram.
+
+## Title block
+ISO 7200-style ruled grid, identical on both drawings and the same distance (10 px) from the left, right and bottom page border: logo | title + Drawing No / Revision / Date strip | four equipment cells (Solar modules, Inverters, BESS PCS, Batteries — grouped counts, hybrid integrated batteries listed under Batteries) | ruled approvals table.
+
+## Second location — SLD layout (right-hand side) and earthing
+In the SLD the Location 2 columns/panel sit to the RIGHT of the main (Location 1) columns, below the main panel. Its feeder comes from a tap breaker on the main busbar, or (isolation-panel option) from the isolation panel, routed above the main panel and down across the main busbar.
+Earthing: Location 2 has its own panel earth conductor, its own earth bus bar and its own earth pit (size from Location 2's own current); Location 1 keeps its own bar and pit. The two bars are tied by an "Equipotential bond" line between them.
+
+## Hybrid inverter battery (SLD) and Location 2 refinements
+- The hybrid inverter's battery is drawn to the LEFT of the inverter; its earth joins the inverter's own earth line (one common earth conductor) which then runs to the earth bus bar.
+- Location 2's panel earth bus sits at the same height/size as the main panel's, and its earth drop starts from the middle of that bar.
+- The two earth bus bars are joined by a plain earth conductor sized from the Location 2 interconnecting AC cable per IEC 60364-5-54 Table 54.2 (PE = phase size up to 16 mm², 16 mm² up to 35 mm², half the phase size above 35 mm²; rounded up to a standard size).
+- With Location 2 fed from the isolation panel, the main panel is shortened (right → left) and the isolation panel extended (left → right, meter/GRID follow) so the Location 2 feeder drops straight down with no crossings.
+
+## SLD column spacing
+All columns share a 230-unit pitch; only a hybrid column gets extra room on its left (its battery sits between the inverter and its own earth line, so the battery DC cable never crosses the earth). The symbol scale is solved so margins, columns and the gap between the two locations fill the page width — no large empty areas left/middle/right. With Location 2 on the isolation panel the right-hand margin only has to hold Location 2's last column.
+
+## Balanced layout (SLD)
+- The SPD stays right after the LAST MAIN column in every Location 2 case, so the right-hand part of the page belongs to Location 2's inverters (symbols as large as the width allows).
+- Location 2's panel box starts clear of the last main inverter's text; with Location 2 on the isolation panel its feeder x is limited so the extended isolation panel still leaves room for meter + GRID.
+- A hybrid column's earth label sits to the right of its (left-shifted) earth line; its battery DC cable leaves the inverter's left side.
+- Very dense sheets (12+ columns): text scales down slightly with the geometry instead of overlapping.
+- Automated check used during development: text/text, text/line, text/panel-outline and symbol-box overlaps over 1–9 main inverters × Location 2 (main / isolation / off-grid / net-plus) × hybrid / BESS combinations — no overlaps reported (block diagram: clean up to ~12 rows).

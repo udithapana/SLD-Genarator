@@ -1,4 +1,3 @@
-
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#eef1f4;--card:#fff;--tx:#17202b;--mu:#586474;--bd:#cfd6df;--ac:#0a5fb4;--in:#f7f9fb}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1a2028;--tx:#e6e9ee;--mu:#98a3b1;--bd:#2f3844;--ac:#63a7f2;--in:#222a34}}
@@ -29,6 +28,8 @@ input[readonly]{background:var(--bg);color:var(--mu)}
 input.man{border-color:#d9822b}
 select{width:100%;margin-top:2px;padding:6px 8px;border:1px solid var(--bd);border-radius:5px;background:var(--card);color:var(--tx);font:inherit}
 .inv{border:1px solid var(--bd);border-radius:8px;padding:6px 10px 10px;margin:8px 0;background:var(--in)}
+.sub{border-top:1px dashed var(--bd);margin-top:12px;padding-top:10px}
+.sub>b{display:block;margin-bottom:4px;font-size:13px}
 .ih{display:flex;justify-content:space-between;align-items:center}
 .ic{padding:3px 7px;background:transparent;color:#c0392b;border-color:#c0392b}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}

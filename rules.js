@@ -7,6 +7,9 @@
   const CAB = [[28.4,6,'Cu/PVC/PVC'],[33.3,10,'Cu/PVC/PVC'],[58,16,'Cu/PVC/PVC'],[63.8,25,'Al/PVC/PVC'],[83.6,35,'Al/XLPE/PVC'],
                [95.7,50,'Al/XLPE/PVC'],[127,70,'Al/XLPE/PVC'],[166.7,95,'Al/XLPE/PVC'],[206.1,120,'Al/XLPE/PVC'],[250,150,'Al/XLPE/PVC']]; // [max A, mm2, type] (from Supporting_file.xlsx)
   const EAR = [[33.3,6],[63.8,10],[127,16],[183.3,25],[206.1,35],[1e9,50]];                              // [max A, Cu earth mm2]
+  // PV array (roof / module-side) main earth conductor, Cu mm2, by number of PV arrays (one per inverter) bonded together on the roof.
+  // Rule-of-thumb step table following IEC 62548 / IEC 60364-5-54 practice (min 4 mm2 mechanically protected; larger as more arrays share the conductor) — edit to your standard; the UI also has an override.
+  const PVE = [[1,4],[3,6],[6,10],[10,16],[16,25],[1e9,35]];   // [max arrays, Cu mm2]
   const MARGIN = 1.25;                                                                                    // breaker = next standard size >= 1.25 x current
   const AC_V = 1.518;                                                                                     // kW -> A at 400V 3ph, ~0.95 PF (for BESS PCS sizing)
   const up = (v, l) => l.find(x => x >= v) || l[l.length - 1];
@@ -24,6 +27,7 @@
              mccb: up(MARGIN * I, STD), derived: !e.ac };
   };
   // Generic cable size for a given current (used for the load feeder cable, sized from its MCCB rating).
+  S.pvEarth = n => `${PVE.find(r => (+n || 1) <= r[0])[1]}mm² Cu`;
   S.cableFor = I => { const c = cabFor(+I || 0); return `${c[1]}mm² 4C/Cu/XLPE/PVC`; };
   // Per-BESS-unit electrical info, derived from its PCS kW rating (no parts-database entry for batteries).
   S.bessInfo = kw => { const I = +kw * AC_V, c = cabFor(I); return { I, mccb: up(MARGIN * I, STD), ac: `${c[1]}mm²/4C/${c[2]}`, earth: `${earFor(I)}mm² Cu` }; };
