@@ -109,8 +109,9 @@ else if(!B&&sm3){t(410,Y(0,2,22),(nI>1?'INVERTER '+(k+1)+' · ':'INVERTER · ')+
 else if(!B){const n=sm2?3:sm?4:5;t(410,Y(0,n,22),(nI>1?'INVERTER '+(k+1):'INVERTER'),fz(12),'middle','bold');t(410,Y(1,n,42),u.name,fz(u.name.length>18?9:11));if(sm2)t(410,Y(2,n,58),u.kw+' kW · Integrated DC/AC + SPD',fz(9));else{t(410,Y(2,n,58),u.kw+' kW',fz(11));if(sm)t(410,Y(3,n,70),'Integrated DC/AC + SPD',fz(9));else{t(410,yy(i,70),'Integrated DC/AC',fz(9));t(410,yy(i,82),'SPD',fz(9))}}}
 else if(sm3){t(410,Y(0,2,24),'BESS PCS'+(nB>1?' '+(k-nI+1):'')+' · '+u.kw+' kW',fz(10),'middle','bold');t(410,Y(1,2,45),'Bi-directional',fz(9))}
 else{t(410,Y(0,3,24),'BESS PCS'+(nB>1?' '+(k-nI+1):''),fz(12),'middle','bold');t(410,Y(1,3,45),u.kw+' kW',fz(11));t(410,Y(2,3,62),'Bi-directional',fz(10))}
-ln(380,yy(i,90),380,yy(i,105),GR,1.5,'5 3');ln(380,yy(i,105),300,yy(i,105),GR,1.5,'5 3');t(306,yy(i,105)+Math.max(12*sv,fz(10)*0.85+1),u.earth+(B?' (PCS + battery earth)':''),fz(10),'start');
-if(B){ln(125,yy(i,90),125,yy(i,98),GR,1.5,'5 3');ln(125,yy(i,98),380,yy(i,98),GR,1.5,'5 3');t(190,yy(i,98)+Math.max(9*sv,7.5),'Battery earth →',fz(9),'start')}
+{const ye=yy(i,B?110:105); // BESS: ONE common earth conductor — the battery and the PCS both drop onto it, it runs to the earth trunk (x=300); lowered a little so it keeps clear of both boxes
+ln(380,yy(i,90),380,ye,GR,1.5,'5 3');ln(380,ye,300,ye,GR,1.5,'5 3');t(306,ye+Math.max(12*sv,fz(10)*0.85+1),u.earth+(B?' (PCS + battery earth)':''),fz(10),'start');
+if(B){ln(125,yy(i,90),125,ye,GR,1.5,'5 3');ln(125,ye,300,ye,GR,1.5,'5 3');dot(300,ye)}}
 if(!B){const ys=yy(i,45);ln(40,ys,cx,ys,GR,1.5);dot(cx,ys);pv.push(ys)} // module-side earth: ONE roof earth line per location, separate from the equipment earth trunk
 if(isHyb(u)){ln(410,yy(i,90),410,yy(i,150),'#1f6fd0',2);t(418,yy(i,124),u.battDc||'DC cable',fz(9),'start');
 bx(350,yy(i,150),120,80*sv);if(sm4)t(410,yy(i,190)+2.2,`BATTERY · ${u.battKwh} kWh`,6,'middle','bold');else{t(410,sm?yy(i,178):yy(i,177),'BATTERY',fz(12),'middle','bold');t(410,sm?yy(i,204):yy(i,203),u.battKwh+' kWh',fz(12),'middle')}
@@ -132,7 +133,33 @@ if(efrM){efrBox(BK+16,ym-48,efrSet('efrMainSet'));ln(BK+49,ym-24,BK+49,ym-20,'#0
 if(indM)lampBox(BK+16,ym-(efrM?76:48));
 ln(BK+70,ym,1010,ym);t2((PR+ISL+5)/2,ym-27,g('mainCable'));
 const TX=1104,ipEx=isIso?-10:0; // TX: where Location 2's feeder taps the isolation panel
-if(og){
+const src=og?String(g('ogSrc')||''):'';
+const wrap=(str,n)=>{const out=[];let cur='';String(str).split(' ').forEach(w=>{if(cur&&(cur+' '+w).length>n){out.push(cur);cur=w}else cur=cur?cur+' '+w:w});if(cur)out.push(cur);return out};
+const dotB=(x,y,r=2.6)=>s.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="#000" stroke-width="1.2"/>`);
+// standard ATS symbol (changeover switch in an enclosure): inputs I / II on the left / right edges, common (load) terminal at the bottom (flip: at the top)
+const atsB=(x,y,flip)=>{const cy=flip?y+32:y+12,py=flip?y+10:y+34,c1=x+12,c2=x+48,px=x+30;bx(x,y,60,44);
+ ln(x,cy,c1-2.6,cy);ln(x+60,cy,c2+2.6,cy);flip?ln(px,y,px,py-2.6):ln(px,py+2.6,px,y+44);
+ ln(px,py,px+(c1-px)*0.82,py+(cy-py)*0.82,'#000',1.8);dotB(c1,cy);dotB(c2,cy);dotB(px,py);
+ t(c1,flip?y+22:y+27,'I',8,'middle','bold');t(c2,flip?y+22:y+27,'II',8,'middle','bold');t(x+47,flip?y+13:y+40,'ATS',7,'middle','bold')};
+const genB=(x,y,r=18)=>{s.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#000" stroke-width="1.5"/>`);t(x,y+3,'G',12,'middle','bold');t(x,y+13,'~',9,'middle')};
+if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) built into the isolation panel
+ const both=src=='both',A=g('atsA')||g('iso')||g('panel'),efrA=!!g('efrIso'),x2=isIso?1160:1060,x1=x2+(efrA?140:110),BEa=Math.max((both?x1:x2)+80,efrA?x2+130:0),yT=ym-50-(indI?0:0),yB=ym+75,yG=both?ym+42:ym;
+ bx(1000,yT,BEa-1000,yB-yT,'8 4');t(1000,yT-6,`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`,10,'start','bold');
+ ln(1010,ym,x2,ym);t(x2-5,ym-5,'SOLAR',8,'end','bold');if(indI)lampBox(1012,ym+40);
+ atsB(x2,ym-12,false);t(x2+30,ym-18,`${both?'ATS-2':'ATS'}  4P ${A}A`,10,'middle','bold');
+ {const lx=x2+30;ln(lx,ym+32,lx,ym+100);s.push(`<polygon points="${lx-12},${ym+100} ${lx+12},${ym+100} ${lx},${ym+124}" fill="#000"/>`);const ls=(q=>q.length>2?[q[0],q.slice(1).join(' ')]:q)(wrap(g('loadName'),18));ls.forEach((q,j)=>t(lx,ym+146+j*14,q,12,'middle','bold'));t2(lx,ym+148+ls.length*14,g('loadCable'))}
+ if(efrA){const cx2=x2+30,cy=ym+60,rx=x2+48;s.push(`<circle cx="${cx2}" cy="${cy}" r="7" fill="none" stroke="#000" stroke-width="1.5"/>`);ln(cx2+7,cy,rx,cy,'#000',1);efrBox(rx,cy-12,efrSet('efrIsoSet')); // EFR: CBCT on the ATS output (load side), relay trips the ATS (dashed)
+  ln(rx+33,cy-12,rx+33,ym+40,'#000',1.5,'3 2');ln(rx+33,ym+40,x2+50,ym+40,'#000',1.5,'3 2');ln(x2+50,ym+40,x2+50,ym+32,'#000',1.5,'3 2')}
+ const lab=(L,R,y,gx,gw,yb,str)=>{const w=str.length*0.56*10;if(R-L-16>=w)t2((L+R)/2,y-8,str);else t2(Math.min(gx+gw/2,1565-w/2),yb+(str.search(/ [(×]/)>0?10:0),str)}; // source cable: above its line if it fits, else under the source symbol
+ const grid=(xs,y)=>{const m=Math.max(1344,BEa+54),gx=m+52,gw=Math.min(80,1560-gx);ln(xs,y,m-18,y);s.push(`<circle cx="${m}" cy="${y}" r="18" fill="none" stroke="#000" stroke-width="1.5"/>`);t(m,y+4,'kWh',10);wrap(g('meterLbl')||'',14).forEach((q,j)=>t(m,y+34+j*11,q,9));
+   ln(m+18,y,gx,y);bx(gx,y-25,gw,50);t(gx+gw/2,y+5,'GRID',13,'middle','bold');lab(BEa,m-18,y,gx,gw,y+(g('meterLbl')?64:48),g('utilCable'))},
+  dg=(xs,y)=>{const m=Math.max(1344,BEa+70);ln(xs,y,m-18,y);genB(m,y);t(m,y+34,'DIESEL GENERATOR',9,'middle','bold');if(g('dgKva'))t(m,y+46,`${g('dgKva')} kVA`,9);lab(BEa,m-18,y,m-40,80,y+62,g('dgCable')||g('utilCable'))};
+ if(!both)(src=='grid'?grid:dg)(x2+60,ym);
+ else{ln(x2+60,ym,x1+30,ym);ln(x1+30,ym,x1+30,ym+10);atsB(x1,ym+10,true);t(x1+30,ym-6,`ATS-1  4P ${A}A`,10,'middle','bold');
+  const dx=x1-12;ln(x1,ym+42,dx,ym+42);ln(dx,ym+42,dx,ym+104);genB(dx,ym+122);t(dx+24,ym+118,'DG',10,'start','bold');if(g('dgKva'))t(dx+24,ym+131,`${g('dgKva')} kVA`,9,'start');t(dx+24,ym+144,g('dgCable')||g('utilCable'),9,'start');
+  grid(x1+60,yG)}
+ {const ipx=1020,ipy=yB;ln(ipx,ipy,ipx,ipy+18,GR,1.5,'5 3');ln(ipx-14,ipy+18,ipx+14,ipy+18,GR,2);ln(ipx-9,ipy+24,ipx+9,ipy+24,GR,2);ln(ipx-4,ipy+30,ipx+4,ipy+30,GR,2);t(ipx,ipy+46,'Isolation',10,'middle');t(ipx,ipy+58,'panel earth',10,'middle')}
+}else if(og){
 const ey2=indI?14:0;bx(1010,ym-50,230,100+ey2,'8 4');t(1010,ym-56,`LOAD DISTRIBUTION BOARD (LOAD DB) — ${ipT('ipIso')}`,10,'start','bold');if(indI)lampBox(1092,ym+29);
 ln(1010,ym,1240,ym,'#000',4);t(1125,ym-18,`LOAD DB BUS ${g('loadBrk')||g('panel')}A`,10,'middle');if(isIso)t(1112,ym+22,'No utility connection',10,'start');else t(1125,ym+22,'No utility connection',10,'middle');
 {const ipx=1050,ipy=ym+50+ey2;ln(ipx,ipy,ipx,ipy+18,GR,1.5,'5 3');
@@ -195,7 +222,7 @@ const DCX=dcSpd?(dcIso?100:55):(dcIso?40:0); // extra vertical room on the PV DC
 const SH=efrI?18:0; // SH: with an isolation-panel EFR the isolation panel is taller (its busbar, breakers and meter sit SH lower) so the CBCT + relay get room above the busbar
 const E1=20,E2=L2?22:0,AR=8; // E1: extra gap between the isolation panel and the main panel (room for the main-cable label + panel title); E2: extra gap above Location 2's panel; AR: load arrow drop
 const PD=E1+(efrM?46:0); // PD: with an earth-fault relay the main panel's contents (breaker, busbar, columns) sit PD lower so the CBCT + relay fit INSIDE the panel outline
-const yE=(L2?(cnt>9?925:cnt>6?885:850):(cnt>9?735:690))+DCX+(L2?(DCX||efrM?24:12):(cnt>6&&(DCX||efrM)?14:0))+PD+E2,fy=(A4H-146)/(yE+48),DY2=166; // DY2: Location 2's busbar sits at y=466, i.e. its columns hang 166px lower than the main ones
+const yE=(L2?(cnt>9?898:cnt>6?865:850):(cnt>9?735:690))+DCX+(L2?(DCX||efrM?24:12):(cnt>6&&(DCX||efrM)?14:0))+PD+E2,fy=(A4H-146)/(yE+48),DY2=166; // DY2: Location 2's busbar sits at y=466, i.e. its columns hang 166px lower than the main ones
 let DY=0; // vertical offset applied by the drawing helpers (0 for the main columns, DY2 while drawing Location 2's)
 const t=(x,y,str,sz=11,a='start',w='normal')=>s.push(`<text xml:space="preserve" x="${x}" y="${((y+DY)*fy).toFixed(1)}" font-size="${sz}" text-anchor="${a}" font-weight="${w}" fill="#000">${esc(str)}</text>`);
 const ln=(a,b,c,d,col='#000',w=1.5,da='')=>s.push(`<line x1="${a}" y1="${((b+DY)*fy).toFixed(1)}" x2="${c}" y2="${((d+DY)*fy).toFixed(1)}" stroke="${col}" stroke-width="${w}"${da?` stroke-dasharray="${da}"`:''}/>`);
@@ -205,8 +232,8 @@ const bx=(x,y,w,h,da='',col='#000',sw=1.5)=>s.push(`<rect x="${x}" y="${((y+DY)*
 const many=cnt>6,SPDX=many?60:0,MAXSH=L2?1.3:1.8,HX=110,BASE=230; // SPDX: with 7+ units the (held-size) text of the last column needs extra room before the SPD
 const hyU=u=>!!u&&u.kind=='inv'&&u.hybrid&&+u.battKwh>0,hy0=hyU(U[0]),hy2=hyU(U2[0]),isIso0=L2&&V.loc2to=='iso',two=L2&&U1.length>0;
 const hxc=[];U.reduce((a,u,i)=>(hxc[i]=a+((i>0&&!(L2&&i==n1)&&hyU(u))?HX:0)),0);const sumHx=hxc.length?hxc[hxc.length-1]:0,hxAt=i=>hxc.length?hxc[Math.min(i,hxc.length-1)]:0;
-const c0=196,k0=hy0?208:98; // left margin: main earth line + room for the first column's earth label; k0 = how far left of its inverter the first column reaches (x-95 earth line, x-205 for a hybrid)
-const g0=two?215+SPDX:0,g1=two&&hy2?110:0; // gap between the locations (Location 2's feeder, panel earth line, its first column's earth label)
+const c0=many&&n1>=3?172:196,k0=hy0?208:98; // left margin: main earth line + room for the first column's earth label; k0 = how far left of its inverter the first column reaches (x-95 earth line, x-205 for a hybrid)
+const g0=two?(many&&n1>=3?185:215)+SPDX:0,g1=two&&hy2?110:0; // gap between the locations (Location 2's feeder, panel earth line, its first column's earth label)
 const R0=L2?30:SPDX+135,R1=L2?166:105; // right margin: with Location 2 only its last column is at the right (the SPD stays after the main columns); otherwise the SPD + busbar end
 const solve=spn=>(A4W-c0-g0-R0)/(k0+spn+g1+R1);
 const x1Lim=1271; // with Location 2 on the isolation panel its feeder x (cx = x1-98sh-75) must stay left of ~1196 so the extended isolation panel still leaves room for the meter + GRID
@@ -216,7 +243,7 @@ const slack0=A4W-(c0+g0+R0+sh*(k0+BASE*(cnt-1)+sumHx+g1+R1)),x1L=c0+k0*sh+sh*(n1
 const colStart=c0+k0*sh+Math.min(slack0/2,room1),colPitch=BASE*sh;
 // FONT scale is decoupled from the geometry scale (sh): text is held at the size it has with 4 units for anything smaller (1-3 units),
 // follows the geometry between 4 and 6 units, and is held at the 6-unit size for anything bigger so it stays readable in print.
-const shAt=n=>Math.min(MAXSH,solve((n-1)*(BASE+sumHx/Math.max(1,cnt-1)))),fs0=Math.max(shAt(6),Math.min(shAt(4),sh)),fs=fs0*Math.min(1,sh/0.44); // very dense sheets (12+ columns): text shrinks a little with the geometry instead of overlapping
+const shAt=n=>Math.min(MAXSH,solve((n-1)*(BASE+sumHx/Math.max(1,cnt-1)))),fs0=Math.max(shAt(6),Math.min(shAt(4),sh)),fs=fs0*Math.min(1,sh/0.44)*(L2&&many&&n1>=3?(cnt<=14?1.12:1.06):1); // very dense sheets (12+ columns): text shrinks a little with the geometry instead of overlapping
 const XPE=()=>Xc(n1)-(hy2?208:98)*sh-105; // x of Location 2's own panel-earth conductor (left of its first column, clear of that column's earth label)
 const Xc=i=>colStart+sh*(i*BASE+hxAt(i))+(L2&&i>=n1?GAPPX:0),tc=(x,y,str,sz,a,w)=>t(x,y,str,sz*fs,a,w),LP=(sz=10)=>Math.max(11,1.17*sz*fs/fy); // LP: line pitch (unscaled) for stacked, wrapped labels: never tighter than the text height, whatever the vertical stretch fy
 // 'tight' = text is now larger than the (compressed) geometry, i.e. more than 6 units: wrap long labels so they stay clear of neighbouring columns
@@ -307,11 +334,46 @@ ln(85,364,155,364,GR,3);t(98,350,'PANEL EARTH BUS',9,'start','bold');
 ln(120,364,120,yE-PD,GR,1.5,'5 3');
 (L2?['Location 1','panel earth']:['Switchgear','panel earth']).forEach((q,j)=>t(114,(L2?yE-PD-170:534)+j*11,q,10,'end'));DY=0; // two lines so it stays inside the drawing windowDY=0; // left of the earth line, clear of the first column's own earth runs
 const hl=md()=='nm'||md()=='na',og=md()=='og',isIso=L2&&V.loc2to=='iso',cx=L2?XPE()+30:0; // cx = x of Location 2's feeder (right of the main columns)
+const src=og?String(g('ogSrc')||''):'';let topR=0; // off-grid backup source(s): '' none | dg | grid | both
+const dotS=(x,y,r=2.4)=>s.push(`<circle cx="${x}" cy="${((y+DY)*fy).toFixed(1)}" r="${r}" fill="#fff" stroke="#000" stroke-width="1.2"/>`);
+// standard ATS symbol (changeover switch in an enclosure): inputs I / II on the left / right edges, common (load) terminal at the bottom (flip: at the top)
+const atsSym=(x,y,flip)=>{const cy=flip?y+32:y+12,py=flip?y+10:y+34,c1=x+12,c2=x+48,px=x+30;bx(x,y,60,44);
+ ln(x,cy,c1-2.4,cy);ln(x+60,cy,c2+2.4,cy);flip?ln(px,y,px,py-2.4):ln(px,py+2.4,px,y+44);
+ ln(px,py,px+(c1-px)*0.82,py+(cy-py)*0.82,'#000',1.8);dotS(c1,cy);dotS(c2,cy);dotS(px,py);
+ t(c1,flip?y+22:y+26,'I',7,'middle','bold');t(c2,flip?y+22:y+26,'II',7,'middle','bold');t(x+47,flip?y+12:y+40,'ATS',7,'middle','bold')};
+const gen=(x,y,r)=>{s.push(`<circle cx="${x}" cy="${((y+DY)*fy).toFixed(1)}" r="${r}" fill="none" stroke="#000" stroke-width="1.5"/>`);t(x,y+3/fy,'G',11,'middle','bold');t(x,y+11/fy,'~',8,'middle')};
+const cabLab=(L,R,y,str)=>{const gp=R-L-28,x=(L+R)/2,w=(q,z)=>q.length*0.56*z;let sz=9,ls=[str];if(w(str,9)>gp){sz=8;if(w(str,8)>gp){const q=str.split(' × ');ls=wslash(q[0],Math.max(8,Math.floor(gp/(0.56*8)))).concat(q[1]?['× '+q[1]]:[])}}
+ ls.forEach((q,j)=>t(x,y-(ls.length-1-j)*10,q,sz,'middle'))};
 const BE=isIso?Math.max(660,cx+70):660,mx=isIso?Math.min(BE+150,1405):810; // BE: right edge of the isolation panel (extended left→right to Location 2's feeder); mx: x of the energy meter (GRID follows)
 const ulab=(L,str)=>{const gp=mx-14-L-14,x=(L+mx-14)/2,w=(q,z)=>q.length*0.56*z; // utility cable label, centred in the gap between the panel outline (L) and the meter: shrinks, then wraps (at '/' and before '× n'), never touching either
  let sz=10,ls=[str];if(w(str,10)>gp){sz=9;if(w(str,9)>gp){const q=str.split(' × ');ls=wslash(q[0],Math.max(8,Math.floor(gp/(0.56*9)))).concat(q[1]?['× '+q[1]]:[])}}
  ls.forEach((q,j)=>t(x,117-(ls.length-1-j)*11,q,sz,'middle'))};
-if(og){
+if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) built into the isolation panel
+ const both=src=='both',A=g('atsA')||g('iso')||g('panel'),efrA=!!g('efrIso'),eset=efrSet('efrIsoSet').slice(0,isIso?8:10),ew=isIso?44:50,x2=isIso?cx+(efrA?70:80):370,x1=x2+(efrA?ew+92:100),BEa=Math.max((both?x1:x2)+(efrA?66:75),efrA?x2+64+ew+12:0),tight=isIso&&efrA,yG=both?167:125;
+ bx(80,92,BEa-80,98,'8 4');t(85,86,`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`,9,'start','bold');
+ ln(100,125,x2-24,125,OR,4);t(175,115,`SOLAR BUS ${g('isoBus')||A}A`,9,'middle');ln(x2-24,125,x2,125,OR);if(!isIso)t(x2-5,120,'SOLAR',7,'end','bold');ln(150,125,150,177,OR);
+ if(indI)lamps(225,125);
+ atsSym(x2,113,false);t(x2+30,107,`${both?'ATS-2':'ATS'}  4P ${A}A`,9,'middle','bold');
+ // load: ATS output straight down, out of the panel
+ ln(x2+30,157,x2+30,205+AR,OR);s.push(`<polygon points="${x2+16},${((205+AR)*fy).toFixed(1)} ${x2+44},${((205+AR)*fy).toFixed(1)} ${x2+30},${((233+AR)*fy).toFixed(1)}" fill="#000"/>`);
+ {const cap=both&&!isIso?2:3,ls=(q=>q.length>cap?q.slice(0,cap-1).concat([q.slice(cap-1).join(' ')]):q)(wrap(g('loadName'),both?13:18)),sz=ls.length>1?10:11;ls.forEach((q,j)=>both?t(x2+14,224+AR+j*12,q,sz,'end','bold'):t(x2+46,224+AR+j*12,q,sz,'start','bold'))}t(x2+24,203,g('loadCable'),8,'end');
+ if(efrA){const yc=172,ry=161,rx=x2+64;ctc(x2+30,yc);ln(x2+30+CTR,yc,rx,yc,'#000',1);const d=relay(rx,ry,ew,eset); // EFR: CBCT on the ATS output (load side), relay trips the ATS (dashed)
+  ln(rx+ew/2,ry,rx+ew/2,147,'#000',1,'4 3');ln(rx+ew/2,147,x2+60,147,'#000',1,'4 3')}
+ const srcLab=(L,R,y,str,xr)=>{if(str.length*0.56*9<=R-L-28)return cabLab(L,R,y-8,str); // fits between the panel and the source: above its line
+   const xm=(L+xr)/2,hw=Math.min((xr-L-8)/2,1568-xm),n=Math.max(8,Math.floor(2*hw/4.48)),q=str.split(' × '),ls=wslash(q[0],n).concat(q[1]?['× '+q[1]]:[]),xc=Math.min(xm,1568-Math.max(...ls.map(z=>z.length))*2.24);ls.forEach((q,j)=>t(xc,y-30-(ls.length-1-j)*10,q,8,'middle'))}, // else above the source symbols
+  grid=(xs,y)=>{const m=Math.max(BEa+(tight?36:48),isIso?Math.min(BEa+150,1405):BEa+150),cmp=m+170>1565,cmp2=cmp&&m+86>1565,gx=cmp2?m+24:cmp?m+30:m+90,gw=cmp2?44:cmp?56:80; // utility supply: meter then GRID
+   ln(xs,y,m-14,y,OR);s.push(`<circle cx="${m}" cy="${((y+DY)*fy).toFixed(1)}" r="${(14*fy).toFixed(1)}" fill="none" stroke="#000" stroke-width="1.5"/>`);t(m,y+4,'kWh',9,'middle');
+   if(g('meterLbl'))(cmp?wrap(g('meterLbl'),13):[g('meterLbl')]).forEach((q,j)=>t(m,y+(cmp?36:25)+j*10,q,8,'middle'));
+   ln(m+14,y,gx,y,OR);bx(gx,y-25,gw,50);t(gx+gw/2,y+5,'GRID',cmp2?10:cmp?11:13,'middle','bold');srcLab(BEa,m-14,y,g('utilCable'),gx+gw);return gx+gw},
+  dg=(xs,y)=>{const gx=Math.max(BEa+70,Math.min(BEa+170,1522));ln(xs,y,gx-16,y,OR);gen(gx,y,16);t(gx,y+34,'DIESEL GENERATOR',8,'middle','bold');if(g('dgKva'))t(gx,y+44,`${g('dgKva')} kVA`,8,'middle');srcLab(BEa,gx-16,y,g('dgCable')||g('utilCable'),gx+40);return gx+50};
+ if(!both)topR=src=='grid'?grid(x2+60,125):dg(x2+60,125);
+ else{ // ATS-1 selects DG / grid, its output feeds ATS-2's second input
+  ln(x2+60,125,x1+30,125,OR);ln(x1+30,125,x1+30,135,OR);atsSym(x1,135,true);t(x1+30,118,`ATS-1  4P ${A}A`,9,'middle','bold');
+  ln(x1,167,x1-20,167,OR);ln(x1-20,167,x1-20,205,OR);gen(x1-20,221,16);t(x1+2,218,'DG',9,'start','bold');if(g('dgKva'))t(x1+2,229,`${g('dgKva')} kVA`,8,'start');t(x1+2,240,g('dgCable')||g('utilCable'),8,'start');
+  topR=grid(x1+60,yG)}
+ ln(85,170,120,170,GR,3);t(85,163,'EARTH BUS',7,'start','bold');
+ ln(100,170,100,196,GR,1.5,'5 3');es(100,196);t(100,230,'Isolation panel',8,'middle');t(100,239,'earth',8,'middle');
+}else if(og){
 bx(80,92,isIso?BE-80:220,98,'8 4');t(85,86,`LOAD DISTRIBUTION BOARD (LOAD DB) — ${ipT('ipIso')}`,9,'start','bold');if(indI)lamps(225,115);
 ln(100,115,isIso?BE-20:295,115,OR,4);t(175,105,`LOAD DB BUS ${g('loadBrk')||g('panel')}A`,9,'middle');t(200,165,'No utility connection',8,'middle');
 ln(150,115,150,177,OR);
@@ -342,7 +404,7 @@ ln(mx+14,125,mx+90,125,OR);bx(mx+90,100,80,50);t(mx+130,130,'GRID',13,'middle','
 }
 if(L2){
 // ---- Location 2 switchgear panel: sits below the main panel, RIGHT of the main inverters. Its incomer breaker is sized from Location 2's OWN current (loc2panel) and appears at both ends of the interconnecting cable ----
-const l2A=g('loc2panel'),l2T=BT(l2A,V.loc2panelI),busY2=300+DY2+PD+E2,arr=busY2-52,srcY=isIso?(og?115:125+SH):300+PD;
+const l2A=g('loc2panel'),l2T=BT(l2A,V.loc2panelI),busY2=300+DY2+PD+E2,arr=busY2-52,srcY=isIso?(og&&!src?115:125+SH):300+PD;
 if(isIso){ // straight down from the (extended) isolation panel — nothing to cross
  ln(cx,srcY,cx,srcY+10,OR,2);brk(cx,srcY+10,`4P ${l2A}A`,l2T,1);ln(cx,srcY+62,cx,arr,OR,2)}
 else{ln(cx,300+PD,cx,320+PD,OR,2);brk(cx,320+PD,`4P ${l2A}A`,l2T,1);ln(cx,372+PD,cx,arr,OR,2)}
@@ -366,8 +428,8 @@ ln(120,yE,120,yE+28,GR); // (short bar, 1 main unit: the label above is kept cle
 es(120,yE+28);t(142,yE+40,`${g('earthMain')} — Earth pit  r ≤ ${g('earthR')}Ω`,11);
 ln(xb1,yE,xp,yE,GR,2.5);if(xp-xb1>=110){t((xb1+xp)/2,yE-14,pe?`${pe}mm² Cu`:'Earth interconnection',9,'middle');t((xb1+xp)/2,yE-4,pe?'earth interconnection':'',9,'middle')}
 ln(xp,yE,xe2,yE,GR,4);t(xp,yE+16,'LOCATION 2 EARTH BUS BAR',10,'start','bold');ln(xe2,yE,xe2,yE+28,GR);es(xe2,yE+28);t(xe2-22,yE+40,`${g('loc2earth')?g('loc2earth')+' — ':''}Earth pit  r ≤ ${g('earthR')}Ω`,11,'end')}
-const LY=isIso&&mx+170>1270?215:48; // legend drops below the isolation panel when it has been extended far to the right
-[[OR,'AC power',''],[BL,'DC power (PV / battery)',''],[GR,'Equipment earthing','5 3'],[GR,'PV array (roof) earthing',''],[MG,'Surge protection','']].concat(efrM||efrI?[['#000','EFR trip signal','4 3']]:[]).forEach(([c,l,d],i)=>{ln(W-300,LY+i*16,W-260,LY+i*16,c,2,d);t(W-250,LY+4+i*16,l,10)});
+const LY=og&&src?(isIso||topR>1270?262:48):isIso&&mx+170>1270?215:48; // legend drops below the isolation panel when it has been extended far to the right
+[[OR,'AC power',''],[BL,'DC power (PV / battery)',''],[GR,'Equipment earthing','5 3'],[GR,'PV array (roof) earthing',''],[MG,'Surge protection','']].concat(efrM||efrI||(og&&src&&!!g('efrIso'))?[['#000','EFR trip signal','4 3']]:[]).forEach(([c,l,d],i)=>{ln(W-300,LY+i*16,W-260,LY+i*16,c,2,d);t(W-250,LY+4+i*16,l,10)});
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);
 // drawing window: an inner frame around the diagram area, separate from the title block (which sits below it, inside the sheet border)
 s.push(FRAME(W));

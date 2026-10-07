@@ -5,7 +5,7 @@
   const firstOf = b => D.findIndex(d => d.brand == b);
   const today = () => new Date().toISOString().slice(0, 10);
   let MODE = 'nm';
-  const HINT = { nm: 'Solar feeds the site load; surplus is exported. Load sits on the isolation-panel busbar.', na: 'Same connection as net metering; only the metering / billing arrangement differs (edit the meter label if needed).', np: 'All solar generation is exported to the grid. No site load is connected.', og: 'No utility connection. The main panel feeds the site load directly through a Load Distribution Board (LOAD DB) — no isolator, meter, or grid.' };
+  const HINT = { nm: 'Solar feeds the site load; surplus is exported. Load sits on the isolation-panel busbar.', na: 'Same connection as net metering; only the metering / billing arrangement differs (edit the meter label if needed).', np: 'All solar generation is exported to the grid. No site load is connected.', og: 'Off-grid: solar (+ battery) supplies the site load. Pick a backup source below — an ATS in the isolation panel switches the load between solar and the DG / grid; with both DG and grid, ATS-1 selects DG or grid and ATS-2 selects solar or that backup. Choose "None" for a plain Load DB with no utility connection.' };
   let INVS = [{ m: Math.max(0, D.findIndex(d => d.model == 'STT-45KTL')), mods: 84, cfg: '18x2+15x2+9+9', ov: '', acOv: '', dc: '4mm² DC Cable', battKwh: '', battDc: 'Battery DC cable' }];
   let BESSU = []; // { kwh, kw, model, ov, acOv, dc }
   let LOC2 = { on: false, to: 'main', name: 'Location 2', cableOv: '', pvEarthOv: '' }; // a second physical switchgear location, wired back with a breaker at each end of the interconnecting cable
@@ -34,7 +34,7 @@
 <label>Indicators<select id="indMain">${YN('None', 'Phase indicator lamps (R-Y-B)')}</select></label></div>
 <div class="sub"><b id="isoPanelTitle">Isolation panel</b>
 <label>Enclosure (IP rating)<select id="ipIso">${IPOPT}</select></label>
-<label>Earth fault relay (EFR)<select id="efrIso">${YN('Not fitted', 'EFR fitted — CBCT + relay trips isolator')}</select></label>
+<label>Earth fault relay (EFR)<select id="efrIso">${YN('Not fitted', 'EFR fitted — CBCT + relay trips isolator (off-grid: trips the ATS)')}</select></label>
 <label>EFR setting <span class="tag">optional</span><input id="efrIsoSet" placeholder="e.g. 0.3 A / 0.1 s"></label>
 <label>Indicators<select id="indIso">${YN('None', 'Phase indicator lamps (R-Y-B)')}</select></label></div>
 <div class="sub" id="ipL2Box"><b>Second-location panel</b>
@@ -45,7 +45,14 @@
 <label>DC isolator rating text<input id="dcIsoTxt" value="1000V DC"></label>
 <label>DC surge protection (SPD)<select id="dcSpd">${YN('Not shown (inverter built-in)', 'DC SPD on each PV array DC cable')}</select></label>
 <label>DC SPD rating text<input id="dcSpdTxt" value="Type 2 · 1000V DC"></label></div></fieldset>`;
-  $('form').innerHTML = '<fieldset><legend>System configuration</legend><div class="seg">' + [['nm', 'Net metering'], ['na', 'Net accounting'], ['np', 'Net plus'], ['og', 'Off-grid']].map(([k, l]) => `<button type="button" class="alt${k == MODE ? ' on' : ''}" data-mode="${k}">${l}</button>`).join('') + '</div><div class="hint" id="modeHint"></div></fieldset>' + SPEC.map(([g, fs]) => g == 'INV'
+  // Off-grid backup source(s): automatic transfer switch(es) built into the isolation panel (ATS-1 = DG / grid, ATS-2 = solar / backup)
+  AUTO.add('atsA'); AUTO.add('dgCable');
+  const OG_HTML = `<div class="sub" id="ogBox"><b>Backup source — ATS in the isolation panel</b>
+<label>Backup source<select id="ogSrc"><option value="dg" selected>Diesel generator (DG) — one ATS</option><option value="grid">Grid (utility) — one ATS</option><option value="both">DG + grid — two ATS</option><option value="">None — solar / battery only (no ATS)</option></select></label>
+<label>ATS rating (A) <span class="tag">auto</span><input id="atsA"></label>
+<label>DG rating (kVA) <span class="tag">optional</span><input id="dgKva" placeholder="e.g. 100"></label>
+<label>DG cable <span class="tag">auto</span><input id="dgCable"></label></div>`;
+  $('form').innerHTML = '<fieldset><legend>System configuration</legend><div class="seg">' + [['nm', 'Net metering'], ['na', 'Net accounting'], ['np', 'Net plus'], ['og', 'Off-grid']].map(([k, l]) => `<button type="button" class="alt${k == MODE ? ' on' : ''}" data-mode="${k}">${l}</button>`).join('') + '</div><div class="hint" id="modeHint"></div>' + OG_HTML + '</fieldset>' + SPEC.map(([g, fs]) => g == 'INV'
     ? '<fieldset><legend>Inverters</legend><div id="invList"></div><button type="button" class="alt" id="addInv"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add inverter</button></fieldset>'
     : g == 'BESS' ? '<fieldset><legend>Battery (BESS)</legend><div id="bessList"></div><button type="button" class="alt" id="addBess"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add battery</button></fieldset>'
     : g == 'LOC2' ? '<fieldset><legend>Second location</legend><div id="loc2Body"></div></fieldset>'
@@ -145,13 +152,16 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const d = LOC2.on ? { ...dTot } : dMain;
     if (LOC2.on && LOC2.to == 'iso') { d.panel = dMain.panel; d.bus = dMain.bus; d.mainCable = dMain.mainCable; d.T = dMain.T; }
     dMain.pvEarth = d.pvEarth = S.pvEarth(invInfos.length);
-    d.loadCable = S.cableFor($('loadBrk').value);
+    const ogSrc = MODE == 'og' ? $('ogSrc').value : '';
+    d.atsA = d.iso; d.dgCable = d.utilCable;
+    d.loadCable = ogSrc ? d.utilCable : S.cableFor($('loadBrk').value);
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = ((invInfos.reduce((a, i) => a + i.mods, 0) + (LOC2.on ? invInfos2.reduce((a, i) => a + i.mods, 0) : 0)) * wp / 1000).toFixed(2);
     const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2panelI: d2 ? d2.T : 0, panelI: d.T, loc2bus: d2 ? d2.bus : 0 }; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => V[el.id] = el.value);
-    $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || MODE == 'og');
-    $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = MODE == 'og'; $('isoPanelTitle').textContent = MODE == 'og' ? 'Load distribution board (Load DB)' : 'Isolation panel';
-    $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || MODE == 'og';
+    $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || (MODE == 'og' && !(ogSrc && k != 'loadBrk')));
+    $('ogBox').hidden = MODE != 'og'; $('atsA').parentElement.hidden = !ogSrc; ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
+    $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = MODE == 'og' && !ogSrc; $('isoPanelTitle').textContent = MODE == 'og' ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
+    $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || (MODE == 'og' && !ogSrc);
     $('dcIsoTxt').parentElement.hidden = !$('dcIso').value; $('dcSpdTxt').parentElement.hidden = !$('dcSpd').value;
     $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos, invInfos2, bessInfos2);
     document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
@@ -165,7 +175,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   [['t1', 'out'], ['t2', 'out2'], ['t3', 'out3']].forEach(([b, o]) => $(b).onclick = () => {
     cur = o; $('out').hidden = o != 'out'; $('out2').hidden = o != 'out2'; $('out3').hidden = o != 'out3';
     $('t1').classList.toggle('on', o == 'out'); $('t2').classList.toggle('on', o == 'out2'); $('t3').classList.toggle('on', o == 'out3');
-    $('dl').hidden = $('pr').hidden = o == 'out3'; if (o == 'out3') drawHistory();
+    $('dl').hidden = $('pr').hidden = o == 'out3'; if (o == 'out3') { drawHistory(); sync(true); }
   });
   $('pr').onclick = () => {
     const svgEl = $(cur).querySelector('svg'); if (!svgEl) return;
@@ -193,17 +203,27 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   };
 
   // ---- History: saved revisions kept in this browser (localStorage), so a project's past states can be reopened later ----
-  const HKEY = 'sld_history_v1', HMAX = 60;
+  const HKEY = 'sld_history_v1', HMAX = 200;
   const hLoad = () => { try { return JSON.parse(localStorage.getItem(HKEY)) || []; } catch (e) { return []; } };
   const hSave = list => { try { localStorage.setItem(HKEY, JSON.stringify(list.slice(0, HMAX))); } catch (e) { } };
   const flash = m => { $('msg').textContent = m; setTimeout(() => { if ($('msg').textContent == m) $('msg').textContent = ''; }, 2500); };
-  $('sv').onclick = () => {
+  const snap = label => { // snapshot of the whole configuration (same shape as a history entry)
     const fields = {}; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => fields[el.id] = el.value);
     const def = (fields.dno || 'Drawing') + ' — ' + (fields.opt || '') + ' (' + MODE + ')';
-    const label = prompt('Save this revision as:', def); if (label == null) return;
-    const list = hLoad();
-    list.unshift({ id: Date.now(), ts: new Date().toISOString(), label: label || def, mode: MODE, fields, manual: [...manual], invs: JSON.parse(JSON.stringify(INVS)), bess: JSON.parse(JSON.stringify(BESSU)), loc2: JSON.parse(JSON.stringify(LOC2)), invs2: JSON.parse(JSON.stringify(INVS2)), bess2: JSON.parse(JSON.stringify(BESSU2)) });
-    hSave(list); flash('Saved to history.'); if (cur == 'out3') drawHistory();
+    return { id: Date.now(), ts: new Date().toISOString(), label: label || def, mode: MODE, fields, manual: [...manual], invs: JSON.parse(JSON.stringify(INVS)), bess: JSON.parse(JSON.stringify(BESSU)), loc2: JSON.parse(JSON.stringify(LOC2)), invs2: JSON.parse(JSON.stringify(INVS2)), bess2: JSON.parse(JSON.stringify(BESSU2)) };
+  };
+  let DEFAULT = null; // the untouched start-up configuration (set after the first render)
+  $('sv').onclick = () => {
+    const e = snap(), label = prompt('Save this revision as:', e.label); if (label == null) return;
+    const list = hLoad(); e.label = label || e.label; e.by = SY().name || ''; list.unshift(e);
+    hSave(list); flash('Saved to history.'); if (cur == 'out3') drawHistory(); if (SY().token) sync(true);
+  };
+  // Reset: back to the default project. The current configuration is first saved to history (so nothing is lost), unless the user declines.
+  $('rs').onclick = () => {
+    const keep = confirm('Reset to the default project?\n\nOK = save the current drawing to History first, then reset.\nCancel = go back (nothing changes).'); if (!keep) return;
+    const e = snap('Auto-saved before reset — ' + new Date().toLocaleString()), list = hLoad(); list.unshift(e); hSave(list);
+    hApply(Object.assign({}, DEFAULT, { label: 'default project' })); flash('Reset to default. Previous drawing saved in History.');
+    $('out').hidden = false; $('out2').hidden = true; $('out3').hidden = true; $('t1').classList.add('on'); $('t2').classList.remove('on'); $('t3').classList.remove('on'); cur = 'out';
   };
   function hApply(e) {
     MODE = e.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode == MODE));
@@ -216,16 +236,151 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     cur = 'out'; $('out').hidden = false; $('out2').hidden = true; $('out3').hidden = true;
     $('t1').classList.add('on'); $('t2').classList.remove('on'); $('t3').classList.remove('on');
   }
+  // ---- Team sync: the shared history lives in ONE file (history.json) on a separate branch (sld-data) of the same GitHub repository, so every
+  // person using the same web link sees the same saved drawings. Reading needs nothing (public repo); saving needs a GitHub access token (fine-grained,
+  // this repository only, "Contents: read and write"), entered once per browser. Merging is by entry id; deletions are remembered so they sync too. ----
+  const SYK = 'sld_sync_v1', DELK = 'sld_deleted_v1', BR = 'sld-data', FILE = 'history.json';
+  const lsGet = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } }, lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
+  const guessRepo = () => { const h = location.hostname; return /\.github\.io$/.test(h) ? h.split('.')[0] + '/' + (location.pathname.split('/')[1] || h) : ''; };
+  // Team settings fixed by the admin in index.html (SLD_CONFIG): dataRepo = the (private) repository holding the shared history; requireToken = lock the app until a valid token is entered
+  const CFG = window.SLD_CONFIG || {}, CREPO = /^[\w.-]+\/[\w.-]+$/.test(CFG.dataRepo || '') ? CFG.dataRepo : '';
+  // Username + password sign-in: SLD_CONFIG.users = { username: "<sealed>" } — each person's GitHub token (and display name) is encrypted with THEIR password
+  // (PBKDF2-SHA256, 250 000 rounds -> AES-256-GCM). Nobody needs to see a token: they type a username and password; a wrong password cannot unlock anything.
+  const USERS = CFG.users && Object.keys(CFG.users).length ? Object.fromEntries(Object.entries(CFG.users).map(([k, v]) => [k.trim().toLowerCase(), v])) : null;
+  const ub64 = u8 => { let b = ''; u8.forEach(c => b += String.fromCharCode(c)); return btoa(b); }, b64u = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const kdf = async (pass, salt) => crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']), { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  const seal = async (pass, obj) => { const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await kdf(pass, salt), new TextEncoder().encode(JSON.stringify(obj)))); const o = new Uint8Array(28 + ct.length); o.set(salt); o.set(iv, 16); o.set(ct, 28); return ub64(o); };
+  const unseal = async (blob, pass) => { try { const u = b64u(blob); return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u.slice(16, 28) }, await kdf(pass, u.slice(0, 16)), u.slice(28)))); } catch (e) { return null; } };
+  const SY = () => { const o = Object.assign({ repo: guessRepo(), token: '', name: '' }, lsGet(SYK, {})); if (CREPO) o.repo = CREPO; return o; };
+  const b64e = str => { const by = new TextEncoder().encode(str); let b = ''; by.forEach(c => b += String.fromCharCode(c)); return btoa(b); };
+  let syState = '', syBusy = false;
+  const gh = async (path, o = {}) => {
+    const c = SY(), r = await fetch('https://api.github.com/repos/' + c.repo + path, Object.assign({}, o, { headers: Object.assign({ Accept: 'application/vnd.github+json' }, c.token ? { Authorization: 'Bearer ' + c.token } : {}, o.headers || {}) }));
+    return r;
+  };
+  async function getRemote() { // -> { data, sha } | null (no file yet)
+    const r = await gh('/contents/' + FILE + '?ref=' + BR + '&t=' + Date.now());
+    if (r.status == 404) return null; if (!r.ok) throw new Error(r.status == 403 ? 'GitHub rate limit / no access (403)' : 'GitHub error ' + r.status);
+    const j = await r.json(); let txt = j.content ? decodeURIComponent(escape(atob(j.content.replace(/\s/g, '')))) : ''; if (!txt && j.download_url) txt = await (await fetch(j.download_url)).text();
+    let data = {}; try { data = JSON.parse(txt) || {}; } catch (e) { }
+    return { data, sha: j.sha };
+  }
+  async function putRemote(data, sha) {
+    const body = { message: 'SLD history sync' + (SY().name ? ' — ' + SY().name : ''), content: b64e(JSON.stringify(data)), branch: BR }; if (sha) body.sha = sha;
+    return gh('/contents/' + FILE, { method: 'PUT', body: JSON.stringify(body) });
+  }
+  async function ensureBranch() {
+    const r = await gh('/branches/' + BR); if (r.ok) return;
+    const rr = await gh(''); if (!rr.ok) throw new Error(rr.status == 404 ? 'Repository not found (check name / token access)' : 'GitHub error ' + rr.status);
+    const def = (await rr.json()).default_branch, ref = await gh('/git/ref/heads/' + def); if (!ref.ok) throw new Error('Cannot read the default branch (' + ref.status + ')');
+    const sha = (await ref.json()).object.sha, mk = await gh('/git/refs', { method: 'POST', body: JSON.stringify({ ref: 'refs/heads/' + BR, sha }) });
+    if (!mk.ok && mk.status != 422) throw new Error('Cannot create the ' + BR + ' branch (' + mk.status + ' — token needs Contents: write)');
+  }
+  const mergeH = (a, b, del) => { const m = new Map(); a.concat(b).forEach(e => { if (e && e.id != null && !del.has(String(e.id)) && !m.has(String(e.id))) m.set(String(e.id), e) }); return [...m.values()].sort((x, y) => (y.ts || '').localeCompare(x.ts || '')).slice(0, HMAX); };
+  async function sync(quiet) {
+    const c = SY(); if (!/^[\w.-]+\/[\w.-]+$/.test(c.repo)) { syState = 'Enter the repository as owner/name.'; if (cur == 'out3') drawHistory(); return; }
+    if (syBusy) return; syBusy = true; syState = 'Syncing…'; if (cur == 'out3') drawHistory();
+    try {
+      for (let k = 0; k < 4; k++) {
+        const rem = await getRemote(), rd = (rem && rem.data) || {}, del = new Set((rd.deleted || []).concat(lsGet(DELK, [])).map(String));
+        const merged = mergeH(hLoad(), rd.entries || [], del); hSave(merged); lsSet(DELK, [...del].slice(-500));
+        const same = rem && JSON.stringify((rd.entries || []).map(e => e.id)) == JSON.stringify(merged.map(e => e.id)) && (rd.deleted || []).length >= del.size;
+        if (!rem && !c.token && !(await gh('')).ok) { syState = '🔒 Team history is private — enter your GitHub token to see and share it.'; break; }
+        if (same || !c.token) { syState = (same ? 'In sync' : 'Read-only (no token): team drawings loaded — your own saves stay in this browser') + ' · ' + new Date().toLocaleTimeString(); break; }
+        if (!rem) await ensureBranch();
+        const r = await putRemote({ entries: merged, deleted: [...del].slice(-500) }, rem && rem.sha);
+        if (r.ok) { syState = 'Synced ' + merged.length + ' entries · ' + new Date().toLocaleTimeString(); break; }
+        if (r.status == 409 || r.status == 422) continue; // someone else saved at the same moment: re-read and merge again
+        throw new Error(r.status == 401 || r.status == 403 || r.status == 404 ? 'Token rejected or has no write access (' + r.status + ')' : 'GitHub error ' + r.status);
+      }
+    } catch (e) { syState = 'Sync failed: ' + (e.message || e); }
+    syBusy = false; if (cur == 'out3') drawHistory(); if (!quiet) flash(syState);
+  }
+  function syncBox() {
+    const c = SY();
+    return `<div class="sync-box"><div class="sync-h"><b>Team sync (GitHub)</b><span class="sync-st">${esc(syState || (c.token ? 'Connected — press Sync now' : 'Not connected'))}</span></div>
+<div class="sync-g"><label>Repository (owner/name)<input id="syRepo" value="${esc(c.repo)}" placeholder="yourname/repo-name"${CREPO ? ' readonly title="Set by the admin (SLD_CONFIG in index.html)"' : ''}></label>
+${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + '</b>' : 'Not signed in'}</div>` : `<label>Your name<input id="syName" value="${esc(c.name)}" placeholder="shown next to what you save"></label>
+<label>GitHub token (to save &amp; share)<input id="syTok" type="password" value="${esc(c.token)}" placeholder="optional — leave empty to only read"></label>`}</div>
+<div class="btns">${USERS && !c.token ? '<button type="button" class="alt on" data-a="sy-in">🔑 Sign in</button>' : ''}<button type="button" class="alt${USERS && !c.token ? '' : ' on'}" data-a="sy-go">⟳ ${USERS ? 'Sync now' : 'Save settings &amp; sync'}</button><button type="button" class="alt" data-a="sy-exp">⬇ Export file</button><button type="button" class="alt" data-a="sy-imp">⬆ Import file</button><button type="button" class="alt" data-a="sy-off">${USERS ? 'Sign out' : 'Disconnect'}</button></div>
+<details><summary>How to set it up (once)</summary><ol><li>On GitHub: <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b>.</li><li>Repository access: <b>Only select repositories</b> → this app's repository. Permissions → <b>Contents: Read and write</b>.</li><li>Paste the token above (stored only in this browser) and press <b>Save settings &amp; sync</b>. Everyone who uses the same link and the same repository sees the same History; people without a token can still open and load shared drawings.</li></ol>The history is stored in the <code>${BR}</code> branch (file <code>${FILE}</code>), so saving never redeploys the website. Anyone with a token for the repository can write there — share tokens only with your team.</details></div>`;
+  }
   function drawHistory() {
     const list = hLoad();
-    $('out3').innerHTML = list.length ? list.map(e => `<div class="hist-item" data-id="${e.id}"><div><b>${esc(e.label)}</b><span>${new Date(e.ts).toLocaleString()}</span></div><div class="btns"><button type="button" class="alt" data-a="load">Load</button><button type="button" class="alt ic" data-a="del">Delete</button></div></div>`).join('')
-      : '<p class="hist-empty">No saved revisions yet — use "💾 Save to history" above to keep a copy of the current configuration.</p>';
+    $('out3').innerHTML = syncBox() + (list.length ? list.map(e => `<div class="hist-item" data-id="${e.id}"><div><b>${esc(e.label)}</b><span>${esc(e.by ? e.by + ' · ' : '')}${new Date(e.ts).toLocaleString()}</span></div><div class="btns"><button type="button" class="alt" data-a="load">Load</button><button type="button" class="alt ic" data-a="del">Delete</button></div></div>`).join('')
+      : '<p class="hist-empty">No saved revisions yet — use "💾 Save to history" above to keep a copy of the current configuration.</p>');
   }
   $('out3').addEventListener('click', e => {
+    const a = e.target.dataset && e.target.dataset.a;
+    if (a == 'sy-in') { lockScreen('', true); return; }
+    if (a == 'sy-go' && USERS) { sync(); return; }
+    if (a == 'sy-go') { lsSet(SYK, { repo: $('syRepo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, ''), token: $('syTok').value.trim(), name: $('syName').value.trim() }); sync(); return; }
+    if (a == 'sy-off') { if (confirm(USERS ? 'Sign out on this device?' : 'Disconnect: remove the saved token and repository from this browser? (Saved history stays.)')) { lsSet(SYK, { repo: SY().repo, token: '', name: SY().name, user: SY().user || '' }); lsSet(OKK, ''); syState = 'Disconnected'; drawHistory(); if (CFG.requireToken) lockScreen('Signed out.'); } return; }
+    if (a == 'sy-exp') { const u = URL.createObjectURL(new Blob([JSON.stringify({ entries: hLoad(), deleted: lsGet(DELK, []) }, null, 1)], { type: 'application/json' })), x = document.createElement('a'); x.href = u; x.download = 'sld-history.json'; document.body.appendChild(x); x.click(); x.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); return; }
+    if (a == 'sy-imp') { const f = document.createElement('input'); f.type = 'file'; f.accept = '.json,application/json'; f.onchange = () => { const r = new FileReader(); r.onload = () => { try { const d = JSON.parse(r.result), del = new Set(lsGet(DELK, [])); hSave(mergeH(hLoad(), d.entries || [], del)); drawHistory(); flash('Imported ' + (d.entries || []).length + ' entries.'); if (SY().token) sync(true); } catch (er) { flash('Not a valid history file.'); } }; r.readAsText(f.files[0]); }; f.click(); return; }
     const item = e.target.closest('.hist-item'); if (!item) return;
     const id = +item.dataset.id, list = hLoad(), e2 = list.find(x => x.id == id); if (!e2) return;
     if (e.target.dataset.a == 'load') hApply(e2);
-    else if (e.target.dataset.a == 'del') { if (confirm('Delete "' + e2.label + '"?')) { hSave(list.filter(x => x.id != id)); drawHistory(); } }
+    else if (e.target.dataset.a == 'del') { if (confirm('Delete "' + e2.label + '"?' + (SY().token ? '\n(Also removed from the shared history.)' : ''))) { hSave(list.filter(x => x.id != id)); lsSet(DELK, lsGet(DELK, []).concat(String(id))); drawHistory(); if (SY().token) sync(true); } }
   });
-  drawInvs(); drawBess(); drawLoc2Shell(); update();
+  drawInvs(); drawBess(); drawLoc2Shell(); update(); DEFAULT = snap('default project');
+  // ---- Optional sign-in lock (SLD_CONFIG.requireToken): the app stays covered until the person enters a GitHub token that can open the team's data repository.
+  // The admin cuts someone off by revoking / deleting their token on GitHub — they are locked out the next time the app starts. ----
+  const OKK = 'sld_ok_v1';
+  async function tokenOk(tok) { try { const r = await fetch('https://api.github.com/repos/' + SY().repo, { headers: { Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + tok } }); return r.ok ? 1 : 0; } catch (e) { return -1; } } // -1 = offline
+  function lockScreen(msg, optional) {
+    let d = $('lock'); if (!d) { d = document.createElement('div'); d.id = 'lock'; document.body.appendChild(d); }
+    const close = optional ? '<button type="button" class="alt" id="lkX">Cancel</button>' : '';
+    d.innerHTML = USERS ? `<form class="lock-card" onsubmit="return false"><h2>🔒 Team sign-in</h2><p>${optional ? 'Sign in to see and share the team History.' : 'This SLD generator is for the team only.'}</p>
+<label>Username<input id="lkUser" autocomplete="username" autocapitalize="none" value="${esc(SY().user || '')}"></label><label>Password<input id="lkPass" type="password" autocomplete="current-password"></label>
+<button type="submit" id="lkGo">Sign in</button>${close}<p class="lock-msg">${esc(msg || '')}</p></form>`
+      : `<form class="lock-card" onsubmit="return false"><h2>🔒 Team sign-in</h2><p>Enter your name and the GitHub access token you were given.</p>
+<label>Your name<input id="lkName" value="${esc(SY().name)}"></label><label>GitHub token<input id="lkTok" type="password" placeholder="github_pat_…"></label>
+<button type="submit" id="lkGo">Sign in</button>${close}<p class="lock-msg">${esc(msg || '')}</p></form>`;
+    if (optional) $('lkX').onclick = () => d.remove();
+    (USERS ? $('lkUser').value ? $('lkPass') : $('lkUser') : $('lkTok')).focus();
+    $('lkGo').onclick = async () => {
+      let tok, nm, user = '';
+      if (USERS) {
+        user = $('lkUser').value.trim().toLowerCase(); const pw = $('lkPass').value; if (!user || !pw) return lockScreen('Enter your username and password.', optional);
+        $('lkGo').disabled = true; $('lkGo').textContent = 'Checking…';
+        const o = USERS[user] ? await unseal(USERS[user], pw) : null; if (!o || !o.t) return lockScreen('Wrong username or password.', optional);
+        tok = o.t; nm = o.n || user;
+      } else { tok = $('lkTok').value.trim(); nm = $('lkName').value.trim(); if (!tok) return lockScreen('Enter a token.', optional); $('lkGo').disabled = true; $('lkGo').textContent = 'Checking…'; }
+      const ok = await tokenOk(tok);
+      if (ok == 1) { lsSet(SYK, Object.assign(SY(), { token: tok, name: nm, user })); lsSet(OKK, SY().repo); d.remove(); flash('Signed in as ' + nm + '.'); sync(true); }
+      else lockScreen(ok == 0 ? 'Your access has been removed or has expired. Ask your admin.' : 'No internet connection — try again.', optional);
+    };
+  }
+  // ---- Admin page (open the app with #admin at the end of the link): create the sealed line for each user, to paste into SLD_CONFIG.users in index.html ----
+  function adminPage() {
+    const d = document.createElement('div'); d.id = 'lock'; document.body.appendChild(d);
+    d.innerHTML = `<form class="lock-card wide" onsubmit="return false"><h2>👤 Admin — add a team member</h2><p>Runs only in this browser; nothing is sent anywhere. Give each person their own GitHub token (fine-grained, the data repository only, Contents: Read and write) — to remove someone later, delete their token on GitHub.</p>
+<label>Username (for signing in)<input id="adU" autocapitalize="none"></label><label>Display name (shown in History)<input id="adN"></label>
+<label>Password (min 8 characters)<input id="adP" type="password"></label><label>Repeat password<input id="adP2" type="password"></label>
+<label>That person's GitHub token<input id="adT" type="password" placeholder="github_pat_…"></label>
+<button type="submit" id="adGo">Create user line</button><p class="lock-msg" id="adM"></p>
+<label>Paste these lines inside <code>users: { … }</code> in index.html (TEAM SETTINGS):<textarea id="adOut" rows="6" readonly></textarea></label>
+<button type="button" class="alt" id="adX">Close</button></form>`;
+    $('adX').onclick = () => { d.remove(); history.replaceState(null, '', location.pathname + location.search); };
+    $('adGo').onclick = async () => {
+      const u = $('adU').value.trim().toLowerCase(), n = $('adN').value.trim() || u, p = $('adP').value, t = $('adT').value.trim();
+      if (!/^[a-z0-9._-]{2,32}$/.test(u)) return $('adM').textContent = 'Username: 2–32 letters / numbers / . _ -';
+      if (p.length < 8) return $('adM').textContent = 'Password must be at least 8 characters.'; if (p != $('adP2').value) return $('adM').textContent = 'Passwords do not match.';
+      if (!t) return $('adM').textContent = 'Enter the GitHub token.';
+      $('adM').textContent = 'Encrypting…'; const line = `    "${u}": "${await seal(p, { t, n })}",`;
+      $('adOut').value += ($('adOut').value ? '\n' : '') + line; $('adM').textContent = '✓ ' + u + ' added below. Tell them their username and password.'; $('adM').style.cssText = 'color:#0a7a2f!important'; $('adP').value = $('adP2').value = $('adT').value = '';
+    };
+  }
+  (async () => {
+    const http = /^https?:$/.test(location.protocol), c = SY();
+    if (location.hash == '#admin') return adminPage();
+    if (CFG.requireToken && http) {
+      if (!c.token) return lockScreen();
+      const ok = await tokenOk(c.token);
+      if (ok == 0) { lsSet(SYK, Object.assign(c, { token: '' })); lsSet(OKK, ''); return lockScreen('Your access has ended (token expired or revoked). Ask your admin for a new token.'); }
+      if (ok == -1 && lsGet(OKK, '') != c.repo) return lockScreen('No internet connection — sign-in needs internet the first time.');
+    }
+    if (/^[\w.-]+\/[\w.-]+$/.test(c.repo) && http) sync(true); // pick up what the team has saved
+  })();
 })();
