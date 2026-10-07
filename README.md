@@ -186,3 +186,39 @@ The **⬇ Download CAD (.dxf)** button (replaces the old SVG download) exports w
 
 ## Installing on a phone (PWA)
 `js/pwa.js` builds the web-app manifest in code (icons embedded), so the app is installable even when only the single-file `index.html` is uploaded. Its manifest `id` is `<folder URL>regen-sld-generator`, unique to this app, so Chrome does not confuse it with other apps on the same github.io address. `sw.js` (optional) adds offline use. If you reuse this project for another app, change `id`, `name` and `short_name` in `js/pwa.js`. After deploying: uninstall the old icon (long-press → Uninstall), in Chrome open the site, pull down to reload twice, then ⋮ → Install app.
+
+## Off-grid backup source (ATS)
+In **Off-grid** mode the System tab has a *Backup source* choice; the automatic transfer switch(es) are drawn inside the **isolation panel** with the standard changeover (ATS) symbol — inputs I / II, common load terminal:
+- **Diesel generator (DG)** or **Grid** — one ATS: input I = solar side (main switchgear panel, plus Location 2 if it feeds the isolation panel), input II = DG / grid, output → load.
+- **DG + grid** — two ATS: ATS-1 selects DG (I) or grid (II); its output feeds ATS-2 input II; ATS-2 input I = solar side; ATS-2 output → load.
+- **None** — the original Load DB with no utility connection.
+The grid is drawn with its kWh meter (label *UTILITY IMPORT METER*, editable), the DG with the generator symbol (G~) and optional kVA rating. An optional isolation-panel EFR (Protection tab) is drawn as a CBCT on the ATS output with its relay tripping the ATS (ATS-2 when there are two). ATS rating defaults to the isolator size (auto, overridable); the DG cable and load cable default to the utility cable size.
+
+## Save / reset
+**💾 Save to history** keeps a named copy of the whole configuration in this browser (History tab → Load / Delete). **↺ Reset to default** returns every setting, inverter, battery and Location 2 to the start-up project; the current drawing is saved to History automatically first (labelled "Auto-saved before reset"), so it can be loaded back.
+
+## Team sync (shared History through GitHub)
+History tab → **Team sync (GitHub)**. Everyone using the same web link shares one History, stored as `history.json` on a separate branch `sld-data` of the same repository (so saving never redeploys the site).
+- Repository is detected from the github.io link (owner/repo); edit it if needed.
+- **Without a token**: the team's saved drawings are loaded and can be opened; your own saves stay in your browser.
+- **With a token** (GitHub → Settings → Developer settings → Fine-grained tokens; only this repository; *Contents: Read and write*): every Save / Delete is synced; opening the History tab or the app fetches the latest. Simultaneous saves are merged (re-read + retry), deletions propagate.
+- Each entry shows who saved it ("Your name"). Export / Import file is available for backup or for offline sharing.
+- The token is kept only in that browser's local storage; share tokens only with your team.
+
+### Restricting access (team only)
+The website itself is public, so real protection comes from keeping the **drawings in a PRIVATE repository**:
+1. Create a private repository for the data (e.g. `sld-team-data`, can be empty).
+2. In `index.html` (top, *TEAM SETTINGS*): `dataRepo: "owner/sld-team-data"` and, to put a sign-in screen in front of the app, `requireToken: true`.
+3. For each team member, create a fine-grained token (*Only select repositories* → the data repo, *Contents: Read and write*, with an expiry date) and give it to that person.
+4. To remove someone: delete/revoke their token on GitHub — the app locks them out the next time it starts, and the private data cannot be read without a valid token.
+Note: the sign-in screen only hides the app; the drawing tool's code is public by nature. The shared drawings are what is protected.
+
+### Username + password sign-in
+Instead of handing out tokens, give each person a **username and password**:
+1. Open the app link with `#admin` at the end (e.g. `https://owner.github.io/repo/#admin`).
+2. For each person enter username, display name, a password (8+ characters) and **their own** GitHub token → *Create user line*. Their token is encrypted with their password (PBKDF2-SHA256 250k rounds + AES-256-GCM) in your browser; nothing is sent anywhere.
+3. Paste the lines into `users: { … }` in the TEAM SETTINGS block of `index.html`, with `dataRepo` = your private data repository and `requireToken: true`; upload `index.html`.
+4. People now sign in with username + password (remembered on that device until *Sign out*).
+- **Remove someone**: delete their token on GitHub (they are locked out immediately on next start) and remove their line.
+- **Change a password**: create a new line for that user and replace the old one.
+- Use strong passwords: the encrypted lines are inside the public page, so a weak password could be guessed offline.
