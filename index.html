@@ -819,6 +819,8 @@ const ALLI = () => INV.concat(V.loc2on ? INV2 : []), ALLB = () => BESS.concat(V.
 const units = () => INV.map(u => ({ ...u, kind: 'inv' })).concat(BESS.map(u => ({ ...u, kind: 'bess' })));
 const A4W = 1587, A4H = 1123; // fixed A4-landscape page (~135 dpi) — the sheet size never changes
 const page = inner => `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${A4W}" height="${A4H}" viewBox="0 0 ${A4W} ${A4H}" font-family="Arial, Helvetica, sans-serif"><rect width="${A4W}" height="${A4H}" fill="#fff"/>${inner}</svg>`;
+// Drawing window: inner frame whose left/right edges line up with the title block (same margin BM=10, i.e. 6 px from the border line at x=4) and with the same 6 px gap above the title block (two separate windows)
+const FRAME=W=>`<g data-layer="FRAME"><rect x="10" y="10" width="${W-20}" height="${A4H-10-105-6-10}" fill="none" stroke="#000" stroke-width="1.5"/></g>`;
 // Title block (ISO 7200-style ruled grid): logo | title + (Drawing No | Revision | Date) strip | 2×2 equipment cells (inverters, solar modules, BESS PCS, batteries) | ruled approvals table.
 // Drawn in absolute page coordinates (no diagram stretch) and sits the same distance from the left, right and bottom page border (BM).
 function TB(s,W,wp,qty,kwp,title){
@@ -919,7 +921,7 @@ ln(410,yy(i,230),410,yy(i,244),GR,1.5,'5 3');ln(410,yy(i,244),300,yy(i,244),GR,1
 ln(480,yc,MB,yc);{const f=fz(9),w=u.ac.length*0.55*f,al=w>(PL-480-12)?wslash(u.ac,Math.ceil(u.ac.length/2)):[u.ac];al.forEach((x,k)=>t((480+PL)/2,yc-8*sv-(al.length-1-k)*(f+1),x,f))}
 {const bh=Math.max(40*sv,11);bx(MB,yc-bh/2,60,bh)}if(sm)t(MB+30,yc+2.5,`${/ADJ/.test(BT(u.mccb,u.I))?'':'4P '}${u.mccb}A ${BT(u.mccb,u.I)}`,fz(9));else{t(MB+30,yc-3*sv,`4P ${u.mccb}A`,fz(11));t(MB+30,yc+12*sv,BT(u.mccb,u.I),fz(9))}
 ln(MB+60,yc,bx0,yc)};
-const pv1=[],pv2=[],PVX1=14,PVX2=14; // both locations' roof earth collectors share the same x and label style
+const pv1=[],pv2=[],PVX1=24,PVX2=24; // both locations' roof earth collectors share the same x and label style
 U1.forEach((u,k)=>row(u,posM[k],k,INV.length,BESS.length,PVX1,pv1));
 U2.forEach((u,k)=>row(u,posL[k],k,INV2.length,BESS2.length,PVX2,pv2));
 const yc0=yy(posM[0],45),yL=yy(posM[n1-1],45),ym=(yc0+yL)/2;
@@ -977,7 +979,7 @@ if(pv2.length){ln(PVX2,Math.min(...pv2),PVX2,yE,GR,2);t(PVX2+6,yE-6,PVL(g('loc2p
 ln(two?(pv2.length?PVX2:240):(pv1.length?PVX1:240),yE,600,yE,GR,5);t(420,yE-10,two?'LOCATION 2 EARTH BUS BAR':'EARTH BUS BAR',10);
 ln(420,yE,420,yE+30,GR,1.5);ln(400,yE+30,440,yE+30,GR,2);ln(407,yE+36,433,yE+36,GR,2);ln(414,yE+42,426,yE+42,GR,2);
 t(455,yE+40,`Earth pit   r ≤ ${g('earthR')}Ω`,11,'start');
-s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);
+s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
 t(20,32,`${qty} panels (×${wp} Wp) — ${strs} strings${(cf=>cf.length>70?'':' ('+cf+')')(ALLI().map(i=>i.cfg).join(' | '))} — ${kwp} kWp DC / ${+kw.toFixed(1)} kW AC${ALLB().length?' / '+ALLB().reduce((a,b)=>a+ +b.kwh,0)+' kWh BESS':''}`,12,'start');
 t(W-20,32,CFGN()+' — '+g('opt'),14,'end','bold');
 TB(s,W,wp,qty,kwp,title);
@@ -1008,7 +1010,7 @@ const hyU=u=>!!u&&u.kind=='inv'&&u.hybrid&&+u.battKwh>0,hy0=hyU(U[0]),hy2=hyU(U2
 const hxc=[];U.reduce((a,u,i)=>(hxc[i]=a+((i>0&&!(L2&&i==n1)&&hyU(u))?HX:0)),0);const sumHx=hxc.length?hxc[hxc.length-1]:0,hxAt=i=>hxc.length?hxc[Math.min(i,hxc.length-1)]:0;
 const c0=196,k0=hy0?208:98; // left margin: main earth line + room for the first column's earth label; k0 = how far left of its inverter the first column reaches (x-95 earth line, x-205 for a hybrid)
 const g0=two?215+SPDX:0,g1=two&&hy2?110:0; // gap between the locations (Location 2's feeder, panel earth line, its first column's earth label)
-const R0=L2?30:SPDX+135,R1=L2?150:105; // right margin: with Location 2 only its last column is at the right (the SPD stays after the main columns); otherwise the SPD + busbar end
+const R0=L2?30:SPDX+135,R1=L2?166:105; // right margin: with Location 2 only its last column is at the right (the SPD stays after the main columns); otherwise the SPD + busbar end
 const solve=spn=>(A4W-c0-g0-R0)/(k0+spn+g1+R1);
 const x1Lim=1271; // with Location 2 on the isolation panel its feeder x (cx = x1-98sh-75) must stay left of ~1196 so the extended isolation panel still leaves room for the meter + GRID
 const shIso=isIso0?(x1Lim-c0-g0)/(k0+n1*BASE+(hxc.length?hxc[Math.min(n1,hxc.length-1)]:0)+g1-98):1e9;
@@ -1106,7 +1108,7 @@ DY=0;bx(80,250+E1,busEnd-70,128+PD-E1,'8 4');t(L2?170:busEnd,245+E1,`${L2?'LOCAT
 if(indM)lamps(100,300);
 ln(85,364,155,364,GR,3);t(98,350,'PANEL EARTH BUS',9,'start','bold');
 ln(120,364,120,yE-PD,GR,1.5,'5 3');
-t(114,L2?yE-PD-170:534,L2?'Location 1 panel earth':'Switchgear panel earth',10,'end');DY=0; // left of the earth line, clear of the first column's own earth runs
+(L2?['Location 1','panel earth']:['Switchgear','panel earth']).forEach((q,j)=>t(114,(L2?yE-PD-170:534)+j*11,q,10,'end'));DY=0; // two lines so it stays inside the drawing windowDY=0; // left of the earth line, clear of the first column's own earth runs
 const hl=md()=='nm'||md()=='na',og=md()=='og',isIso=L2&&V.loc2to=='iso',cx=L2?XPE()+30:0; // cx = x of Location 2's feeder (right of the main columns)
 const BE=isIso?Math.max(660,cx+70):660,mx=isIso?Math.min(BE+150,1405):810; // BE: right edge of the isolation panel (extended left→right to Location 2's feeder); mx: x of the energy meter (GRID follows)
 const ulab=(L,str)=>{const gp=mx-14-L-14,x=(L+mx-14)/2,w=(q,z)=>q.length*0.56*z; // utility cable label, centred in the gap between the panel outline (L) and the meter: shrinks, then wraps (at '/' and before '× n'), never touching either
@@ -1162,13 +1164,17 @@ if(!L2){ln(120,yE,busEnd,yE,GR,4);t(busEnd,yE-8,'EARTH BUS BAR',11,'end');ln(120
 else{ // two SEPARATE earth bus bars, each with its own earth pit, tied together by an equipotential bond
 const xb1=Xc(n1-1)+12,xp=XPE(),xe2=n2?Xc(cnt-1)+20:xp+90;
 const peS=(m=>m?+m[1]:0)(String(g('loc2cable')).match(/(\d+(?:\.\d+)?)\s*mm/)),peN=peS<=16?peS:peS<=35?16:peS/2,pe=peS?[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300].find(v=>v>=peN)||peN:0; // IEC 60364-5-54 Table 54.2: PE = phase size (<=16), 16 (<=35), half (>35) — taken from the interconnecting AC cable
-ln(120,yE,xb1,yE,GR,4);xb1-150<132?t(132,yE+16,'LOCATION 1 EARTH BUS BAR',10,'start','bold'):t(xb1,yE+16,'LOCATION 1 EARTH BUS BAR',10,'end','bold'); // short bar (1 main unit): keep the label clear of the earth-pit riser at x=120ln(120,yE,120,yE+28,GR);es(120,yE+28);t(142,yE+40,`${g('earthMain')} — Earth pit  r ≤ ${g('earthR')}Ω`,11);
+ln(120,yE,xb1,yE,GR,4);xb1-150<132?t(132,yE+16,'LOCATION 1 EARTH BUS BAR',10,'start','bold'):t(xb1,yE+16,'LOCATION 1 EARTH BUS BAR',10,'end','bold');
+ln(120,yE,120,yE+28,GR); // (short bar, 1 main unit: the label above is kept clear of this earth-pit riser at x=120)
+es(120,yE+28);t(142,yE+40,`${g('earthMain')} — Earth pit  r ≤ ${g('earthR')}Ω`,11);
 ln(xb1,yE,xp,yE,GR,2.5);if(xp-xb1>=110){t((xb1+xp)/2,yE-14,pe?`${pe}mm² Cu`:'Earth interconnection',9,'middle');t((xb1+xp)/2,yE-4,pe?'earth interconnection':'',9,'middle')}
 ln(xp,yE,xe2,yE,GR,4);t(xp,yE+16,'LOCATION 2 EARTH BUS BAR',10,'start','bold');ln(xe2,yE,xe2,yE+28,GR);es(xe2,yE+28);t(xe2-22,yE+40,`${g('loc2earth')?g('loc2earth')+' — ':''}Earth pit  r ≤ ${g('earthR')}Ω`,11,'end')}
 const LY=isIso&&mx+170>1270?215:48; // legend drops below the isolation panel when it has been extended far to the right
 [[OR,'AC power',''],[BL,'DC power (PV / battery)',''],[GR,'Equipment earthing','5 3'],[GR,'PV array (roof) earthing',''],[MG,'Surge protection','']].concat(efrM||efrI?[['#000','EFR trip signal','4 3']]:[]).forEach(([c,l,d],i)=>{ln(W-300,LY+i*16,W-260,LY+i*16,c,2,d);t(W-250,LY+4+i*16,l,10)});
-t(20,30,'SINGLE LINE DIAGRAM — '+CFGN().toUpperCase()+' — '+g('opt'),15,'start','bold');
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);
+// drawing window: an inner frame around the diagram area, separate from the title block (which sits below it, inside the sheet border)
+s.push(FRAME(W));
+s.push(`<text xml:space="preserve" x="28" y="42" font-size="15" text-anchor="start" font-weight="bold" fill="#000">${esc('SINGLE LINE DIAGRAM — '+CFGN().toUpperCase()+' — '+g('opt'))}</text>`);
 TB(s,W,wp,qty,kwp,title);
 return page(s.join(''))}
 
@@ -1179,7 +1185,7 @@ S.renderSLD = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || 
 <script>/* CAD export: converts the rendered drawing (block diagram or SLD, an <svg> element) into an AutoCAD DXF (R12 / AC1009 ASCII — opens in every
    AutoCAD version, BricsCAD, DraftSight, LibreCAD, QCAD, ...). Everything is generated in the browser; nothing is uploaded.
    - Units: millimetres, drawing placed on a real A4 landscape sheet (297 x 210), origin at the lower-left corner, Y up, so it plots 1:1.
-   - Layers: SLD-AC, SLD-DC, SLD-EARTH, SLD-SPD, SLD-SYMBOLS, TEXT, TITLEBLOCK, TITLEBLOCK-TEXT (colours match the on-screen drawing).
+   - Layers: SLD-AC, SLD-DC, SLD-EARTH, SLD-SPD, SLD-SYMBOLS, TEXT, TITLEBLOCK, TITLEBLOCK-TEXT, FRAME (SLD drawing window) (colours match the on-screen drawing).
    - Entities: LINE, POLYLINE (rectangles / heavy lines carry a width), CIRCLE, TEXT (Arial), SOLID (arrow heads / filled dots).
    - The raster company logo cannot be carried in an R12 DXF, so the logo cell holds the text "REGEN" instead. */
 (function (G) {

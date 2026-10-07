@@ -1,7 +1,7 @@
 /* CAD export: converts the rendered drawing (block diagram or SLD, an <svg> element) into an AutoCAD DXF (R12 / AC1009 ASCII — opens in every
    AutoCAD version, BricsCAD, DraftSight, LibreCAD, QCAD, ...). Everything is generated in the browser; nothing is uploaded.
    - Units: millimetres, drawing placed on a real A4 landscape sheet (297 x 210), origin at the lower-left corner, Y up, so it plots 1:1.
-   - Layers: SLD-AC, SLD-DC, SLD-EARTH, SLD-SPD, SLD-SYMBOLS, TEXT, TITLEBLOCK, TITLEBLOCK-TEXT (colours match the on-screen drawing).
+   - Layers: SLD-AC, SLD-DC, SLD-EARTH, SLD-SPD, SLD-SYMBOLS, TEXT, TITLEBLOCK, TITLEBLOCK-TEXT, FRAME (SLD drawing window) (colours match the on-screen drawing).
    - Entities: LINE, POLYLINE (rectangles / heavy lines carry a width), CIRCLE, TEXT (Arial), SOLID (arrow heads / filled dots).
    - The raster company logo cannot be carried in an R12 DXF, so the logo cell holds the text "REGEN" instead. */
 (function (G) {

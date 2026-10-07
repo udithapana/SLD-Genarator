@@ -138,7 +138,7 @@ The single conductor that collects the PV-module (roof) earths of a location is 
 1 array → 4 mm² Cu, 2–3 → 6, 4–6 → 10, 7–10 → 16, 11–16 → 25, 17+ → 35 mm² Cu (practice following IEC 62548 / IEC 60364-5-54). This is an editable rule-of-thumb table — verify against your standard/project. Main location: field "PV array main earth (roof)" (AUTO, type to override). Second location: "PV array main earth (roof) override" in the Second location section. Both locations' roof earth collectors are drawn at the same position in the block diagram.
 
 ## Title block
-ISO 7200-style ruled grid, identical on both drawings and the same distance (10 px) from the left, right and bottom page border: logo | title + Drawing No / Revision / Date strip | four equipment cells (Solar modules, Inverters, BESS PCS, Batteries — grouped counts, hybrid integrated batteries listed under Batteries) | ruled approvals table.
+ISO 7200-style ruled grid, identical on both drawings and the same distance (6 px between border lines) from the left, right and bottom page border — equal to the 6 px gap between the drawing frame and the title block: logo | title + Drawing No / Revision / Date strip | four equipment cells (Solar modules, Inverters, BESS PCS, Batteries — grouped counts, hybrid integrated batteries listed under Batteries) | ruled approvals table.
 
 ## Second location — SLD layout (right-hand side) and earthing
 In the SLD the Location 2 columns/panel sit to the RIGHT of the main (Location 1) columns, below the main panel. Its feeder comes from a tap breaker on the main busbar, or (isolation-panel option) from the isolation panel, routed above the main panel and down across the main busbar.
@@ -181,3 +181,5 @@ The **⬇ Download CAD (.dxf)** button (replaces the old SVG download) exports w
 - The drawing panel on the right stays fixed and is scaled so the whole A4 sheet fits the window; only the left settings panel scrolls.
 - The settings are grouped into tabs: **System** (metering mode, panel Wp, inverters, BESS), **Location 2**, **Cables & breakers**, **Protection** (IP ratings, EFR, indicators, DC isolator / SPD) and **Project** (drawing details, sign-off). The last tab used is remembered. "Location 2 ●" shows when a second location is on.
 - On phones / narrow windows the page scrolls normally (settings above, drawing below).
+
+- SLD and block-diagram sheets: the diagram sits inside its own drawing window (inner frame) above the title block; the DXF carries it on a `FRAME` layer.
