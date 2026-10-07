@@ -183,3 +183,6 @@ The **⬇ Download CAD (.dxf)** button (replaces the old SVG download) exports w
 - On phones / narrow windows the page scrolls normally (settings above, drawing below).
 
 - SLD and block-diagram sheets: the diagram sits inside its own drawing window (inner frame) above the title block; the DXF carries it on a `FRAME` layer.
+
+## Installing on a phone (PWA)
+The site is an installable app: `manifest.webmanifest` + `sw.js` + `icons/` (all deployed with the rest of the repo by the Pages workflow). Chrome identifies an installed app by its manifest `id`, so **every app hosted under the same github.io address needs its own unique `id`** (here `sld-generator-regen`), its own `scope` (`./`) and a relative `start_url`; otherwise Chrome says "already installed". If you copy this project as the base of another app, change `id`, `name`, `short_name` and the cache name in `sw.js`. After pushing, remove any old home-screen shortcut/app (long-press → Uninstall), then open the site in Chrome → ⋮ → Install app.

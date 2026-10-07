@@ -2,6 +2,10 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Solar SLD Generator</title>
+<meta name="theme-color" content="#0a7a2f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#eef1f4;--card:#fff;--tx:#17202b;--mu:#586474;--bd:#cfd6df;--ac:#0a5fb4;--in:#f7f9fb}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--card:#1a2028;--tx:#e6e9ee;--mu:#98a3b1;--bd:#2f3844;--ac:#63a7f2;--in:#222a34}}
@@ -1557,5 +1561,10 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   });
   drawInvs(); drawBess(); drawLoc2Shell(); update();
 })();
+</script>
+<script>// Register the service worker (needed for Chrome's "Install app"). Only on http(s).
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
 </script>
 </body></html>
