@@ -61,3 +61,15 @@ fieldset>button{margin-top:10px}
  .dwg{overflow:auto;min-height:0;container-type:size}
  .paper{min-width:760px;max-width:calc((100cqh - 2px)*1.4133);margin:0 auto}
 }
+
+.sync-box{border:1px solid var(--bd);border-radius:8px;padding:12px 14px;margin:0 0 14px;background:rgba(127,127,127,.05)}
+.sync-h{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}.sync-st{font-size:12px;color:var(--mu)}
+.sync-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:8px}.sync-g label{font-size:12px}
+.sync-box .btns{display:flex;gap:6px;flex-wrap:wrap}.sync-box .btns button{padding:5px 10px;font-size:12px}
+.sync-box details{margin-top:8px;font-size:12px;color:var(--mu)}.sync-box ol{margin:6px 0 6px 18px;padding:0}
+
+#lock{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+.lock-card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:22px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:10px}
+.lock-card h2{margin:0;font-size:20px}.lock-card p{margin:0;font-size:13px;color:var(--mu)}.lock-card label{font-size:13px}
+.lock-card button{padding:10px;font-size:15px}.lock-msg{color:#c0392b!important;min-height:1em}
+.lock-card.wide{max-width:520px}.lock-card textarea{width:100%;font:12px monospace;box-sizing:border-box}.sync-who{align-self:end;font-size:13px;padding:8px 0}
