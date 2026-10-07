@@ -208,7 +208,7 @@ History tab → **Team sync (GitHub)**. Everyone using the same web link shares 
 ### Restricting access (team only)
 The website itself is public, so real protection comes from keeping the **drawings in a PRIVATE repository**:
 1. Create a private repository for the data (e.g. `sld-team-data`, can be empty).
-2. In `index.html` (top, *TEAM SETTINGS*): `dataRepo: "owner/sld-team-data"` and, to put a sign-in screen in front of the app, `requireToken: true`.
+2. In `config.js` (copy `config.example.js`): `dataRepo: "owner/sld-team-data"` and, to put a sign-in screen in front of the app, `requireToken: true`.
 3. For each team member, create a fine-grained token (*Only select repositories* → the data repo, *Contents: Read and write*, with an expiry date) and give it to that person.
 4. To remove someone: delete/revoke their token on GitHub — the app locks them out the next time it starts, and the private data cannot be read without a valid token.
 Note: the sign-in screen only hides the app; the drawing tool's code is public by nature. The shared drawings are what is protected.
@@ -217,8 +217,9 @@ Note: the sign-in screen only hides the app; the drawing tool's code is public b
 Instead of handing out tokens, give each person a **username and password**:
 1. Open the app link with `#admin` at the end (e.g. `https://owner.github.io/repo/#admin`).
 2. For each person enter username, display name, a password (8+ characters) and **their own** GitHub token → *Create user line*. Their token is encrypted with their password (PBKDF2-SHA256 250k rounds + AES-256-GCM) in your browser; nothing is sent anywhere.
-3. Paste the lines into `users: { … }` in the TEAM SETTINGS block of `index.html`, with `dataRepo` = your private data repository and `requireToken: true`; upload `index.html`.
+3. Paste the lines into `users: { … }` in `config.js` (copy of `config.example.js`), with `dataRepo` = your private data repository and `requireToken: true`; upload `index.html`.
 4. People now sign in with username + password (remembered on that device until *Sign out*).
 - **Remove someone**: delete their token on GitHub (they are locked out immediately on next start) and remove their line.
 - **Change a password**: create a new line for that user and replace the old one.
 - Use strong passwords: the encrypted lines are inside the public page, so a weak password could be guessed offline.
+- **One shared team account** (e.g. username `Regen`): create a single line on the admin page. The sign-in screen pre-fills that username; each person types the shared password and their own name, which is shown next to what they save in History. To remove someone from a shared account, change the password (new line) and create a new GitHub token (delete the old one).

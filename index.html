@@ -2,20 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Solar SLD Generator</title>
-<script>
-/* ===== TEAM SETTINGS (admin: edit these two lines, then upload index.html) =====
-   dataRepo:     the repository that holds the shared History, e.g. "udithapana/sld-team-data".
-                 Make that repository PRIVATE so only people with a token can read it. "" = use this website's own repository.
-   requireToken: true = the app shows a sign-in screen and only opens for team members.
-   users:        username + password sign-in. Create each line on the admin page (open the app link with #admin at the end) and paste it here.
-                 Leave users empty {} to sign in with a GitHub token instead. */
-window.SLD_CONFIG = {
-  dataRepo: "",
-  requireToken: false,
-  users: {
-  }
-};
-</script>
+<script src="config.js"></script><!-- team settings (optional file, see config.example.js) -->
 <meta name="theme-color" content="#0a7a2f">
 <style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#eef1f4;--card:#fff;--tx:#17202b;--mu:#586474;--bd:#cfd6df;--ac:#0a5fb4;--in:#f7f9fb}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -1736,7 +1723,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   function syncBox() {
     const c = SY();
     return `<div class="sync-box"><div class="sync-h"><b>Team sync (GitHub)</b><span class="sync-st">${esc(syState || (c.token ? 'Connected — press Sync now' : 'Not connected'))}</span></div>
-<div class="sync-g"><label>Repository (owner/name)<input id="syRepo" value="${esc(c.repo)}" placeholder="yourname/repo-name"${CREPO ? ' readonly title="Set by the admin (SLD_CONFIG in index.html)"' : ''}></label>
+<div class="sync-g"><label>Repository (owner/name)<input id="syRepo" value="${esc(c.repo)}" placeholder="yourname/repo-name"${CREPO ? ' readonly title="Set by the admin in config.js"' : ''}></label>
 ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + '</b>' : 'Not signed in'}</div>` : `<label>Your name<input id="syName" value="${esc(c.name)}" placeholder="shown next to what you save"></label>
 <label>GitHub token (to save &amp; share)<input id="syTok" type="password" value="${esc(c.token)}" placeholder="optional — leave empty to only read"></label>`}</div>
 <div class="btns">${USERS && !c.token ? '<button type="button" class="alt on" data-a="sy-in">🔑 Sign in</button>' : ''}<button type="button" class="alt${USERS && !c.token ? '' : ' on'}" data-a="sy-go">⟳ ${USERS ? 'Sync now' : 'Save settings &amp; sync'}</button><button type="button" class="alt" data-a="sy-exp">⬇ Export file</button><button type="button" class="alt" data-a="sy-imp">⬆ Import file</button><button type="button" class="alt" data-a="sy-off">${USERS ? 'Sign out' : 'Disconnect'}</button></div>
@@ -1752,7 +1739,7 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
     if (a == 'sy-in') { lockScreen('', true); return; }
     if (a == 'sy-go' && USERS) { sync(); return; }
     if (a == 'sy-go') { lsSet(SYK, { repo: $('syRepo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, ''), token: $('syTok').value.trim(), name: $('syName').value.trim() }); sync(); return; }
-    if (a == 'sy-off') { if (confirm(USERS ? 'Sign out on this device?' : 'Disconnect: remove the saved token and repository from this browser? (Saved history stays.)')) { lsSet(SYK, { repo: SY().repo, token: '', name: SY().name, user: SY().user || '' }); lsSet(OKK, ''); syState = 'Disconnected'; drawHistory(); if (CFG.requireToken) lockScreen('Signed out.'); } return; }
+    if (a == 'sy-off') { if (confirm(USERS ? 'Sign out on this device?' : 'Disconnect: remove the saved token and repository from this browser? (Saved history stays.)')) { lsSet(SYK, { repo: SY().repo, token: '', name: SY().name, user: SY().user || '', who: SY().who || '' }); lsSet(OKK, ''); syState = 'Disconnected'; drawHistory(); if (CFG.requireToken) lockScreen('Signed out.'); } return; }
     if (a == 'sy-exp') { const u = URL.createObjectURL(new Blob([JSON.stringify({ entries: hLoad(), deleted: lsGet(DELK, []) }, null, 1)], { type: 'application/json' })), x = document.createElement('a'); x.href = u; x.download = 'sld-history.json'; document.body.appendChild(x); x.click(); x.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); return; }
     if (a == 'sy-imp') { const f = document.createElement('input'); f.type = 'file'; f.accept = '.json,application/json'; f.onchange = () => { const r = new FileReader(); r.onload = () => { try { const d = JSON.parse(r.result), del = new Set(lsGet(DELK, [])); hSave(mergeH(hLoad(), d.entries || [], del)); drawHistory(); flash('Imported ' + (d.entries || []).length + ' entries.'); if (SY().token) sync(true); } catch (er) { flash('Not a valid history file.'); } }; r.readAsText(f.files[0]); }; f.click(); return; }
     const item = e.target.closest('.hist-item'); if (!item) return;
@@ -1769,7 +1756,8 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
     let d = $('lock'); if (!d) { d = document.createElement('div'); d.id = 'lock'; document.body.appendChild(d); }
     const close = optional ? '<button type="button" class="alt" id="lkX">Cancel</button>' : '';
     d.innerHTML = USERS ? `<form class="lock-card" onsubmit="return false"><h2>🔒 Team sign-in</h2><p>${optional ? 'Sign in to see and share the team History.' : 'This SLD generator is for the team only.'}</p>
-<label>Username<input id="lkUser" autocomplete="username" autocapitalize="none" value="${esc(SY().user || '')}"></label><label>Password<input id="lkPass" type="password" autocomplete="current-password"></label>
+<label>Username<input id="lkUser" autocomplete="username" autocapitalize="none" value="${esc(SY().user || (CFG.users && Object.keys(CFG.users).length == 1 ? Object.keys(CFG.users)[0] : ''))}"></label><label>Password<input id="lkPass" type="password" autocomplete="current-password"></label>
+<label>Your name <span class="tag">shown in History</span><input id="lkWho" value="${esc(SY().who || '')}" placeholder="e.g. Kavish"></label>
 <button type="submit" id="lkGo">Sign in</button>${close}<p class="lock-msg">${esc(msg || '')}</p></form>`
       : `<form class="lock-card" onsubmit="return false"><h2>🔒 Team sign-in</h2><p>Enter your name and the GitHub access token you were given.</p>
 <label>Your name<input id="lkName" value="${esc(SY().name)}"></label><label>GitHub token<input id="lkTok" type="password" placeholder="github_pat_…"></label>
@@ -1782,10 +1770,10 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
         user = $('lkUser').value.trim().toLowerCase(); const pw = $('lkPass').value; if (!user || !pw) return lockScreen('Enter your username and password.', optional);
         $('lkGo').disabled = true; $('lkGo').textContent = 'Checking…';
         const o = USERS[user] ? await unseal(USERS[user], pw) : null; if (!o || !o.t) return lockScreen('Wrong username or password.', optional);
-        tok = o.t; nm = o.n || user;
+        tok = o.t; nm = $('lkWho').value.trim() || o.n || user;
       } else { tok = $('lkTok').value.trim(); nm = $('lkName').value.trim(); if (!tok) return lockScreen('Enter a token.', optional); $('lkGo').disabled = true; $('lkGo').textContent = 'Checking…'; }
       const ok = await tokenOk(tok);
-      if (ok == 1) { lsSet(SYK, Object.assign(SY(), { token: tok, name: nm, user })); lsSet(OKK, SY().repo); d.remove(); flash('Signed in as ' + nm + '.'); sync(true); }
+      if (ok == 1) { lsSet(SYK, Object.assign(SY(), { token: tok, name: nm, user }, USERS ? { who: $('lkWho').value.trim() } : {})); lsSet(OKK, SY().repo); d.remove(); flash('Signed in as ' + nm + '.'); sync(true); }
       else lockScreen(ok == 0 ? 'Your access has been removed or has expired. Ask your admin.' : 'No internet connection — try again.', optional);
     };
   }
@@ -1797,12 +1785,12 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
 <label>Password (min 8 characters)<input id="adP" type="password"></label><label>Repeat password<input id="adP2" type="password"></label>
 <label>That person's GitHub token<input id="adT" type="password" placeholder="github_pat_…"></label>
 <button type="submit" id="adGo">Create user line</button><p class="lock-msg" id="adM"></p>
-<label>Paste these lines inside <code>users: { … }</code> in index.html (TEAM SETTINGS):<textarea id="adOut" rows="6" readonly></textarea></label>
+<label>Paste into <code>users: { … }</code> in config.js:<textarea id="adOut" rows="6" readonly></textarea></label>
 <button type="button" class="alt" id="adX">Close</button></form>`;
     $('adX').onclick = () => { d.remove(); history.replaceState(null, '', location.pathname + location.search); };
     $('adGo').onclick = async () => {
-      const u = $('adU').value.trim().toLowerCase(), n = $('adN').value.trim() || u, p = $('adP').value, t = $('adT').value.trim();
-      if (!/^[a-z0-9._-]{2,32}$/.test(u)) return $('adM').textContent = 'Username: 2–32 letters / numbers / . _ -';
+      const u = $('adU').value.trim(), n = $('adN').value.trim() || u, p = $('adP').value, t = $('adT').value.trim();
+      if (!/^[a-z0-9._-]{2,32}$/i.test(u)) return $('adM').textContent = 'Username: 2–32 letters / numbers / . _ -';
       if (p.length < 8) return $('adM').textContent = 'Password must be at least 8 characters.'; if (p != $('adP2').value) return $('adM').textContent = 'Passwords do not match.';
       if (!t) return $('adM').textContent = 'Enter the GitHub token.';
       $('adM').textContent = 'Encrypting…'; const line = `    "${u}": "${await seal(p, { t, n })}",`;
