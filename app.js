@@ -12,7 +12,7 @@
   let INVS2 = [], BESSU2 = [];
   // [group, [[id, label, default, flag]]]  flag: 1 = auto (overridable), 2 = auto (read-only, always computed)
   const SPEC = [
-    ['Drawing', [['proj', 'Project title (use {kW} for the auto total)', 'PROPOSED {kW} kW SOLAR POWER SYSTEM FOR RODESHA ENTERPRISES MORATUWA'], ['loc', 'Location', '25 Lunawa Station Rd, Moratuwa'], ['dno', 'Drawing no', 'RR_2026_118'], ['rev', 'Revision', 'Preliminary'], ['date', 'Date', today(), 3], ['totalKw', 'Total DC capacity (kWp)', '', 2], ['opt', 'Option label', 'Option 1']]],
+    ['Drawing', [['site', 'Site name', 'RODESHA ENTERPRISES MORATUWA'], ['loc', 'Location', '25 Lunawa Station Rd, Moratuwa'], ['dno', 'Drawing no', 'RR_2026_118'], ['rev', 'Revision', 'Preliminary'], ['date', 'Date', today(), 3], ['totalKw', 'Total DC capacity (kWp)', '', 2], ['opt', 'Option label', 'Option 1']]],
     ['INV'], ['BESS'], ['LOC2'],
     ['Solar array', [['modWp', 'Panel Wp', '620']]],
     ['Cables & switchgear', [['mainCable', 'Main cable to isolator', '', 1], ['utilCable', 'Utility cable', '', 1], ['earthMain', 'Earth bus feeder', '', 1], ['pvEarth', 'PV array main earth (roof)', '', 1], ['panel', 'Main switchgear panel (A)', '', 1], ['bus', 'Common coupling busbar (A)', '', 1], ['iso', 'Isolator (A)', '', 1], ['isoBus', 'Isolation panel busbar (A)', '', 1], ['meterLbl', 'Meter label', '', 1], ['earthR', 'Earth resistance (Ω max)', '10'], ['loadName', 'Load / DB name', 'LOAD'], ['loadBrk', 'Load feeder MCCB (A)', '100'], ['loadCable', 'Load feeder cable', '', 1]]],
@@ -232,6 +232,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     LOC2 = JSON.parse(JSON.stringify(e.loc2 || { on: false, to: 'main', name: 'Location 2', cableOv: '', pvEarthOv: '' })); INVS2 = JSON.parse(JSON.stringify(e.invs2 || [])); BESSU2 = JSON.parse(JSON.stringify(e.bess2 || []));
     drawInvs(); drawBess(); drawLoc2Shell();
     Object.keys(e.fields || {}).forEach(k => { const el = $(k); if (el) el.value = e.fields[k]; });
+    if (e.fields && e.fields.proj && !e.fields.site) $('site').value = String(e.fields.proj).replace(/^\s*PROPOSED\s+\S+\s+KW\s+SOLAR\s+POWER\s+SYSTEM\s+(FOR\s+)?/i, '').trim() || e.fields.proj;
     update(); flash('Loaded "' + e.label + '".');
     cur = 'out'; $('out').hidden = false; $('out2').hidden = true; $('out3').hidden = true;
     $('t1').classList.add('on'); $('t2').classList.remove('on'); $('t3').classList.remove('on');

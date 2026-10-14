@@ -17,7 +17,13 @@ const units = () => INV.map(u => ({ ...u, kind: 'inv' })).concat(BESS.map(u => (
 const A4W = 1587, A4H = 1123; // fixed A4-landscape page (~135 dpi) — the sheet size never changes
 const page = inner => `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${A4W}" height="${A4H}" viewBox="0 0 ${A4W} ${A4H}" font-family="Arial, Helvetica, sans-serif"><rect width="${A4W}" height="${A4H}" fill="#fff"/>${inner}</svg>`;
 // Drawing window: inner frame whose left/right edges line up with the title block (same margin BM=10, i.e. 6 px from the border line at x=4) and with the same 6 px gap above the title block (two separate windows)
-const FRAME=W=>`<g data-layer="FRAME"><rect x="10" y="10" width="${W-20}" height="${A4H-10-105-6-10}" fill="none" stroke="#000" stroke-width="1.5"/></g>`;
+// Company notice (management requirement on all Regen drawings): two lines at the bottom INSIDE the main drawing window; the diagram itself stops at FB, above them
+const NB=24,FB=A4H-10-105-6-NB-6; // FB: lowest y the diagram may use (the window's bottom edge is 30 px lower, holding the notice)
+const NOTICE1=()=>`© ${new Date().getFullYear()} Regen Renewables (Pvt) Ltd. All rights reserved. This document is confidential and is the property of Regen Renewables (Pvt) Ltd. It must not be copied, reproduced or disclosed to any third party without written consent.`,
+ NOTICE2='Not for construction or implementation without written approval from Regen Renewables (Pvt) Ltd.';
+const FRAME=W=>`<g data-layer="FRAME"><rect x="10" y="10" width="${W-20}" height="${A4H-10-105-6-10}" fill="none" stroke="#000" stroke-width="1.5"/></g><g data-layer="NOTICE"><text x="20" y="${FB+17}" font-size="8.5" text-anchor="start" fill="#000">${esc(NOTICE1())}</text><text x="20" y="${FB+28}" font-size="8.5" text-anchor="start" font-weight="bold" fill="#000">${esc(NOTICE2)}</text></g>`;
+// Project title: "PROPOSED <kWp> kW SOLAR POWER SYSTEM FOR <SITE NAME>" — only the site name is typed; drawings saved earlier with a full title template keep it
+const TITLE=kwp=>g('site')?`PROPOSED ${kwp} kW SOLAR POWER SYSTEM FOR ${String(g('site')).trim().toUpperCase()}`:String(g('proj')||'').replace(/\{kw\}/gi,kwp);
 // Title block (ISO 7200-style ruled grid): logo | title + (Drawing No | Revision | Date) strip | 2×2 equipment cells (inverters, solar modules, BESS PCS, batteries) | ruled approvals table.
 // Drawn in absolute page coordinates (no diagram stretch) and sits the same distance from the left, right and bottom page border (BM).
 function TB(s,W,wp,qty,kwp,title){
@@ -58,7 +64,7 @@ function renderBlock(){
 const L2=!!V.loc2on,isIso=L2&&V.loc2to=='iso',toMain=L2&&!isIso;
 const U1=units(),U2=L2?INV2.map(u=>({...u,kind:'inv'})).concat(BESS2.map(u=>({...u,kind:'bess'}))):[],U=U1.concat(U2),n1=Math.max(1,U1.length),n2=U2.length,R=n1;
 const wp=+g('modWp')||0,qty=ALLI().reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),kw=ALLI().reduce((a,i)=>a+i.kw,0);
-const strs=ALLI().reduce((a,i)=>a+i.strs,0),title=g('proj').replace(/\{kw\}/gi,kwp);
+const strs=ALLI().reduce((a,i)=>a+i.strs,0),title=TITLE(kwp);
 const W=A4W,GR='#0a7a2f',s=[],MG='#a020a0';
 const ipT=k=>g(k)=='IP66'?'IP66 (OUTDOOR)':'IP54 (INDOOR)',efrM=!!g('efrMain'),efrI=!!g('efrIso')&&md()!='og',indM=!!g('indMain'),indI=!!g('indIso'),dcIso=!!g('dcIso'),dcSpd=!!g('dcSpd'),indL=!!g('indL2');
 const efrSet=k=>(g(k)||'50N/51N').slice(0,16);
@@ -70,7 +76,7 @@ const t2=(x,y,str)=>{const k=str.search(/ [(×]/);(k>0?[str.slice(0,k),str.slice
 const ln=(a,b,c,d,col='#000',w=1.5,da='')=>s.push(`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${col}" stroke-width="${w}"${da?` stroke-dasharray="${da}"`:''}/>`);
 const bx=(x,y,w,h,da='',sw=1.5)=>s.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#000" stroke-width="${sw}"${da?` stroke-dasharray="${da}"`:''}/>`);
 // --- fixed page geometry: these never move, regardless of how many units there are ---
-const top=114,yE=A4H-218,lu2=U2[U2.length-1],rowsBudget=(yE-(L2&&!(lu2&&lu2.kind=='inv'&&lu2.hybrid&&+lu2.battKwh>0)?120:170))-top; // with a second location only Location 2's earth bus bar sits below the rows
+const top=114,yE=FB-97,lu2=U2[U2.length-1],rowsBudget=(yE-(L2&&!(lu2&&lu2.kind=='inv'&&lu2.hybrid&&+lu2.battKwh>0)?120:170))-top; // with a second location only Location 2's earth bus bar sits below the rows
 // x layout of the switchgear panel (dashed outline PL..PR): row breakers -> busbar -> main breaker, each with a clear gap to the outline and to each other
 const PL=600,MB=630,bx0=750,BK=780,PR=870,ISL=1000;
 // rows carrying a hybrid inverter's integrated battery are taller (room for a proper battery box); every row below simply moves down
@@ -213,7 +219,7 @@ function renderSLD(){
 const L2=!!V.loc2on,mk=(I,B)=>I.map(u=>({...u,kind:'inv'})).concat(B.map(u=>({...u,kind:'bess'})));
 // columns are laid out in ONE row so both locations share exactly the same symbol size: the main columns first (left), then Location 2's (right)
 const U1=mk(INV,BESS),U2=L2?mk(INV2,BESS2):[],U=U1.concat(U2),n1=Math.max(1,U1.length),cnt=Math.max(1,U.length+(L2&&!U2.length?1:0)),n2=U2.length; // Location 2's columns sit to the RIGHT of the main ones (a virtual empty column keeps room for its panel if it has no units)
-const wp=+g('modWp')||0,qty=INV.concat(L2?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),title=g('proj').replace(/\{kw\}/gi,kwp);
+const wp=+g('modWp')||0,qty=INV.concat(L2?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),title=TITLE(kwp);
 const OR='#d9822b',BL='#1f6fd0',GR='#0a7a2f',MG='#a020a0',s=[],W=A4W;
 // panel options (Panels & protection): enclosure IP rating, EFR (CBCT + relay), phase indicator lamps, DC-side isolator / SPD
 const ipT=k=>g(k)=='IP66'?'IP66 (OUTDOOR)':'IP54 (INDOOR)',efrM=!!g('efrMain'),efrI=!!g('efrIso')&&md()!='og',indM=!!g('indMain'),indI=!!g('indIso'),indL=!!g('indL2'),dcIso=!!g('dcIso'),dcSpd=!!g('dcSpd');
@@ -222,7 +228,7 @@ const DCX=dcSpd?(dcIso?100:55):(dcIso?40:0); // extra vertical room on the PV DC
 const SH=efrI?18:0; // SH: with an isolation-panel EFR the isolation panel is taller (its busbar, breakers and meter sit SH lower) so the CBCT + relay get room above the busbar
 const E1=20,E2=L2?22:0,AR=8; // E1: extra gap between the isolation panel and the main panel (room for the main-cable label + panel title); E2: extra gap above Location 2's panel; AR: load arrow drop
 const PD=E1+(efrM?46:0); // PD: with an earth-fault relay the main panel's contents (breaker, busbar, columns) sit PD lower so the CBCT + relay fit INSIDE the panel outline
-const yE=(L2?(cnt>9?898:cnt>6?865:850):(cnt>9?735:690))+DCX+(L2?(DCX||efrM?24:12):(cnt>6&&(DCX||efrM)?14:0))+PD+E2,fy=(A4H-146)/(yE+48),DY2=166; // DY2: Location 2's busbar sits at y=466, i.e. its columns hang 166px lower than the main ones
+const yE=(L2?(cnt>9?898:cnt>6?865:850):(cnt>9?735:690))+DCX+(L2?(DCX||efrM?24:12):(cnt>6&&(DCX||efrM)?14:0))+PD+E2,fy=(FB-28)/(yE+48),DY2=166; // DY2: Location 2's busbar sits at y=466, i.e. its columns hang 166px lower than the main ones
 let DY=0; // vertical offset applied by the drawing helpers (0 for the main columns, DY2 while drawing Location 2's)
 const t=(x,y,str,sz=11,a='start',w='normal')=>s.push(`<text xml:space="preserve" x="${x}" y="${((y+DY)*fy).toFixed(1)}" font-size="${sz}" text-anchor="${a}" font-weight="${w}" fill="#000">${esc(str)}</text>`);
 const ln=(a,b,c,d,col='#000',w=1.5,da='')=>s.push(`<line x1="${a}" y1="${((b+DY)*fy).toFixed(1)}" x2="${c}" y2="${((d+DY)*fy).toFixed(1)}" stroke="${col}" stroke-width="${w}"${da?` stroke-dasharray="${da}"`:''}/>`);
@@ -252,7 +258,7 @@ const wrap=(str,maxCh)=>{const words=String(str).split(' ').flatMap(w=>w.length>
   words.forEach(w=>{const cand=cur?(cur.endsWith('-')?cur+w:cur+' '+w):w;if(!cur||cand.length<=maxCh)cur=cand;else{lines.push(cur);cur=w}});if(cur)lines.push(cur);return lines};
 const brk=(x,y,l1,l2,mc)=>{ln(x,y,x,y+16,OR);ln(x,y+34,x,y+52,OR);ln(x,y+34,x+10,y+16);ln(x-4,y+12,x+4,y+20);ln(x-4,y+20,x+4,y+12);if(mc)bx(x+1,y+22,7,7,'','#000',1);tc(x+18,y+22,l1,11);tc(x+18,y+35,l2,9)};
 const inv=(x,y)=>{bx(x-45*sh,y,90*sh,70);ln(x-45*sh,y+70,x+45*sh,y,'#000',1);t(x-28*sh,y+22,'~',15,'middle');t(x+28*sh,y+62,'=',15,'middle')};
-const txt=(x,lines)=>lines.forEach(([str,sz,w,dy],k)=>tc(x+52*sh,tight?416+k*11:400+dy,str,sz,'start',w));
+const txt=(x,lines)=>{let y=0;lines.forEach(([str,sz,w,dy],k)=>{y=tight?416+k*11:k?y+Math.max(dy-lines[k-1][3],LP(sz)):400+dy;tc(x+52*sh,y,str,sz,'start',w)})}; // line pitch never tighter than the text height, however much the sheet is squeezed vertically
 const es=(x,y,c=GR)=>{ln(x,y,x,y+8,c);ln(x-14,y+8,x+14,y+8,c,2);ln(x-9,y+14,x+9,y+14,c,2);ln(x-4,y+20,x+4,y+20,c,2)};
 // --- standard symbols: CBCT (circle on the conductor) + EFR relay box (IEC protection relay) with a dashed trip link; signal lamp (circle with cross); DC isolator (disconnector) ---
 const CTR=7,rdim=()=>{const b1=8.1/fy+1.5,b2=b1+10.3/fy;return{b1,b2,h:b2+1.8/fy+1.5}}; // relay box: label baselines / height in unscaled units (fixed 9px + 7px text)
@@ -313,7 +319,7 @@ const eb2=Math.max(eb,PVC+15+(ea.length-1)*LP(10)); // never let a wrapped label
 if(hb){const eh=wrap(el,Math.max(6,Math.floor(126*sh/cwid(10))));eh.forEach((q,j)=>tc(xe+4*sh,Math.max(eb,PVC+15+(eh.length-1)*LP(10))-(eh.length-1-j)*LP(10),q,10,'start'))} // hybrid: the label sits to the RIGHT of its earth line (between it and the PV earth), where there is room
 else ea.forEach((s,j)=>tc(xl,eb2-(ea.length-1-j)*LP(10),s,10,'end')); // tight: sit above the (wrapped) PV-earth label of the neighbouring column
 if(B){ln(x-45*sh,540,x-95*sh,540,GR,1.5,'5 3');
-{const by=(dcIso||dcSpd)?557:529;tc(x-99*sh,by,'Battery',9,'end');tc(x-99*sh,by+11,'earth →',9,'end')}}
+{const by=(dcIso||dcSpd)?557:529;tc(x-99*sh,by+11-LP(9),'Battery',9,'end');tc(x-99*sh,by+11,'earth →',9,'end')}}
 DY=0};
 const pvA=[],pvB=[];
 U1.forEach((u,k)=>drawCol(u,k,Xc(k),PD,k,INV.length,BESS.length,pvB,false));
