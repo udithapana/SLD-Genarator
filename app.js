@@ -58,6 +58,8 @@
     : g == 'LOC2' ? '<fieldset><legend>Second location</legend><div id="loc2Body"></div></fieldset>'
     : g == 'PROT' ? PROT_HTML
     : `<fieldset><legend>${g}</legend>` + fs.map(fld).join('') + (g == 'Cables & switchgear' ? '<button type="button" class="alt" id="rst">↺ Reset all to auto</button>' : '') + '</fieldset>').join('');
+  // Drawing notice: preliminary / for-approval drawings carry "Not for construction…"; as-built drawings show only the copyright / confidentiality notice
+  $('rev').parentElement.insertAdjacentHTML('afterend', '<label>Drawing notice<select id="ncNote"><option value="">Design / for approval — copyright + “Not for construction…”</option><option value="asbuilt">As-built — copyright notice only</option></select></label>');
   // ---- Left panel tabs: the form's sections grouped into a few short tabs (all fields stay in the page, only hidden) ----
   const TABS = [['sys', 'System', ['System configuration', 'Solar array', 'Inverters', 'Battery (BESS)']], ['loc2', 'Location 2', ['Second location']],
     ['sw', 'Cables & breakers', ['Cables & switchgear']], ['prot', 'Protection', ['Panels & protection']], ['proj', 'Project', ['Drawing', 'Sign-off']]];

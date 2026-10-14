@@ -226,4 +226,5 @@ Instead of handing out tokens, give each person a **username and password**:
 
 ## Company notice & project title
 - Every drawing (block diagram and SLD, on screen, PDF and DXF layer `NOTICE`) carries the Regen notice at the bottom inside the main drawing window: "© <year> Regen Renewables (Pvt) Ltd. All rights reserved. This document is confidential … without written consent." and, in bold, "Not for construction or implementation without written approval from Regen Renewables (Pvt) Ltd."
+- Project tab → **Drawing notice**: "Design / for approval" (copyright + "Not for construction…", default) or "As-built" (copyright notice only).
 - Project tab → **Site name** only. The title block reads "PROPOSED <total kWp> kW SOLAR POWER SYSTEM FOR <SITE NAME>" (capacity calculated automatically, name in capitals). Older saved drawings with a full title are converted automatically.
