@@ -89,6 +89,9 @@
           const pts = (e.getAttribute('points') || '').trim().split(/\s+/).map(p => p.split(',').map(Number)).filter(p => p.length == 2 && isFinite(p[0] + p[1])).map(p => [X(p[0]), Y(p[1])]);
           if (pts.length < 3) continue;
           if (hasF && pts.length <= 4) solid(pts, layerFor(fill, ctx)); else pline(pts, true, wmm, layerFor(hasS ? stroke : fill, ctx), lt);
+        } else if (tag == 'path' && hasS) {                              // "hop" over a crossing conductor: M x y A r r 0 0 sweep x2 y2 (semicircle) -> 2-vertex polyline with bulge ±1
+          const m = (e.getAttribute('d') || '').match(/M\s*([-\d.]+)[\s,]+([-\d.]+)\s*A\s*[-\d.]+[\s,]+[-\d.]+[\s,]+[-\d.]+[\s,]+[01][\s,]+([01])[\s,]+([-\d.]+)[\s,]+([-\d.]+)/);
+          if (m) pline([[X(+m[1]), Y(+m[2]), m[3] == '1' ? 1 : -1], [X(+m[4]), Y(+m[5])]], false, wmm, layerFor(stroke, ctx), lt);
         } else if (tag == 'text') {
           const s = e.textContent; if (!s || !s.trim()) continue;
           const sz = attrN(e, 'font-size', 12), a = e.getAttribute('text-anchor') || 'start', bold = /bold|[6-9]00/.test(e.getAttribute('font-weight') || '');

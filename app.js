@@ -5,7 +5,7 @@
   const firstOf = b => D.findIndex(d => d.brand == b);
   const today = () => new Date().toISOString().slice(0, 10);
   let MODE = 'nm';
-  const HINT = { nm: 'Solar feeds the site load; surplus is exported. Load sits on the isolation-panel busbar.', na: 'Same connection as net metering; only the metering / billing arrangement differs (edit the meter label if needed).', np: 'All solar generation is exported to the grid. No site load is connected.', og: 'Off-grid: solar (+ battery) supplies the site load. Pick a backup source below — an ATS in the isolation panel switches the load between solar and the DG / grid; with both DG and grid, ATS-1 selects DG or grid and ATS-2 selects solar or that backup. Choose "None" for a plain Load DB with no utility connection.' };
+  const HINT = { nm: 'Solar feeds the site load; surplus is exported. Load sits on the isolation-panel busbar.', na: 'Same connection as net metering; only the metering / billing arrangement differs (edit the meter label if needed).', np: 'All solar generation is exported to the grid. No site load is connected.', hy: 'Hybrid: each hybrid inverter has TWO AC cables — its output to the main switchgear busbar, and its grid port (supplies the load / charges the battery) through its own breaker in the main panel to the ATS grid-side busbar. The ATS in the isolation panel switches the load between the inverter output and the grid (or DG).', og: 'Off-grid: solar (+ battery) supplies the site load. Pick a backup source below — an ATS in the isolation panel switches the load between solar and the DG / grid; with both DG and grid, ATS-1 selects DG or grid and ATS-2 selects solar or that backup. Choose "None" for a plain Load DB with no utility connection.' };
   let INVS = [{ m: Math.max(0, D.findIndex(d => d.model == 'STT-45KTL')), mods: 84, cfg: '18x2+15x2+9+9', ov: '', acOv: '', dc: '4mm² DC Cable', battKwh: '', battDc: 'Battery DC cable' }];
   let BESSU = []; // { kwh, kw, model, ov, acOv, dc }
   let LOC2 = { on: false, to: 'main', name: 'Location 2', cableOv: '', pvEarthOv: '' }; // a second physical switchgear location, wired back with a breaker at each end of the interconnecting cable
@@ -49,10 +49,11 @@
   AUTO.add('atsA'); AUTO.add('dgCable');
   const OG_HTML = `<div class="sub" id="ogBox"><b>Backup source — ATS in the isolation panel</b>
 <label>Backup source<select id="ogSrc"><option value="dg" selected>Diesel generator (DG) — one ATS</option><option value="grid">Grid (utility) — one ATS</option><option value="both">DG + grid — two ATS</option><option value="">None — solar / battery only (no ATS)</option></select></label>
+<label id="hySrcL">ATS sources (hybrid)<select id="hySrc"><option value="grid">Grid only — one ATS (inverter output / grid)</option><option value="both">Grid + DG — two ATS (ATS-1 grid / DG → grid-side busbar)</option></select></label>
 <label>ATS rating (A) <span class="tag">auto</span><input id="atsA"></label>
 <label>DG rating (kVA) <span class="tag">optional</span><input id="dgKva" placeholder="e.g. 100"></label>
 <label>DG cable <span class="tag">auto</span><input id="dgCable"></label></div>`;
-  $('form').innerHTML = '<fieldset><legend>System configuration</legend><div class="seg">' + [['nm', 'Net metering'], ['na', 'Net accounting'], ['np', 'Net plus'], ['og', 'Off-grid']].map(([k, l]) => `<button type="button" class="alt${k == MODE ? ' on' : ''}" data-mode="${k}">${l}</button>`).join('') + '</div><div class="hint" id="modeHint"></div>' + OG_HTML + '</fieldset>' + SPEC.map(([g, fs]) => g == 'INV'
+  $('form').innerHTML = '<fieldset><legend>System configuration</legend><div class="seg">' + [['nm', 'Net metering'], ['na', 'Net accounting'], ['np', 'Net plus'], ['og', 'Off-grid'], ['hy', 'Hybrid']].map(([k, l]) => `<button type="button" class="alt${k == MODE ? ' on' : ''}" data-mode="${k}">${l}</button>`).join('') + '</div><div class="hint" id="modeHint"></div>' + OG_HTML + '</fieldset>' + SPEC.map(([g, fs]) => g == 'INV'
     ? '<fieldset><legend>Inverters</legend><div id="invList"></div><button type="button" class="alt" id="addInv"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add inverter</button></fieldset>'
     : g == 'BESS' ? '<fieldset><legend>Battery (BESS)</legend><div id="bessList"></div><button type="button" class="alt" id="addBess"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add battery</button></fieldset>'
     : g == 'LOC2' ? '<fieldset><legend>Second location</legend><div id="loc2Body"></div></fieldset>'
@@ -81,7 +82,8 @@
 <div class="two"><label>PV modules<input data-a="mods" type="number" min="0" value="${s.mods}"></label><label>Strings<input data-a="cfg" value="${esc(s.cfg)}"></label></div>
 <label>DC cable <span class="tag">site-specific</span><input data-a="dc" value="${esc(s.dc)}" placeholder="depends on array-to-inverter distance"></label>
 ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</span><input data-a="battKwh" type="number" min="0" value="${esc(s.battKwh)}" placeholder="0 = none"></label>
-<label>Battery DC cable <span class="tag">site-specific</span><input data-a="battDc" value="${esc(s.battDc)}"></label>` : ''}
+<label>Battery DC cable <span class="tag">site-specific</span><input data-a="battDc" value="${esc(s.battDc)}"></label>
+<label class="gpL">Grid port current (A) <span class="tag">hybrid mode</span><input data-a="gp" type="number" min="0" step="any" value="${esc(s.gp || '')}" placeholder="${D[s.m].current} = rated (change if different)"></label>` : ''}
 <label>Breaker override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
 <label>AC cable override — blank = auto<input data-a="acOv" value="${esc(s.acOv || '')}" placeholder="e.g. 35mm²/4C/Cu/XLPE/PVC"></label><div class="inf"></div></div>`; };
   const bessCard = (s, i) => `<div class="inv" data-i="${i}"><div class="ih"><b>BESS ${i + 1}</b><button type="button" class="ic" data-a="rm" title="Remove battery" aria-label="Remove BESS ${i + 1}">${RM}</button></div>
@@ -138,7 +140,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { MODE = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x == b)); if (LOC2.on) drawLoc2Shell(); update(); });
   $('rst').onclick = () => { manual.clear(); update(); };
   $('form').addEventListener('input', e => { if (AUTO.has(e.target.id)) manual.add(e.target.id); update(); });
-  function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv, battKwh: +s.battKwh || 0, battDc: s.battDc }; }); }
+  function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv, battKwh: +s.battKwh || 0, battDc: s.battDc, gp: x.hybrid ? S.portInfo(+s.gp > 0 ? +s.gp : x.I) : null }; }); }
   function mkBessInfos(list) { return list.map(s => { const x = S.bessInfo(+s.kw || 0), o = parseFloat(s.ov); return { ...x, kwh: +s.kwh || 0, kw: +s.kw || 0, model: s.model, dc: s.dc, mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv }; }); }
   function update() {
     const wp = +$('modWp').value || 0;
@@ -154,19 +156,20 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const d = LOC2.on ? { ...dTot } : dMain;
     if (LOC2.on && LOC2.to == 'iso') { d.panel = dMain.panel; d.bus = dMain.bus; d.mainCable = dMain.mainCable; d.T = dMain.T; }
     dMain.pvEarth = d.pvEarth = S.pvEarth(invInfos.length);
-    const ogSrc = MODE == 'og' ? $('ogSrc').value : '';
+    const ogSrc = MODE == 'og' ? $('ogSrc').value : MODE == 'hy' ? ($('hySrc').value || 'grid') : '';
     d.atsA = d.iso; d.dgCable = d.utilCable;
     d.loadCable = ogSrc ? d.utilCable : S.cableFor($('loadBrk').value);
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = ((invInfos.reduce((a, i) => a + i.mods, 0) + (LOC2.on ? invInfos2.reduce((a, i) => a + i.mods, 0) : 0)) * wp / 1000).toFixed(2);
     const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2panelI: d2 ? d2.T : 0, panelI: d.T, loc2bus: d2 ? d2.bus : 0 }; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => V[el.id] = el.value);
-    $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || (MODE == 'og' && !(ogSrc && k != 'loadBrk')));
-    $('ogBox').hidden = MODE != 'og'; $('atsA').parentElement.hidden = !ogSrc; ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
-    $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = MODE == 'og' && !ogSrc; $('isoPanelTitle').textContent = MODE == 'og' ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
-    $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || (MODE == 'og' && !ogSrc);
+    $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || ((MODE == 'og' || MODE == 'hy') && !(ogSrc && k != 'loadBrk')));
+    $('ogBox').hidden = MODE != 'og' && MODE != 'hy'; $('ogSrc').parentElement.hidden = MODE == 'hy'; $('hySrcL').hidden = MODE != 'hy'; document.querySelectorAll('.gpL').forEach(el => el.hidden = MODE != 'hy'); $('atsA').parentElement.hidden = !ogSrc; ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
+    $('ogBox').querySelector('b').textContent = MODE == 'hy' ? 'ATS in the isolation panel (hybrid)' : 'Backup source — ATS in the isolation panel';
+    $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = (MODE == 'og' || MODE == 'hy') && !ogSrc; $('isoPanelTitle').textContent = (MODE == 'og' || MODE == 'hy') ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
+    $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || ((MODE == 'og' || MODE == 'hy') && !ogSrc);
     $('dcIsoTxt').parentElement.hidden = !$('dcIso').value; $('dcSpdTxt').parentElement.hidden = !$('dcSpd').value;
     $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos, invInfos2, bessInfos2);
-    document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });
+    document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}${MODE == 'hy' && x.gp ? ` · GRID PORT ${x.gp.I} A → ${S.brkType(x.gp.mccb, x.gp.I)} ${x.gp.mccb} A · ${x.gp.ac}` : ''}`; });
     document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}`; });
     if (LOC2.on) {
       document.querySelectorAll('#invList2 .inf').forEach((el, i) => { const x = invInfos2[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}`; });

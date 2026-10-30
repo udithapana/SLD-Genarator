@@ -228,3 +228,12 @@ Instead of handing out tokens, give each person a **username and password**:
 - Every drawing (block diagram and SLD, on screen, PDF and DXF layer `NOTICE`) carries the Regen notice at the bottom inside the main drawing window: "© <year> Regen Renewables (Pvt) Ltd. All rights reserved. This document is confidential … without written consent." and, in bold, "Not for construction or implementation without written approval from Regen Renewables (Pvt) Ltd."
 - Project tab → **Drawing notice**: "Design / for approval" (copyright + "Not for construction…", default) or "As-built" (copyright notice only).
 - Project tab → **Site name** only. The title block reads "PROPOSED <total kWp> kW SOLAR POWER SYSTEM FOR <SITE NAME>" (capacity calculated automatically, name in capitals). Older saved drawings with a full title are converted automatically.
+
+## Hybrid mode
+System → **Hybrid**. Every **hybrid-type** inverter at Location 1 gets a second AC cable from its **grid port** (supplies the load / charges the battery):
+- Each hybrid inverter card shows **Grid port current (A)** (pre-filled with the rated current); its breaker and cable are sized from it (breaker ≥ 1.25 × current, standard sizes).
+- **One hybrid inverter**: its grid-port breaker sits in the main switchgear panel (NOT on the common busbar) and its cable runs straight to the ATS grid-side busbar.
+- **Two or more**: their breakers sit on a separate **grid supply busbar** in the main panel, with one feeder breaker and one feeder cable (sized from the sum of the grid-port currents) to the ATS grid-side busbar.
+- The grid-port cables cross the common busbar with a "hop" (crossing, not connected) — also in the DXF.
+- Isolation panel (ATS): input I = inverter output side (main switchgear), input II = **grid-side busbar** (grid via the meter); output → load. **Grid + DG**: ATS-1 chooses grid / DG and feeds the grid-side busbar; ATS-2 chooses inverter output / grid-side busbar for the load.
+- Location 2 hybrids are drawn as before (one AC cable to their own panel).

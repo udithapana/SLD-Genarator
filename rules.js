@@ -33,6 +33,10 @@
   // Generic cable size for a given current (used for the load feeder cable, sized from its MCCB rating).
   S.pvEarth = n => `${PVE.find(r => (+n || 1) <= r[0])[1]}mm² Cu`;
   S.cableFor = I => { const c = cabFor(+I || 0); return `${c[1]}mm² 4C/Cu/XLPE/PVC`; };
+  // Hybrid mode: a hybrid inverter's GRID port (AC input from the ATS grid-side busbar, used to supply load / charge the battery) — its own current, cable and breaker
+  S.portInfo = I => { const c = cabFor(+I || 0); return { I: +I || 0, mccb: up(MARGIN * (+I || 0), STD), ac: `${c[1]}mm²/4C/${c[2]}` }; };
+  // ...and with 2+ hybrid inverters, the feeder from their separate grid-supply busbar (main switchgear panel) to the ATS grid-side busbar
+  S.gridFeeder = sumI => { const sets = Math.ceil(sumI / 250) || 1, c = cabFor(sumI / sets), brk = up(MARGIN * sumI, STD); return { I: sumI, mccb: brk, bus: up(brk, BUS), ac: `${c[1]}mm² 4C/Cu/XLPE/PVC${sets > 1 ? ' × ' + sets : ''}` }; };
   // Per-BESS-unit electrical info, derived from its PCS kW rating (no parts-database entry for batteries).
   S.bessInfo = kw => { const I = +kw * AC_V, c = cabFor(I); return { I, mccb: up(MARGIN * I, STD), ac: `${c[1]}mm²/4C/${c[2]}`, earth: `${earFor(I)}mm² Cu` }; };
   // System-level sizing. Main breaker/panel/busbar/main cable are sized on whichever is larger of the total
@@ -42,7 +46,7 @@
     const Ti = invCurrents.reduce((a, c) => a + c, 0), Tb = bessCurrents.reduce((a, c) => a + c, 0), T = Math.max(Ti, Tb);
     const iso = up(MARGIN * T, STD), sets = Math.ceil(T / 250) || 1, c = cabFor(T / sets);
     return { T, iso, panel: iso, bus: up(iso, BUS), isoBus: up(iso, BUS),
-      meterLbl: { nm: 'BI-DIRECTIONAL METER', na: 'IMPORT / EXPORT METER', np: 'GENERATION METER', og: 'UTILITY IMPORT METER' }[mode] || '',
+      meterLbl: { nm: 'BI-DIRECTIONAL METER', na: 'IMPORT / EXPORT METER', np: 'GENERATION METER', og: 'UTILITY IMPORT METER', hy: 'BI-DIRECTIONAL METER' }[mode] || '',
       mainCable: `${c[1]}mm² 1C/Cu/XLPE/PVC (4 Runs${sets > 1 ? ' × ' + sets + ' sets' : ''})`,
       utilCable: `${c[1]}mm² 4C/Cu/XLPE/PVC${sets > 1 ? ' × ' + sets : ''}`, earthMain: `${earFor(T)}mm² Cu` };
   };
