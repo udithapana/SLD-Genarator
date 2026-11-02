@@ -474,10 +474,58 @@ window.SLD_INVERTERS = [
  },
  {
   "brand": "Sunways Hybrid",
+  "model": "STA-HT-125",
+  "current": 190,
+  "ac": "120mm2/4C/Al/XLPE/PVC",
+  "earth": "35mm2 Cu/ PVc Earth Cable",
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sunways Hybrid",
+  "model": "STH-80KTL-HT",
+  "current": 133.3,
+  "ac": "70mm2/4C/AL/XLPE/PVC",
+  "earth": "25mm2 Cu/ PVc Earth Cable",
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sunways Hybrid",
+  "model": "STH-70KTL-HT",
+  "current": 116.7,
+  "ac": "70mm2/4C/AL/XLPE/PVC",
+  "earth": "16mm2 Cu/ PVc Earth Cable",
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sunways Hybrid",
+  "model": "STH-60KTL-HT",
+  "current": 100,
+  "ac": "50mm2/4C/Al/XLPE/PVC",
+  "earth": "16mm2 Cu/ PVc Earth Cable",
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sunways Hybrid",
+  "model": "STH-50KTL-HT",
+  "current": 83.3,
+  "ac": "35mm2/4C/Al/XLPE/PVC",
+  "earth": "16mm2 Cu/ PVc Earth Cable",
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sunways Hybrid",
+  "model": "STH-40KTL-HT",
+  "current": 66.7,
+  "ac": "25mm2/4C/Al/PVC/PVC",
+  "earth": "10mm2 Cu/ PVc Earth Cable",
+  "type": "hybrid"
+ },
+ {
+  "brand": "Sunways Hybrid",
   "model": "STH-33KTL-HT",
   "current": 55,
   "ac": "16mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "10mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -485,7 +533,7 @@ window.SLD_INVERTERS = [
   "model": "STH-30KTL-HT",
   "current": 50,
   "ac": "16mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "10mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -493,7 +541,7 @@ window.SLD_INVERTERS = [
   "model": "STH-25KTL-HT",
   "current": 41.7,
   "ac": "16mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "10mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -501,7 +549,7 @@ window.SLD_INVERTERS = [
   "model": "STH-20KTL-HT",
   "current": 33.3,
   "ac": "10mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "6mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -509,7 +557,7 @@ window.SLD_INVERTERS = [
   "model": "STH-17KTL-HT",
   "current": 28.3,
   "ac": "6mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "6mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -517,7 +565,7 @@ window.SLD_INVERTERS = [
   "model": "STH-15KTL-HT",
   "current": 25,
   "ac": "6mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "6mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -525,7 +573,7 @@ window.SLD_INVERTERS = [
   "model": "STH-12KTL-HTP",
   "current": 20,
   "ac": "6mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "6mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -533,7 +581,7 @@ window.SLD_INVERTERS = [
   "model": "STH-10KTL-HTP",
   "current": 16.5,
   "ac": "6mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "6mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -541,7 +589,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-125KTL",
   "current": 181,
   "ac": "120mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "35mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -549,7 +597,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-100KTL",
   "current": 144,
   "ac": "120mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "25mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -557,7 +605,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-150HV",
   "current": 217,
   "ac": "240mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "50mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -565,7 +613,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-100HV",
   "current": 144,
   "ac": "120mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "25mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -573,7 +621,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-150",
   "current": 217,
   "ac": "240mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "50mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -581,7 +629,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-120",
   "current": 173,
   "ac": "120mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "35mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -589,7 +637,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-100",
   "current": 144,
   "ac": "120mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "25mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -597,7 +645,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-50",
   "current": 72,
   "ac": "35mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "16mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -605,7 +653,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-30",
   "current": 43,
   "ac": "16mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "10mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -613,7 +661,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-50KTL",
   "current": 72,
   "ac": "35mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "16mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -621,7 +669,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-40KTL",
   "current": 57,
   "ac": "25mm2/4C/Al/PVC/PVC",
-  "earth": null,
+  "earth": "10mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -629,7 +677,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-30KTL",
   "current": 43,
   "ac": "16mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "10mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -637,7 +685,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-20KTL",
   "current": 28,
   "ac": "10mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "6mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -645,7 +693,7 @@ window.SLD_INVERTERS = [
   "model": "HPS-15KTL",
   "current": 21,
   "ac": "6mm2/4C/Cu/PVC/PVC",
-  "earth": null,
+  "earth": "6mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -653,7 +701,7 @@ window.SLD_INVERTERS = [
   "model": "Sungrow-SH50CX",
   "current": 108.3,
   "ac": "120mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "16mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -661,7 +709,7 @@ window.SLD_INVERTERS = [
   "model": "Sungrow-SH80CX",
   "current": 173.2,
   "ac": "120mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "25mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
  },
  {
@@ -669,7 +717,319 @@ window.SLD_INVERTERS = [
   "model": "Sungrow-SH125CX",
   "current": 270.6,
   "ac": "240mm2/4C/Al/XLPE/PVC",
-  "earth": null,
+  "earth": "35mm2 Cu/ PVc Earth Cable",
   "type": "hybrid"
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-2ML-1MP",
+  "current": 1785.5,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 1125.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-1ML-500P",
+  "current": 793.9,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 500.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-261L-125P",
+  "current": 197.7,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 125.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-261L-75HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 75.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-261L-80HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 80.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-261L-99HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 99.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-261L-100HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 100.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-261L-125HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 125.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-25HT-150",
+  "current": 150,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 25.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-29.9HT-150",
+  "current": 150,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 29.9
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-30HT-150",
+  "current": 150,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 30.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-40HT-150",
+  "current": 150,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 40.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-50HT-150",
+  "current": 150,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 50.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-75HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 75.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-80HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 80.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-99HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 99.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-100HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 100.0
+ },
+ {
+  "brand": "Suntech C&I Hybrid",
+  "model": "STE-125HT-300",
+  "current": 300,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 125.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-3HS-30",
+  "current": 13.6,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 3.0,
+  "phase": 1
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-3.6HS-30",
+  "current": 16.4,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 3.6,
+  "phase": 1
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-4.2HS-30",
+  "current": 19.1,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 4.2,
+  "phase": 1
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-4.6HS-30",
+  "current": 20.9,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 4.6,
+  "phase": 1
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-5HS-30",
+  "current": 22.7,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 5.0,
+  "phase": 1
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-6HS-30",
+  "current": 27.3,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 6.0,
+  "phase": 1
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-4HT-25",
+  "current": 6.7,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 4.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-5HT-25",
+  "current": 8.3,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 5.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-6HT-25",
+  "current": 10,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 6.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-8HT-25",
+  "current": 13.3,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 8.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-10HT-25",
+  "current": 16.5,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 10.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-12HT-25",
+  "current": 20,
+  "ac": null,
+  "earth": null,
+  "type": "hybrid",
+  "kw": 12.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-10HT-40",
+  "current": 16.5,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": null,
+  "type": "hybrid",
+  "kw": 10.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-12HT-40",
+  "current": 20,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": null,
+  "type": "hybrid",
+  "kw": 12.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-15HT-40",
+  "current": 25,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": null,
+  "type": "hybrid",
+  "kw": 15.0
+ },
+ {
+  "brand": "Suntech Domestic Hybrid",
+  "model": "STE-20HT-40",
+  "current": 33.5,
+  "ac": "6mm2/4C/Cu/PVC/PVC",
+  "earth": null,
+  "type": "hybrid",
+  "kw": 20.0
  }
 ];

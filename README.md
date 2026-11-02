@@ -235,5 +235,11 @@ System → **Hybrid**. Every **hybrid-type** inverter at Location 1 gets a secon
 - **One hybrid inverter**: its grid-port breaker sits in the main switchgear panel (NOT on the common busbar) and its cable runs straight to the ATS grid-side busbar.
 - **Two or more**: their breakers sit on a separate **grid supply busbar** in the main panel, with one feeder breaker and one feeder cable (sized from the sum of the grid-port currents) to the ATS grid-side busbar.
 - The grid-port cables cross the common busbar with a "hop" (crossing, not connected) — also in the DXF.
-- Isolation panel (ATS): input I = inverter output side (main switchgear), input II = **grid-side busbar** (grid via the meter); output → load. **Grid + DG**: ATS-1 chooses grid / DG and feeds the grid-side busbar; ATS-2 chooses inverter output / grid-side busbar for the load.
+- Isolation panel (ATS): input I = inverter output side (main switchgear), input II = the horizontal **grid-side busbar**, fed through its own **incoming breaker** from the grid (via the meter) — or from ATS-1 with DG; output → load. The cable to the hybrid grid ports drops from that busbar. **Grid + DG**: ATS-1 chooses grid / DG and feeds the grid-side busbar; ATS-2 chooses inverter output / grid-side busbar for the load.
 - Location 2 hybrids are drawn as before (one AC cable to their own panel).
+
+## Inverter list (parts database)
+`data/Supporting_file.xlsx` → `python tools/xlsx_to_data.py` → `js/inverter-data.js` (124 models). Sheet1 columns B–G: phase note ("Single Phase" / "Three Phase") | brand | model | current (A) | AC cable | earth. Sheet2 supplies the rated kVA for models whose name has no "…K" rating (Suntech). Empty cable / earth cells are derived from the current (parallel runs above 250 A). Single-phase models get a 2-pole breaker and a 2-core cable.
+
+## Single unit: no main breaker
+When the main switchgear panel has only ONE unit (one inverter, or one BESS PCS) the main breaker is left out in every configuration: the unit's own breaker already protects the outgoing cable and the current cannot change, so the busbar connects straight to the cable. The main breaker stays when Location 2 feeds this panel (two sources) or when the main-panel EFR is fitted (the relay needs a breaker to trip).

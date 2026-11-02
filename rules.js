@@ -25,9 +25,11 @@
   // Per-inverter electrical info from the parts database. DC cable is NOT included here:
   // it depends on the physical run length between the array and the inverter, so it stays a manual, per-inverter field in the UI.
   S.info = e => {
-    const I = e.current, c = cabFor(I), b = e.brand.split(' ')[0];
-    return { name: e.model.startsWith(b) ? e.model : b + ' ' + e.model, kw: kwOf(e.model, I), I, hybrid: e.type == 'hybrid',
-             ac: e.ac ? fmt(e.ac) : `${c[1]}mm²/4C/${c[2]}`, earth: fmt(e.earth || `${earFor(I)}mm2 Cu/ PVc Earth Cable`),
+    // derived AC cable (no size in the parts list): above the largest single cable (250 A) parallel runs are used, like the utility cable;
+    // single-phase units get a 2-core cable and a 2-pole breaker
+    const I = e.current, ph = e.phase == 1 ? 1 : 3, sets = Math.ceil(I / 250) || 1, c = cabFor(I / sets), b = e.brand.split(' ')[0];
+    return { name: e.model.startsWith(b) ? e.model : b + ' ' + e.model, kw: e.kw ? +e.kw : kwOf(e.model, I), I, hybrid: e.type == 'hybrid', phase: ph, poles: ph == 1 ? '2P' : '4P',
+             ac: e.ac ? fmt(e.ac) : `${c[1]}mm²/${ph == 1 ? '2C' : '4C'}/${c[2]}${sets > 1 ? ' × ' + sets : ''}`, earth: fmt(e.earth || `${earFor(I)}mm2 Cu/ PVc Earth Cable`),
              mccb: up(MARGIN * I, STD), derived: !e.ac };
   };
   // Generic cable size for a given current (used for the load feeder cable, sized from its MCCB rating).
