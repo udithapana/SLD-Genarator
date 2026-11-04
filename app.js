@@ -76,6 +76,8 @@
   })();
   const RM = '<svg width="12" height="12" viewBox="0 0 14 14"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   const AD = '<svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  // Hybrid grid-port feeder: data-sheet current + cable unless the user typed a different current (then the cable is sized from it)
+  const autoGp = (s, x) => +s.gp > 0 && +s.gp != x.gpI ? S.portInfo(+s.gp) : S.portInfo(x.gpI || x.I, x.gpI ? x.gpAc : null);
   const invCard = (s, i, canRemove) => { const b = D[s.m].brand, hyb = D[s.m].type == 'hybrid'; return `<div class="inv" data-i="${i}"><div class="ih"><b>Inverter ${i + 1}</b>${canRemove ? `<button type="button" class="ic" data-a="rm" title="Remove inverter" aria-label="Remove inverter ${i + 1}">${RM}</button>` : ''}</div>
 <label>Brand<select data-a="b">${brands.map(x => `<option${x == b ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
 <label>Model<select data-a="m">${D.map((d, j) => d.brand == b ? `<option value="${j}"${j == s.m ? ' selected' : ''}>${esc(d.model)} (${d.current} A)${d.type == 'hybrid' ? ' — hybrid' : ''}</option>` : '').join('')}</select></label>
@@ -83,9 +85,10 @@
 <label>DC cable <span class="tag">site-specific</span><input data-a="dc" value="${esc(s.dc)}" placeholder="depends on array-to-inverter distance"></label>
 ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</span><input data-a="battKwh" type="number" min="0" value="${esc(s.battKwh)}" placeholder="0 = none"></label>
 <label>Battery DC cable <span class="tag">site-specific</span><input data-a="battDc" value="${esc(s.battDc)}"></label>
-<label class="gpL">Grid port current (A) <span class="tag">hybrid mode</span><input data-a="gp" type="number" min="0" step="any" value="${esc(s.gp || '')}" placeholder="${D[s.m].current} = rated (change if different)"></label>` : ''}
+<label class="gpL">Grid port current (A) <span class="tag">hybrid mode</span><input data-a="gp" type="number" min="0" step="any" value="${esc(s.gp || '')}" placeholder="${D[s.m].gpI || D[s.m].current} = from data sheet (change if different)"></label>
+<label class="gpL">Grid port cable <span class="tag">editable</span><input data-a="gpAc" value="${esc(s.gpAc || autoGp(s, S.info(D[s.m])).ac)}" placeholder="clear = data-sheet cable"></label>` : ''}
 <label>Breaker override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
-<label>AC cable override — blank = auto<input data-a="acOv" value="${esc(s.acOv || '')}" placeholder="e.g. 35mm²/4C/Cu/XLPE/PVC"></label><div class="inf"></div></div>`; };
+<label>Inverter AC cable <span class="tag">editable</span><input data-a="acOv" value="${esc(s.acOv || S.info(D[s.m]).ac)}" placeholder="clear = data-sheet cable"></label><div class="inf"></div></div>`; };
   const bessCard = (s, i) => `<div class="inv" data-i="${i}"><div class="ih"><b>BESS ${i + 1}</b><button type="button" class="ic" data-a="rm" title="Remove battery" aria-label="Remove BESS ${i + 1}">${RM}</button></div>
 <div class="two"><label>Capacity (kWh)<input data-a="kwh" type="number" min="0" value="${s.kwh}"></label><label>PCS rating (kW)<input data-a="kw" type="number" min="0" value="${s.kw}"></label></div>
 <label>Model<input data-a="model" value="${esc(s.model)}"></label>
@@ -109,7 +112,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   }
   $('invList').addEventListener('input', e => {
     const a = e.target.dataset.a, i = +e.target.closest('.inv').dataset.i;
-    if (a == 'b') { INVS[i].m = firstOf(e.target.value); drawInvs(); } else if (a == 'm') { INVS[i].m = +e.target.value; drawInvs(); } else INVS[i][a] = e.target.value;
+    if (a == 'b' || a == 'm') { INVS[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS[i].acOv = ''; INVS[i].gpAc = ''; INVS[i].gp = ''; drawInvs(); } else { INVS[i][a] = e.target.value; if (a == 'gp' && !INVS[i].gpAc) { const g = e.target.closest('.inv').querySelector('[data-a=gpAc]'); if (g) g.value = autoGp(INVS[i], S.info(D[INVS[i].m])).ac; } }
     update();
   });
   $('invList').addEventListener('click', e => { const b = e.target.closest('[data-a=rm]'); if (b) { INVS.splice(+b.closest('.inv').dataset.i, 1); drawInvs(); update(); } });
@@ -125,7 +128,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     if (e.target.id == 'loc2PvEarth') { LOC2.pvEarthOv = e.target.value; update(); return; }
     const card = e.target.closest('.inv'); if (!card || !a) return;
     const i = +card.dataset.i;
-    if (e.target.closest('#invList2')) { if (a == 'b') { INVS2[i].m = firstOf(e.target.value); drawInvs2(); } else if (a == 'm') { INVS2[i].m = +e.target.value; drawInvs2(); } else INVS2[i][a] = e.target.value; update(); }
+    if (e.target.closest('#invList2')) { if (a == 'b' || a == 'm') { INVS2[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS2[i].acOv = ''; INVS2[i].gpAc = ''; INVS2[i].gp = ''; drawInvs2(); } else INVS2[i][a] = e.target.value; update(); }
     else if (e.target.closest('#bessList2')) { BESSU2[i][a] = e.target.value; update(); }
   });
   $('loc2Body').addEventListener('click', e => {
@@ -140,7 +143,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { MODE = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x == b)); if (LOC2.on) drawLoc2Shell(); update(); });
   $('rst').onclick = () => { manual.clear(); update(); };
   $('form').addEventListener('input', e => { if (AUTO.has(e.target.id)) manual.add(e.target.id); update(); });
-  function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv, battKwh: +s.battKwh || 0, battDc: s.battDc, gp: x.hybrid ? S.portInfo(+s.gp > 0 ? +s.gp : x.I) : null }; }); }
+  function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: (s.acOv || '').trim() || x.ac, acOverridden: !!(s.acOv || '').trim() && s.acOv.trim() != x.ac, battKwh: +s.battKwh || 0, battDc: s.battDc, gp: x.hybrid ? (g => Object.assign(g, (s.gpAc || '').trim() ? { ac: s.gpAc.trim() } : {}))(autoGp(s, x)) : null }; }); }
   function mkBessInfos(list) { return list.map(s => { const x = S.bessInfo(+s.kw || 0), o = parseFloat(s.ov); return { ...x, kwh: +s.kwh || 0, kw: +s.kw || 0, model: s.model, dc: s.dc, mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv }; }); }
   function update() {
     const wp = +$('modWp').value || 0;
@@ -212,10 +215,15 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   const hLoad = () => { try { return JSON.parse(localStorage.getItem(HKEY)) || []; } catch (e) { return []; } };
   const hSave = list => { try { localStorage.setItem(HKEY, JSON.stringify(list.slice(0, HMAX))); } catch (e) { } };
   const flash = m => { $('msg').textContent = m; setTimeout(() => { if ($('msg').textContent == m) $('msg').textContent = ''; }, 2500); };
+  // Saved inverters keep the model NAME (mn) as well as the list index, so an updated inverter list can't swap models in old saves.
+  // Saves made before names were stored used the index into the previous 124-model list (LEG_INV).
+  const LEG_INV = ["blueplanet 125 NX3 M10","blueplanet 100 NX3 M8","blueplanet 60 NX3 M5","blueplanet 50 NX3 M5","blueplanet 20.0 NX3 M2","blueplanet 15.0 NX3 M2","blueplanet 10.0 NX3 M2","STT-150KTL-SE","STT-136KTL-SE","STT-125KTL-SE","STT-110KTL-SE","STT-100KTL-SE","STT-80KTL","STT-60KTL-P","STT-50KTL-P","STT-60KTL-M","STT-50KTL-M","STT-45KTL","STT-40KTL","STT-36KTL","STT-33KTL","STT-30KTL","STT-29.9KTL","STT-25KTL-P","STT-20KTL-P","STT-17KTL-P","STT-15KTL-P","STT-12KTL-P","STT-10KTL-P","Sun2000-150K-MG0","Sun2000-115KTL-M2","Sun2000-100KTL-M2","Sun2000-50KTL-M3","Sun2000-40KTL-M3","Sun2000-36KTL-M3","Sun2000-30KTL-M3","Sun2000-25KTL-M5","Sun2000-20KTL-M5","Sun2000-17KTL-M5","Sun2000-15KTL-M5","Sun2000-12KTL-M5","Sun2000-10KTL-M1","Sungrow-SG150CX","Sungrow-SG125CX-P2","Sungrow-SG125CX-P3","Sungrow-SG110CX-P2","Sungrow-SG100CX-P2","Sungrow-SG5.0RT-P2","Sungrow-SG6.0RT-P2","Sungrow-SG7.0RT-P2","Sungrow-SG8.0RT-P2","Sungrow-SG10.0RT-P2","Sungrow-SG12.0RT-P2","Sungrow-SG15RT-P2","Sungrow-SG17RT-P2","Sungrow-SG20RT-P2","Sungrow-SG36CX-P2","Sungrow-SG40CX-P2","Sungrow-SG50CX-P2","STA-HT-125","STH-80KTL-HT","STH-70KTL-HT","STH-60KTL-HT","STH-50KTL-HT","STH-40KTL-HT","STH-33KTL-HT","STH-30KTL-HT","STH-25KTL-HT","STH-20KTL-HT","STH-17KTL-HT","STH-15KTL-HT","STH-12KTL-HTP","STH-10KTL-HTP","HPS-125KTL","HPS-100KTL","HPS-150HV","HPS-100HV","HPS-150","HPS-120","HPS-100","HPS-50","HPS-30","HPS-50KTL","HPS-40KTL","HPS-30KTL","HPS-20KTL","HPS-15KTL","Sungrow-SH50CX","Sungrow-SH80CX","Sungrow-SH125CX","STE-2ML-1MP","STE-1ML-500P","STE-261L-125P","STE-261L-75HT-300","STE-261L-80HT-300","STE-261L-99HT-300","STE-261L-100HT-300","STE-261L-125HT-300","STE-25HT-150","STE-29.9HT-150","STE-30HT-150","STE-40HT-150","STE-50HT-150","STE-75HT-300","STE-80HT-300","STE-99HT-300","STE-100HT-300","STE-125HT-300","STE-3HS-30","STE-3.6HS-30","STE-4.2HS-30","STE-4.6HS-30","STE-5HS-30","STE-6HS-30","STE-4HT-25","STE-5HT-25","STE-6HT-25","STE-8HT-25","STE-10HT-25","STE-12HT-25","STE-10HT-40","STE-12HT-40","STE-15HT-40","STE-20HT-40"];
+  const withNames = list => list.map(s => Object.assign(JSON.parse(JSON.stringify(s)), { mn: D[s.m] ? D[s.m].model : '' }));
+  const fixIdx = list => list.forEach(s => { const n = s.mn || LEG_INV[s.m], k = n ? D.findIndex(d => d.model == n) : -1; if (k >= 0) s.m = k; else if (!D[s.m]) s.m = 0; });
   const snap = label => { // snapshot of the whole configuration (same shape as a history entry)
     const fields = {}; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => fields[el.id] = el.value);
     const def = (fields.dno || 'Drawing') + ' — ' + (fields.opt || '') + ' (' + MODE + ')';
-    return { id: Date.now(), ts: new Date().toISOString(), label: label || def, mode: MODE, fields, manual: [...manual], invs: JSON.parse(JSON.stringify(INVS)), bess: JSON.parse(JSON.stringify(BESSU)), loc2: JSON.parse(JSON.stringify(LOC2)), invs2: JSON.parse(JSON.stringify(INVS2)), bess2: JSON.parse(JSON.stringify(BESSU2)) };
+    return { id: Date.now(), ts: new Date().toISOString(), label: label || def, mode: MODE, fields, manual: [...manual], invs: withNames(INVS), bess: JSON.parse(JSON.stringify(BESSU)), loc2: JSON.parse(JSON.stringify(LOC2)), invs2: withNames(INVS2), bess2: JSON.parse(JSON.stringify(BESSU2)) };
   };
   let DEFAULT = null; // the untouched start-up configuration (set after the first render)
   $('sv').onclick = () => {
@@ -235,7 +243,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     manual.clear(); (e.manual || []).forEach(k => manual.add(k));
     INVS = JSON.parse(JSON.stringify(e.invs || INVS)); BESSU = JSON.parse(JSON.stringify(e.bess || []));
     LOC2 = JSON.parse(JSON.stringify(e.loc2 || { on: false, to: 'main', name: 'Location 2', cableOv: '', pvEarthOv: '' })); INVS2 = JSON.parse(JSON.stringify(e.invs2 || [])); BESSU2 = JSON.parse(JSON.stringify(e.bess2 || []));
-    drawInvs(); drawBess(); drawLoc2Shell();
+    fixIdx(INVS); fixIdx(INVS2); drawInvs(); drawBess(); drawLoc2Shell();
     Object.keys(e.fields || {}).forEach(k => { const el = $(k); if (el) el.value = e.fields[k]; });
     if (e.fields && e.fields.proj && !e.fields.site) $('site').value = String(e.fields.proj).replace(/^\s*PROPOSED\s+\S+\s+KW\s+SOLAR\s+POWER\s+SYSTEM\s+(FOR\s+)?/i, '').trim() || e.fields.proj;
     update(); flash('Loaded "' + e.label + '".');

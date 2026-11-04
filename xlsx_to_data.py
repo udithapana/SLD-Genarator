@@ -1,6 +1,7 @@
 """Rebuild js/inverter-data.js from data/Supporting_file.xlsx.
 Usage:  pip install openpyxl && python tools/xlsx_to_data.py [path.xlsx]
-Sheet1, columns B..G: (Phase note) | Brand | Inverter | Current (A) | AC cable | Inverter earth
+Sheet1, columns B..I: (Phase note) | Brand | Inverter | Current (A) | AC cable | Grid charging current (A) | Grid supply cable | Inverter earth
+  - Grid charging current / grid supply cable are the hybrid unit's second (grid-port) feeder; blank for on-grid units.
   - Brand is filled down; "Single Phase" / "Three Phase" in column B is filled down too (default three-phase).
   - Duplicate model names are skipped (first one wins).
   - Empty cable / earth cells stay null and the app derives them from the current.
@@ -11,6 +12,13 @@ wb = openpyxl.load_workbook(src, data_only=True)
 ws = wb.worksheets[0]
 clean = lambda s: re.sub(r'^\s*[\d.]+\s*\(|\)\s*$', '', str(s)).strip() if s else None
 sp = lambda s: re.sub(r'\s+', ' ', str(s)).strip()
+# cable text: "10mm/2C" -> "10mm2/2C", "... X 10Runs" -> "... × 10"
+cab = lambda s: re.sub(r'\s*[xX×]\s*(\d+)\s*Runs?\b', r' × \1', re.sub(r'(\d)mm(?![2²])', r'\1mm2', sp(clean(s)).replace('/AL/', '/Al/'))) if s else None
+def kw_of(model):
+    m = re.match(r'^STE-(?:\d+L-)?(\d+(?:\.\d+)?)H[ST]', model)          # Suntech STE-3HS-30, STE-261L-75HT-300
+    m = m or re.match(r'^Sigen\w*\s*(?:EC)?\s*-?\s*(\d+(?:\.\d+)?)', model)  # Sigenstor EC -3.0 SP, Sigen - 50M1, Sigen 50M1-HYA
+    m = m or re.match(r'^(?:Sungrow-SH|STA-HT-)(\d+(?:\.\d+)?)', model)          # Sungrow-SH50CX, Sunways STA-HT-125
+    return float(m.group(1)) if m else None
 # rated kVA per model from the second sheet (any row: a model cell followed somewhere by "<n>kVa")
 kva = {}
 if len(wb.worksheets) > 1:
@@ -20,17 +28,21 @@ if len(wb.worksheets) > 1:
         vals = [float(m.group(1)) for c in cells if isinstance(c, str) for m in [re.match(r'^\s*([\d.]+)\s*kva\s*$', c, re.I)] if m]
         if mods and vals and mods[0] not in kva: kva[mods[0]] = vals[0]
 out, seen, brand, phase, skipped = [], set(), '', 3, 0
-for ph, b, m, cur, ac, ea in ws.iter_rows(min_col=2, max_col=7, values_only=True):
+for ph, b, m, cur, ac, gi, gac, ea in ws.iter_rows(min_col=2, max_col=9, values_only=True):
     if ph and 'single' in str(ph).lower(): phase = 1
     elif ph and 'three' in str(ph).lower(): phase = 3
     if b: brand = sp(b); phase = 1 if ph and 'single' in str(ph).lower() else 3
     if not m or m == 'Inverters' or not isinstance(cur, (int, float)): continue
     model = sp(clean(m))
+    # Suntech ESS / all-in-one rows sit under the previous brand block in the sheet without their own brand cell
+    if model.startswith('STE-') and 'suntech' not in brand.lower(): brand = 'Suntech C&I Hybrid'
     if model in seen: skipped += 1; continue
     seen.add(model)
-    d = dict(brand=brand, model=model, current=cur, ac=clean(ac), earth=sp(ea) if ea else None,
-             type='hybrid' if 'hybrid' in brand.lower() else 'string')
-    if model in kva: d['kw'] = kva[model]
+    d = dict(brand=brand, model=model, current=cur, ac=cab(ac), earth=sp(ea) if ea else None,
+             type='hybrid' if re.search(r'hybrid|bess', brand, re.I) else 'string')
+    if isinstance(gi, (int, float)) and gi > 0: d['gpI'] = gi; d['gpAc'] = cab(gac)
+    k = kva.get(model) or kw_of(model)
+    if k: d['kw'] = k
     if phase == 1: d['phase'] = 1
     out.append(d)
 open('js/inverter-data.js', 'w', encoding='utf-8').write(

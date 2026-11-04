@@ -30,13 +30,13 @@
     const I = e.current, ph = e.phase == 1 ? 1 : 3, sets = Math.ceil(I / 250) || 1, c = cabFor(I / sets), b = e.brand.split(' ')[0];
     return { name: e.model.startsWith(b) ? e.model : b + ' ' + e.model, kw: e.kw ? +e.kw : kwOf(e.model, I), I, hybrid: e.type == 'hybrid', phase: ph, poles: ph == 1 ? '2P' : '4P',
              ac: e.ac ? fmt(e.ac) : `${c[1]}mm²/${ph == 1 ? '2C' : '4C'}/${c[2]}${sets > 1 ? ' × ' + sets : ''}`, earth: fmt(e.earth || `${earFor(I)}mm2 Cu/ PVc Earth Cable`),
-             mccb: up(MARGIN * I, STD), derived: !e.ac };
+             mccb: up(MARGIN * I, STD), derived: !e.ac, gpI: e.gpI || null, gpAc: e.gpAc || null };
   };
   // Generic cable size for a given current (used for the load feeder cable, sized from its MCCB rating).
   S.pvEarth = n => `${PVE.find(r => (+n || 1) <= r[0])[1]}mm² Cu`;
   S.cableFor = I => { const c = cabFor(+I || 0); return `${c[1]}mm² 4C/Cu/XLPE/PVC`; };
   // Hybrid mode: a hybrid inverter's GRID port (AC input from the ATS grid-side busbar, used to supply load / charge the battery) — its own current, cable and breaker
-  S.portInfo = I => { const c = cabFor(+I || 0); return { I: +I || 0, mccb: up(MARGIN * (+I || 0), STD), ac: `${c[1]}mm²/4C/${c[2]}` }; };
+  S.portInfo = (I, ac) => { const c = cabFor(+I || 0); return { I: +I || 0, mccb: up(MARGIN * (+I || 0), STD), ac: ac ? fmt(ac) : `${c[1]}mm²/4C/${c[2]}` }; };
   // ...and with 2+ hybrid inverters, the feeder from their separate grid-supply busbar (main switchgear panel) to the ATS grid-side busbar
   S.gridFeeder = sumI => { const sets = Math.ceil(sumI / 250) || 1, c = cabFor(sumI / sets), brk = up(MARGIN * sumI, STD); return { I: sumI, mccb: brk, bus: up(brk, BUS), ac: `${c[1]}mm² 4C/Cu/XLPE/PVC${sets > 1 ? ' × ' + sets : ''}` }; };
   // Per-BESS-unit electrical info, derived from its PCS kW rating (no parts-database entry for batteries).
