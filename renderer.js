@@ -172,9 +172,9 @@ if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) bu
   ln(rx+33,cy-12,rx+33,ym+40,'#000',1.5,'3 2');ln(rx+33,ym+40,x2+50,ym+40,'#000',1.5,'3 2');ln(x2+50,ym+40,x2+50,ym+32,'#000',1.5,'3 2')}
  const lab=(L,R,y,gx,gw,yb,str)=>{const w=str.length*0.56*10;if(R-L-16>=w)t2((L+R)/2,y-8,str);else t2(Math.min(gx+gw/2,1565-w/2),yb+(str.search(/ [(×]/)>0?10:0),str)}; // source cable: above its line if it fits, else under the source symbol
  const grid=(xs,y)=>{const m=Math.max(1344,BEa+54),gx=m+52,gw=Math.min(80,1560-gx);ln(xs,y,m-18,y);s.push(`<circle cx="${m}" cy="${y}" r="18" fill="none" stroke="#000" stroke-width="1.5"/>`);t(m,y+4,'kWh',10);wrap(g('meterLbl')||'',14).forEach((q,j)=>t(m,y+34+j*11,q,9));
-   ln(m+18,y,gx,y);bx(gx,y-25,gw,50);t(gx+gw/2,y+5,'GRID',13,'middle','bold');lab(BEa,m-18,y,gx,gw,y+(g('meterLbl')?64:48),g('utilCable'))},
+   ln(m+18,y,gx,y);bx(gx,y-25,gw,50);t(gx+gw/2,y+5,'GRID',13,'middle','bold');lab(BEa,m-18,y,gx,gw,y+(g('meterLbl')?64:48),SUPC())},
   dg=(xs,y)=>{const m=Math.max(1344,BEa+70);ln(xs,y,m-18,y);genB(m,y);t(m,y+34,'DIESEL GENERATOR',9,'middle','bold');if(g('dgKva'))t(m,y+46,`${g('dgKva')} kVA`,9);lab(BEa,m-18,y,m-40,80,y+62,g('dgCable')||g('utilCable'))};
- const brkG=HYB?Math.max(+A||0,GPB?S.gridFeeder(GPR.reduce((a,k)=>a+U1[k].gp.I,0)).mccb:0):0;
+ const brkG=HYB&&+g('supBrk')?+g('supBrk'):HYB?Math.max(+A||0,GPB?S.gridFeeder(GPR.reduce((a,k)=>a+U1[k].gp.I,0)).mccb:0):0;
  if(HYB){ln(x2+60,ym,xb0,ym);ln(xb0,ym,xb1,ym,'#000',5);(xb1-xb0>80?[['GRID-SIDE BUSBAR',ym+14]]:[['GRID-SIDE',ym+13],['BUSBAR',ym+21]]).forEach(([q,y])=>t(xb0+2,y,q,6.5,'start','bold')); // ATS grid-side busbar (horizontal): feeds ATS input II and the hybrid inverters' grid ports (cable from above)
   if(GPB){ln(XGV,Yg,xgB,Yg);ln(xgB,Yg,xgB,ym);s.push(`<circle cx="${xgB}" cy="${ym}" r="3.5" fill="#000"/>`);t(PR+8,Yg-5,GFC+' — to hybrid inverter grid port'+(GPR.length>1?'s':''),9,'start')}
   ln(xb1,ym,xb1+2,ym);bx(xb1+2,ym-18,54,36);t(xb1+29,ym-3,`4P ${brkG}A`,10);t(xb1+29,ym+11,BT(brkG),8)} // incoming breaker in front of the grid-side busbar
@@ -395,12 +395,12 @@ if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) bu
     ln(xs,y,xv,y,OR);ln(xv,y,xv,ym2+14,OR);s.push(`<circle cx="${xv}" cy="${((ym2+DY)*fy).toFixed(1)}" r="${(14*fy).toFixed(1)}" fill="none" stroke="#000" stroke-width="1.5"/>`);t(xv,ym2+4,'kWh',9,'middle');
     ln(xv-14,ym2,gL+70,ym2,OR);bx(gL,ym2-20,70,40);t(gL+35,ym2+5,'GRID',12,'middle','bold');
     if(g('meterLbl'))wrap(g('meterLbl'),14).forEach((q,j,a)=>t(gL-6,ym2-2+j*9,q,8,'end'));
-    wslash(g('utilCable'),24).forEach((q,j)=>t(gL+35,ym2+29+j*9,q,8,'middle'));return Math.max(xv+14,gL+70)}
+    wslash(SUPC(),24).forEach((q,j)=>t(gL+35,ym2+29+j*9,q,8,'middle'));return Math.max(xv+14,gL+70)}
    ln(xs,y,m-14,y,OR);s.push(`<circle cx="${m}" cy="${((y+DY)*fy).toFixed(1)}" r="${(14*fy).toFixed(1)}" fill="none" stroke="#000" stroke-width="1.5"/>`);t(m,y+4,'kWh',9,'middle');
    if(g('meterLbl'))(cmp?wrap(g('meterLbl'),13):[g('meterLbl')]).forEach((q,j)=>t(m,y+(cmp?36:25)+j*10,q,8,'middle'));
-   ln(m+14,y,gx,y,OR);bx(gx,y-25,gw,50);t(gx+gw/2,y+5,'GRID',cmp2?10:cmp?11:13,'middle','bold');srcLab(BEa,m-14,y,g('utilCable'),gx+gw);return gx+gw},
+   ln(m+14,y,gx,y,OR);bx(gx,y-25,gw,50);t(gx+gw/2,y+5,'GRID',cmp2?10:cmp?11:13,'middle','bold');srcLab(BEa,m-14,y,SUPC(),gx+gw);return gx+gw},
   dg=(xs,y)=>{const gx=Math.max(BEa+70,Math.min(BEa+170,1522));ln(xs,y,gx-16,y,OR);gen(gx,y,16);t(gx,y+34,'DIESEL GENERATOR',8,'middle','bold');if(g('dgKva'))t(gx,y+44,`${g('dgKva')} kVA`,8,'middle');srcLab(BEa,gx-16,y,g('dgCable')||g('utilCable'),gx+40);return gx+50};
- const brkG=HY?Math.max(+A||0,nGP?S.gridFeeder(GPI.reduce((a,i)=>a+U1[i].gp.I,0)).mccb:0):0;
+ const brkG=HY&&+g('supBrk')?+g('supBrk'):HY?Math.max(+A||0,nGP?S.gridFeeder(GPI.reduce((a,i)=>a+U1[i].gp.I,0)).mccb:0):0;
  if(HY){ln(x2+60,125,xb0,125,OR);ln(xb0,125,xb1,125,OR,5);t(xb0+2,117,'GRID-SIDE BUSBAR',6.5,'start','bold'); // ATS grid-side busbar (horizontal): feeds ATS input II and, through the cable dropping from it, the hybrid inverters' grid ports
   if(nGP){s.push(`<circle cx="${xgB}" cy="${(125*fy).toFixed(1)}" r="2.6" fill="${OR}"/>`);ln(xgB,125,xgB,182,OR)}
   ln(xb1,125,xb1+16,125,OR);ln(xb1+36,125,xb1+52,125,OR);ln(xb1+36,125,xb1+18,115);ln(xb1+12,121,xb1+20,129);ln(xb1+12,129,xb1+20,121); // incoming breaker in front of the grid-side busbar (horizontal MCCB symbol)
@@ -501,7 +501,7 @@ const src=HY?(g('hySrc')=='both'?'both':'grid'):og?String(g('ogSrc')||''):'',bot
 const ipT=k=>g(k)=='IP66'?'IP66 (outdoor)':'IP54 (indoor)',efrM=!!g('efrMain'),efrI=!!g('efrIso')&&(!og||ats),indM=!!g('indMain'),indI=!!g('indIso');
 const U1=INV.map((u,i)=>({...u,kind:'inv',n:i+1})).concat(BESS.map((u,i)=>({...u,kind:'bess',n:i+1})));
 const GP=HY?U1.filter(u=>u.kind=='inv'&&u.hybrid&&u.gp):[],nGP=GP.length,F=nGP>1?S.gridFeeder(GP.reduce((a,u)=>a+u.gp.I,0)):null;
-const A=g('atsA')||g('iso')||g('panel'),brkG=HY?Math.max(+A||0,F?F.mccb:0):0,l2A=g('loc2panel');
+const A=g('atsA')||g('iso')||g('panel'),brkG=HY&&+g('supBrk')?+g('supBrk'):HY?Math.max(+A||0,F?F.mccb:0):0,l2A=g('loc2panel');
 const mainBrk=!(U1.length==1&&!l2main&&!efrM); // same rule as the SLD: one unit only -> no main breaker
 const nm=u=>u.kind=='inv'?`INV-${u.n}`:`BESS-${u.n}`,uname=u=>u.kind=='inv'?`Inverter ${u.n} — ${u.name} ${+(+u.kw).toFixed(1)} kW`:`BESS PCS ${u.n} — ${+(+u.kw).toFixed(1)} kW / ${u.kwh} kWh`;
 // ---------- cable list (numbered in drawing order) ----------
@@ -605,15 +605,15 @@ if(!ats){
  if(HY){ // grid-side busbar: feeds ATS input II and the hybrid inverters' grid ports
   L(xII,BY,xb1+20,BY,OR,5);T(xII+4,BY-6,'GRID-SIDE BUSBAR',8,'start','bold');L(xII,BY,xII,yA2,OR);
   L(xIn2,BY,xIn2,BY-28,OR);brk(xIn2,BY-80,`4P ${brkG}A`,BT(brkG),0,1);
-  if(!both){L(xIn2,BY-80,xIn2,46,OR);const w=170;R(xIn2-w/2,22,w,22,'','#000',1.2);T(xIn2,37,gridLbl,8.5,'middle','bold');const n=cab('Energy meter (utility GRID)',IP+` — incoming ${brkG}A`,g('utilCable'));bubble(xIn2,98,n)}
+  if(!both){L(xIn2,BY-80,xIn2,46,OR);const w=170;R(xIn2-w/2,22,w,22,'','#000',1.2);T(xIn2,37,gridLbl,8.5,'middle','bold');const n=cab('Energy meter (utility GRID)',IP+` — incoming ${brkG}A`,SUPC());bubble(xIn2,98,n)}
   else{const ya=BT0+8;L(xIn2,BY-80,xIn2,ya+46,OR);atsS(xIn2,ya,'ATS-1');T(xIn2+40,ya+52,'(grid / DG)',8,'start');
-   [[xIn2-20,'DG',g('dgCable')||g('utilCable'),dgLbl],[xIn2+20,'GRID',g('utilCable'),'FROM GRID / METER']].forEach(([xx,k,cb,lb],j)=>{const xt=xx+(j?58:0);L(xx,ya,xx,ya-12,OR);L(xx,ya-12,xt,ya-12,OR);L(xt,ya-12,xt,46,OR);
+   [[xIn2-20,'DG',g('dgCable')||g('utilCable'),dgLbl],[xIn2+20,'GRID',SUPC(),'FROM GRID / METER']].forEach(([xx,k,cb,lb],j)=>{const xt=xx+(j?58:0);L(xx,ya,xx,ya-12,OR);L(xx,ya-12,xt,ya-12,OR);L(xt,ya-12,xt,46,OR);
     const w=Math.max(66,lb.length*5.2+12);R(xt-w/2,22,w,22,'','#000',1.2);T(xt,37,lb,8,'middle','bold');const n=cab(k=='DG'?'Diesel generator':'Energy meter (utility GRID)',IP+' — ATS-1 input '+(j?'II':'I'),cb);bubble(xt,104,n)})}
   if(nGP){L(xGO,BY,xGO,YB,OR);T(xGO+6,BY-30,'TO MAIN PANEL',7.5,'start','bold');T(xGO+6,BY-21,'GRID PORT(S)',7.5,'start','bold')}
  }else if(!both){const k=src=='grid';L(xII,yA2,xII,46,OR);const lb=k?gridLbl:dgLbl,w=Math.max(80,lb.length*5.4+12);R(xII-w/2+30,22,w,22,'','#000',1.2);T(xII+30,37,lb,8.5,'middle','bold');L(xII,46,xII,44,OR);
-  const n=cab(k?'Energy meter (utility GRID)':'Diesel generator',IP+' — ATS input II',k?g('utilCable'):(g('dgCable')||g('utilCable')));bubble(xII,98,n)}
+  const n=cab(k?'Energy meter (utility GRID)':'Diesel generator',IP+' — ATS input II',k?SUPC():(g('dgCable')||g('utilCable')));bubble(xII,98,n)}
  else{const ya=BT0+8;atsS(x1,ya,'ATS-1');L(x1,ya+46,x1,BY,OR);L(x1,BY,xII,BY,OR);L(xII,BY,xII,yA2,OR);T(x1+40,ya+52,'(grid / DG)',8,'start');
-  [[x1-20,'DG',g('dgCable')||g('utilCable'),dgLbl],[x1+20,'GRID',g('utilCable'),'FROM GRID / METER']].forEach(([xx,k,cb,lb],j)=>{const xt=xx+(j?58:0);L(xx,ya,xx,ya-12,OR);L(xx,ya-12,xt,ya-12,OR);L(xt,ya-12,xt,46,OR);
+  [[x1-20,'DG',g('dgCable')||g('utilCable'),dgLbl],[x1+20,'GRID',SUPC(),'FROM GRID / METER']].forEach(([xx,k,cb,lb],j)=>{const xt=xx+(j?58:0);L(xx,ya,xx,ya-12,OR);L(xx,ya-12,xt,ya-12,OR);L(xt,ya-12,xt,46,OR);
    const w=Math.max(66,lb.length*5.2+12);R(xt-w/2,22,w,22,'','#000',1.2);T(xt,37,lb,8,'middle','bold');const n=cab(k=='DG'?'Diesel generator':'Energy meter (utility GRID)',IP+' — ATS-1 input '+(j?'II':'I'),cb);bubble(xt,104,n)})}
  L(iL+12,BB-16,iL+60,BB-16,GR,3);
 }
@@ -664,7 +664,11 @@ const out=[];out.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="
  q.push('</g>');out.push(q.join(''))}
 return page(out.join('')+s.join(''));
 }
-S.renderPanels = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return renderPanels(); };
-S.renderBlock = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return renderBlock(); };
-S.renderSLD = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return renderSLD(); };
+// Backup (grid-side) supply cable: from the supply-connection table / user edit, else the auto utility cable
+const SUPC=()=>g('supCable')||g('utilCable');
+// Single-phase supply: every breaker becomes 2-pole and busbars single phase (text labels only - layout unchanged)
+const PH1=svg=>!V.sp?svg:svg.replace(/>([^<]+)</g,(m,q)=>'>'+q.replace(/\b4P\b/g,'2P').replace(/3P\+N\+PE,? 400\/230V/g,'1P+N+PE 230V').replace(/3P\+N\+PE/g,'1P+N+PE').replace(/SPD Type 1\+2, 3P\+N/g,'SPD Type 1+2, 1P+N').replace(/\b3P\+N\b/g,'1P+N')+'<');
+S.renderPanels = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderPanels()); };
+S.renderBlock = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderBlock()); };
+S.renderSLD = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderSLD()); };
 })(typeof window !== 'undefined' ? window : globalThis);

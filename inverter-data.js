@@ -1814,3 +1814,83 @@ window.SLD_INVERTERS = [
   "kw": 125.0
  }
 ];
+window.SLD_SUPPLY = [
+ {
+  "name": "Single phase - 30A",
+  "A": 32,
+  "cable": "6mm2/2C/Cu/PVC Flat Twin Cable",
+  "phase": 1
+ },
+ {
+  "name": "Three phase - 30A",
+  "A": 32,
+  "cable": "6mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "Three phase - 60A",
+  "A": 63,
+  "cable": "16mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "70 kVA",
+  "A": 100,
+  "cable": "35mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "110 kVA",
+  "A": 160,
+  "cable": "70mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "140 kVA",
+  "A": 200,
+  "cable": "95mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "160 kVA",
+  "A": 250,
+  "cable": "150mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "250 kVA",
+  "A": 400,
+  "cable": "240mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "400 kVA",
+  "A": 630,
+  "cable": "300mm2/4C/Cu/PVC/PVC",
+  "phase": 3
+ },
+ {
+  "name": "500 kVA",
+  "A": 800,
+  "cable": "240mm2/4C/Cu/PVC/PVC X 2",
+  "phase": 3
+ },
+ {
+  "name": "630 kVA",
+  "A": 1000,
+  "cable": "300mm2/4C/Cu/PVC/PVC X 2",
+  "phase": 3
+ },
+ {
+  "name": "800 kVA",
+  "A": 1250,
+  "cable": "240mm2/4C/Cu/PVC/PVC X 3",
+  "phase": 3
+ },
+ {
+  "name": "1000 kVA",
+  "A": 1600,
+  "cable": "300mm2/4C/Cu/PVC/PVC X 3",
+  "phase": 3
+ }
+];

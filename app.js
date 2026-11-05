@@ -15,13 +15,15 @@
     ['Drawing', [['site', 'Site name', 'RODESHA ENTERPRISES MORATUWA'], ['loc', 'Location', '25 Lunawa Station Rd, Moratuwa'], ['dno', 'Drawing no', 'RR_2026_118'], ['rev', 'Revision', 'Preliminary'], ['date', 'Date', today(), 3], ['totalKw', 'Total DC capacity (kWp)', '', 2], ['opt', 'Option label', 'Option 1']]],
     ['INV'], ['BESS'], ['LOC2'],
     ['Solar array', [['modWp', 'Panel Wp', '620']]],
-    ['Cables & switchgear', [['mainCable', 'Main cable to isolator', '', 1], ['utilCable', 'Utility cable', '', 1], ['earthMain', 'Earth bus feeder', '', 1], ['pvEarth', 'PV array main earth (roof)', '', 1], ['panel', 'Main switchgear panel (A)', '', 1], ['bus', 'Common coupling busbar (A)', '', 1], ['iso', 'Isolator (A)', '', 1], ['isoBus', 'Isolation panel busbar (A)', '', 1], ['meterLbl', 'Meter label', '', 1], ['earthR', 'Earth resistance (Ω max)', '10'], ['loadName', 'Load / DB name', 'LOAD'], ['loadBrk', 'Load feeder MCCB (A)', '100'], ['loadCable', 'Load feeder cable', '', 1]]],
+    ['Cables & switchgear', [['mainCable', 'Main cable to isolator', '', 1], ['utilCable', 'Utility cable', '', 1], ['supply', 'Supply connection (CEB)', '', 4], ['supBrk', 'Backup main breaker (A)', '', 1], ['supCable', 'Backup main cable', '', 1], ['earthMain', 'Earth bus feeder', '', 1], ['pvEarth', 'PV array main earth (roof)', '', 1], ['panel', 'Main switchgear panel (A)', '', 1], ['bus', 'Common coupling busbar (A)', '', 1], ['iso', 'Isolator (A)', '', 1], ['isoBus', 'Isolation panel busbar (A)', '', 1], ['meterLbl', 'Meter label', '', 1], ['earthR', 'Earth resistance (Ω max)', '10'], ['loadName', 'Load / DB name', 'LOAD'], ['loadBrk', 'Load feeder MCCB (A)', '100'], ['loadCable', 'Load feeder cable', '', 1]]],
     ['PROT'],
     ['Sign-off', [['designed', 'Designed by', 'K.U.S.Panagoda'], ['drawn', 'Drawn by', 'K.U.S.Panagoda'], ['checked', 'Checked by', 'Kavish / Uditha'], ['director', 'Director / CTO', 'Champika Periyapperuma'], ['exec', 'Project executive', 'Kavish Weerasinghe']]]];
   const fld = ([k, l, v, flag]) => {
     if (flag == 1) AUTO.add(k); if (flag == 2) RO.add(k);
     const tag = flag == 2 ? ' <span class="tag">auto</span>' : flag == 1 ? ' <span class="tag">auto</span>' : '';
     if (flag == 3) return `<label>${l}<input type="date" id="${k}" value="${esc(v)}"></label>`;
+    // supply connection table (Excel "Supply" sheet): sets the backup main breaker + cable; a single-phase supply makes every breaker 2-pole
+    if (flag == 4) return `<label>${l}<select id="${k}"><option value="">Auto — three phase, sized from the system</option>${(window.SLD_SUPPLY || []).map((r, i) => `<option value="${i}">${esc(r.name)} — ${r.A} A · ${esc(r.cable)}</option>`).join('')}</select></label>`;
     return `<label>${l}${tag}<input id="${k}" value="${esc(v)}"${flag == 2 ? ' readonly' : ''}></label>`;
   };
   // Panels & protection: enclosure IP rating per panel, optional earth-fault relay (EFR) + phase indicator lamps, DC-side isolators / SPDs
@@ -142,7 +144,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   });
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { MODE = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x == b)); if (LOC2.on) drawLoc2Shell(); update(); });
   $('rst').onclick = () => { manual.clear(); update(); };
-  $('form').addEventListener('input', e => { if (AUTO.has(e.target.id)) manual.add(e.target.id); update(); });
+  $('form').addEventListener('input', e => { if (AUTO.has(e.target.id)) manual.add(e.target.id); if (e.target.id == 'supply') { manual.delete('supBrk'); manual.delete('supCable'); } update(); });
   function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: (s.acOv || '').trim() || x.ac, acOverridden: !!(s.acOv || '').trim() && s.acOv.trim() != x.ac, battKwh: +s.battKwh || 0, battDc: s.battDc, gp: x.hybrid ? (g => Object.assign(g, (s.gpAc || '').trim() ? { ac: s.gpAc.trim() } : {}))(autoGp(s, x)) : null }; }); }
   function mkBessInfos(list) { return list.map(s => { const x = S.bessInfo(+s.kw || 0), o = parseFloat(s.ov); return { ...x, kwh: +s.kwh || 0, kw: +s.kw || 0, model: s.model, dc: s.dc, mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv }; }); }
   function update() {
@@ -162,11 +164,16 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const ogSrc = MODE == 'og' ? $('ogSrc').value : MODE == 'hy' ? ($('hySrc').value || 'grid') : '';
     d.atsA = d.iso; d.dgCable = d.utilCable;
     d.loadCable = ogSrc ? d.utilCable : S.cableFor($('loadBrk').value);
+    const SR = $('supply').value === '' ? null : (window.SLD_SUPPLY || [])[+$('supply').value], SP = !!(SR && SR.phase == 1);
+    { const gps = MODE == 'hy' ? invInfos.filter(x => x.hybrid && x.gp) : [];
+      d.supBrk = SR ? SR.A : Math.max(+d.iso || 0, gps.length ? S.gridFeeder(gps.reduce((a, x) => a + x.gp.I, 0)).mccb : 0);
+      d.supCable = SR ? SR.cable : d.utilCable; }
+    if (SP) ['mainCable', 'utilCable', 'loadCable', 'dgCable', 'supCable'].forEach(k => { if (typeof d[k] == 'string') d[k] = d[k].replace(/\b4C\b/g, '2C').replace(/\(4 Runs/g, '(2 Runs'); }); // single phase: 2-core cables
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = ((invInfos.reduce((a, i) => a + i.mods, 0) + (LOC2.on ? invInfos2.reduce((a, i) => a + i.mods, 0) : 0)) * wp / 1000).toFixed(2);
-    const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2panelI: d2 ? d2.T : 0, panelI: d.T, loc2bus: d2 ? d2.bus : 0 }; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => V[el.id] = el.value);
+    const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2panelI: d2 ? d2.T : 0, panelI: d.T, loc2bus: d2 ? d2.bus : 0, sp: SP }; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => V[el.id] = el.value);
     $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || ((MODE == 'og' || MODE == 'hy') && !(ogSrc && k != 'loadBrk')));
-    $('ogBox').hidden = MODE != 'og' && MODE != 'hy'; $('ogSrc').parentElement.hidden = MODE == 'hy'; $('hySrcL').hidden = MODE != 'hy'; document.querySelectorAll('.gpL').forEach(el => el.hidden = MODE != 'hy'); $('atsA').parentElement.hidden = !ogSrc; ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
+    $('ogBox').hidden = MODE != 'og' && MODE != 'hy'; $('ogSrc').parentElement.hidden = MODE == 'hy'; $('hySrcL').hidden = MODE != 'hy'; document.querySelectorAll('.gpL').forEach(el => el.hidden = MODE != 'hy'); $('atsA').parentElement.hidden = !ogSrc; $('supBrk').parentElement.hidden = MODE != 'hy'; $('supCable').parentElement.hidden = !(MODE == 'hy' || ogSrc == 'grid' || ogSrc == 'both'); ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
     $('ogBox').querySelector('b').textContent = MODE == 'hy' ? 'ATS in the isolation panel (hybrid)' : 'Backup source — ATS in the isolation panel';
     $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = (MODE == 'og' || MODE == 'hy') && !ogSrc; $('isoPanelTitle').textContent = (MODE == 'og' || MODE == 'hy') ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
     $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || ((MODE == 'og' || MODE == 'hy') && !ogSrc);
