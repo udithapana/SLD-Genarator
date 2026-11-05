@@ -147,7 +147,9 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   $('form').addEventListener('input', e => { if (AUTO.has(e.target.id)) manual.add(e.target.id); if (e.target.id == 'supply') { manual.delete('supBrk'); manual.delete('supCable'); } update(); });
   function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: (s.acOv || '').trim() || x.ac, acOverridden: !!(s.acOv || '').trim() && s.acOv.trim() != x.ac, battKwh: +s.battKwh || 0, battDc: s.battDc, gp: x.hybrid ? (g => Object.assign(g, (s.gpAc || '').trim() ? { ac: s.gpAc.trim() } : {}))(autoGp(s, x)) : null }; }); }
   function mkBessInfos(list) { return list.map(s => { const x = S.bessInfo(+s.kw || 0), o = parseFloat(s.ov); return { ...x, kwh: +s.kwh || 0, kw: +s.kw || 0, model: s.model, dc: s.dc, mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv }; }); }
+  let recT = 0, restoring = false; const recSoon = () => { if (restoring || typeof recNow != 'function') return; clearTimeout(recT); recT = setTimeout(() => recNow(), 500); };
   function update() {
+    recSoon();
     const wp = +$('modWp').value || 0;
     const invInfos = mkInvInfos(INVS), bessInfos = mkBessInfos(BESSU);
     const invInfos2 = LOC2.on ? mkInvInfos(INVS2) : [], bessInfos2 = LOC2.on ? mkBessInfos(BESSU2) : [];
@@ -246,7 +248,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     hApply(Object.assign({}, DEFAULT, { label: 'default project' })); flash('Reset to default. Previous drawing saved in History.');
     $('t1').onclick();
   };
-  function hApply(e) {
+  function hApply(e, quiet) {
     MODE = e.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode == MODE));
     manual.clear(); (e.manual || []).forEach(k => manual.add(k));
     INVS = JSON.parse(JSON.stringify(e.invs || INVS)); BESSU = JSON.parse(JSON.stringify(e.bess || []));
@@ -254,7 +256,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     fixIdx(INVS); fixIdx(INVS2); drawInvs(); drawBess(); drawLoc2Shell();
     Object.keys(e.fields || {}).forEach(k => { const el = $(k); if (el) el.value = e.fields[k]; });
     if (e.fields && e.fields.proj && !e.fields.site) $('site').value = String(e.fields.proj).replace(/^\s*PROPOSED\s+\S+\s+KW\s+SOLAR\s+POWER\s+SYSTEM\s+(FOR\s+)?/i, '').trim() || e.fields.proj;
-    update(); flash('Loaded "' + e.label + '".');
+    update(); if (quiet) return; flash('Loaded "' + e.label + '".');
     $('t1').onclick();
   }
   // ---- Team sync: the shared history lives in ONE file (history.json) on a separate branch (sld-data) of the same GitHub repository, so every
@@ -345,6 +347,18 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
     else if (e.target.dataset.a == 'del') { if (confirm('Delete "' + e2.label + '"?' + (SY().token ? '\n(Also removed from the shared history.)' : ''))) { hSave(list.filter(x => x.id != id)); lsSet(DELK, lsGet(DELK, []).concat(String(id))); drawHistory(); if (SY().token) sync(true); } }
   });
   drawInvs(); drawBess(); drawLoc2Shell(); update(); DEFAULT = snap('default project');
+  // ---- Back / Forward: every change to the drawing inputs is remembered (this session only, up to 100 steps) ----
+  const UNDO = [], REDO = [], keyOf = e => JSON.stringify([e.mode, e.fields, e.manual, e.invs, e.bess, e.loc2, e.invs2, e.bess2]);
+  UNDO.push(snap('start')); undoBtns();
+  function undoBtns() { $('undo').disabled = UNDO.length < 2; $('redo').disabled = !REDO.length; }
+  function recNow() { if (restoring) return; const e = snap('step'); if (UNDO.length && keyOf(UNDO[UNDO.length - 1]) == keyOf(e)) return; UNDO.push(e); if (UNDO.length > 100) UNDO.shift(); REDO.length = 0; undoBtns(); }
+  function step(from, to) { if (!from.length) return; clearTimeout(recT); recNow(); if (from === UNDO && UNDO.length < 2) return; const cur = from.pop(); to.push(cur); const e = from === UNDO ? UNDO[UNDO.length - 1] : cur;
+    if (from === REDO) UNDO.push(cur);
+    restoring = true; const tab = cur && cur.mode; hApply(e, true); restoring = false; undoBtns(); flash(from === UNDO ? 'Back one step.' : 'Forward one step.'); }
+  $('undo').onclick = () => step(UNDO, REDO);
+  $('redo').onclick = () => { if (!REDO.length) return; restoring = true; const e = REDO.pop(); UNDO.push(e); hApply(e, true); restoring = false; undoBtns(); flash('Forward one step.'); };
+  document.addEventListener('keydown', ev => { const tgt = ev.target, typing = tgt && (tgt.tagName == 'INPUT' || tgt.tagName == 'TEXTAREA') ; if (!(ev.ctrlKey || ev.metaKey) || typing) return;
+    const k = ev.key.toLowerCase(); if (k == 'z' && !ev.shiftKey) { ev.preventDefault(); $('undo').click(); } else if (k == 'y' || (k == 'z' && ev.shiftKey)) { ev.preventDefault(); $('redo').click(); } });
   // ---- Optional sign-in lock (SLD_CONFIG.requireToken): the app stays covered until the person enters a GitHub token that can open the team's data repository.
   // The admin cuts someone off by revoking / deleting their token on GitHub — they are locked out the next time the app starts. ----
   const OKK = 'sld_ok_v1';
