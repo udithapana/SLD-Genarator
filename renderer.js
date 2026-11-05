@@ -494,8 +494,18 @@ ln(120,yE,120,yE+28,GR); // (short bar, 1 main unit: the label above is kept cle
 es(120,yE+28);t(142,yE+40,`${g('earthMain')} — Earth pit  r ≤ ${g('earthR')}Ω`,11);
 ln(xb1,yE,xp,yE,GR,2.5);if(xp-xb1>=110){t((xb1+xp)/2,yE-14,pe?`${pe}mm² Cu`:'Earth interconnection',9,'middle');t((xb1+xp)/2,yE-4,pe?'earth interconnection':'',9,'middle')}
 ln(xp,yE,xe2,yE,GR,4);t(xp,yE+16,'LOCATION 2 EARTH BUS BAR',10,'start','bold');ln(xe2,yE,xe2,yE+28,GR);es(xe2,yE+28);t(xe2-22,yE+40,`${g('loc2earth')?g('loc2earth')+' — ':''}Earth pit  r ≤ ${g('earthR')}Ω`,11,'end')}
-const LY=og&&src?(isIso||topR>1270?(HY&&isIso?292:262):48):isIso&&mx+170>1270?215:48; // legend drops below the isolation panel when it has been extended far to the right
-[[OR,'AC power',''],[BL,'DC power (PV / battery)',''],[GR,'Equipment earthing','5 3'],[GR,'PV array (roof) earthing',''],[MG,'Surge protection','']].concat(efrM||efrI||(og&&src&&!!g('efrIso'))?[['#000','EFR trip signal','4 3']]:[]).forEach(([c,l,d],i)=>{ln(W-300,LY+i*16,W-260,LY+i*16,c,2,d);t(W-250,LY+4+i*16,l,10)});
+const LEG=[[OR,'AC power',''],[BL,'DC power (PV / battery)',''],[GR,'Equipment earthing','5 3'],[GR,'PV array (roof) earthing',''],[MG,'Surge protection','']].concat(efrM||efrI||(og&&src&&!!g('efrIso'))?[['#000','EFR trip signal','4 3']]:[]);
+// legend: first spot (top-right first, then lower / further left) where it touches nothing already drawn
+const {LX,LY}=(()=>{const DY0=DY;DY=0;const ob=[],num=(q,k)=>{const m=q.match(new RegExp(' '+k+'="([-\\d.]+)"'));return m?+m[1]:null};
+ s.forEach(q=>{if(q.startsWith('<line')){const x1=num(q,'x1'),y1=num(q,'y1'),x2=num(q,'x2'),y2=num(q,'y2');ob.push([Math.min(x1,x2)-3,Math.min(y1,y2)-3,Math.max(x1,x2)+3,Math.max(y1,y2)+3])}
+  else if(q.startsWith('<rect')){const x=num(q,'x'),y=num(q,'y'),w=num(q,'width'),h=num(q,'height');if(w!=null&&w<W-40){ob.push([x-3,y-3,x+3,y+h+3]);ob.push([x+w-3,y-3,x+w+3,y+h+3]);ob.push([x-3,y-3,x+w+3,y+3]);ob.push([x-3,y+h-3,x+w+3,y+h+3]);if(!/dasharray/.test(q)&&w<120&&h<120)ob.push([x,y,x+w,y+h])}}
+  else if(q.startsWith('<text')){const x=num(q,'x'),y=num(q,'y'),z=num(q,'font-size')||10,str=q.replace(/<[^>]*>/g,''),w=str.length*0.6*z,an=(q.match(/text-anchor="(\w+)"/)||[])[1];const x0=an=='end'?x-w:an=='middle'?x-w/2:x;ob.push([x0-3,y-z-2,x0+w+3,y+4])}
+  else if(q.startsWith('<circle')){const x=num(q,'cx'),y=num(q,'cy'),r=num(q,'r')||0;ob.push([x-r-3,y-r-3,x+r+3,y+r+3])}
+  else if(q.startsWith('<path')){const n=(q.match(/d="([^"]*)"/)||[,''])[1].match(/-?[\d.]+/g)||[];for(let k=0;k+1<n.length;k+=2){const x=+n[k],y=+n[k+1];if(x>20&&y>20)ob.push([x-8,y-8,x+8,y+8])}}});
+ const lw=Math.max(...LEG.map(([,l])=>l.length))*0.6*10+56,lh=(LEG.length-1)*16+16,free=(X,Y)=>{const r=[X-6,(Y-12)*fy,X+lw,(Y+lh)*fy];return!ob.some(o=>o[0]<r[2]&&o[2]>r[0]&&o[1]<r[3]&&o[3]>r[1])};
+ const lim=(FB-30)/fy-lh;const XR=W-16-lw;for(const X of [XR,XR-40,XR-80,XR-120,XR-160,XR-200])for(let Y=48;Y<=lim;Y+=6)if(free(X,Y)){DY=DY0;return{LX:X,LY:Y}}
+ DY=DY0;return{LX:W-300,LY:og&&src?(isIso||topR>1270?(HY&&isIso?292:262):48):isIso&&mx+170>1270?215:48}})();
+LEG.forEach(([c,l,d],i)=>{ln(LX,LY+i*16,LX+40,LY+i*16,c,2,d);t(LX+50,LY+4+i*16,l,10)});
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);
 // drawing window: an inner frame around the diagram area, separate from the title block (which sits below it, inside the sheet border)
 s.push(FRAME(W));
