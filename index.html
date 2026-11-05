@@ -2161,6 +2161,7 @@ const yy=(p,v)=>rowTop+(p+v)*sv,fz=v=>Math.max(6,+(v*sv).toFixed(2));
 const sm=sv<0.65,sm2=sv<0.45,sm3=sv<0.34,sm4=sv<0.25; // sm4: extremely dense (≈18+ rows): one line per box // many rows: spread each box's lines evenly (the 6px minimum font would otherwise overlap)
 const dot=(x,y)=>s.push(`<circle cx="${x}" cy="${y}" r="2.6" fill="${GR}"/>`);
 const dhUp=v=>(v<0.25?10:Math.max(14,24*v))/2+4;
+let fH=fz(9),GPC=false;if(GPB){const gmin=Math.min(1e9,...posM.slice(0,n1).map((p,k)=>k+1<n1?(posM[k+1]-p-77)*sv:1e9));fH=Math.min(fH,(gmin-19*sv-6)/3);if(fH<7&&GPR.every(k=>U1[k].gp.ac==U1[GPR[0]].gp.ac)){GPC=true;fH=Math.min(fz(9),(gmin-6)/2.3)}fH=Math.max(6,fH)} // GPC: grid-port cables all the same and rows tight -> one shared label (above the first row) instead of one per row // hybrid rows: label size so two-line cable labels (inverter AC above its line, grid-port below) never meet
 const GYs=GPR.map(k=>yy(posM[k],122)),Yg=GPB?Math.max(yy(posM[0],45)-75-(efrM&&indM?14:0),50)+6:0,GBot=GPB?Math.max(...GYs):0;
 const mainLn=yc=>{if(GPB&&yc>Yg&&yc<GBot){ln(MB+60,yc,XGV-6,yc);s.push(`<path d="M ${XGV-6} ${yc} A 6 6 0 0 1 ${XGV+6} ${yc}" fill="none" stroke="#000" stroke-width="1.5"/>`);ln(XGV+6,yc,bx0,yc)}else ln(MB+60,yc,bx0,yc)}; // hop over the grid vertical: crossing, NOT connected
 const row=(u,i,k,nI,nB,cx,pv)=>{const y0=yy(i,0),yc=yy(i,45),B=u.kind=='bess',Y=(j,n,o)=>sm?y0+(j+1)*90*sv/(n+1)+2.5:yy(i,o);
@@ -2189,16 +2190,17 @@ if(!B){const ys=yy(i,45);ln(40,ys,cx,ys,GR,1.5);dot(cx,ys);pv.push(ys)} // modul
 if(isHyb(u)){ln(410,yy(i,90),410,yy(i,150),'#1f6fd0',2);t(418,yy(i,124),u.battDc||'DC cable',fz(9),'start');
 bx(350,yy(i,150),120,80*sv);if(sm4)t(410,yy(i,190)+2.2,`BATTERY · ${u.battKwh} kWh`,6,'middle','bold');else{t(410,sm?yy(i,178):yy(i,177),'BATTERY',fz(12),'middle','bold');t(410,sm?yy(i,204):yy(i,203),u.battKwh+' kWh',fz(12),'middle')}
 ln(410,yy(i,230),410,yy(i,244),GR,1.5,'5 3');ln(410,yy(i,244),300,yy(i,244),GR,1.5,'5 3');if(!sm2)t(318,yy(i,244)+11*sv,'4mm² Cu (battery earth)',fz(9),'start')}
-ln(480,yc,MB,yc);{const f=fz(9),w=u.ac.length*0.55*f,al=w>(PL-480-12)?wslash(u.ac,Math.ceil(u.ac.length/2)):[u.ac];al.forEach((x,k)=>t((480+PL)/2,yc-8*sv-(al.length-1-k)*(f+1),x,f))}
+ln(480,yc,MB,yc);{const av=PL-480-12;let f=GPB?fH:fz(9);const al=u.ac.length*0.55*f>av?wslash(u.ac,Math.ceil(u.ac.length/2)):[u.ac];f=Math.min(f,av/(Math.max(...al.map(q=>q.length))*0.55));al.forEach((x,k)=>t((480+PL)/2,yc-8*sv-(al.length-1-k)*(f+1),x,f))} // hybrid: size fH keeps it clear of the grid-port label of the row above
 {const bh=Math.max(40*sv,11);bx(MB,yc-bh/2,60,bh)}if(sm)t(MB+30,yc+2.5,`${/ADJ/.test(BT(u.mccb,u.I))?'':(u.poles||'4P')+' '}${u.mccb}A ${BT(u.mccb,u.I)}`,fz(9));else{t(MB+30,yc-3*sv,`${u.poles||'4P'} ${u.mccb}A`,fz(11));t(MB+30,yc+12*sv,BT(u.mccb,u.I),fz(9))}
 if(GPB&&k<n1&&u.gp&&u.hybrid&&!B&&U1[k]===u){const ye1=yy(i,75),yg=yy(i,122),p=u.gp,bh=Math.max(40*sv,11); // GRID-port cable: inverter -> its own breaker (not on the common busbar) -> grid-supply vertical
  ln(480,ye1,540,ye1);ln(540,ye1,540,yg);ln(540,yg,MB,yg);bx(MB,yg-bh/2,60,bh);
  if(sm)t(MB+30,yg+2.5,`${p.mccb}A GRID`,fz(9));else{t(MB+30,yg-3*sv,`4P ${p.mccb}A`,fz(11));t(MB+30,yg+12*sv,'GRID PORT',fz(8))}
- {const f=fz(9),al=p.ac.length*0.55*f>(PL-486-6)?wslash(p.ac,Math.ceil(p.ac.length/2)):[p.ac];al.forEach((q,j)=>t(486,yg+Math.max(11*sv,f)+j*(f+1),q,f,'start'))}
+ if(!GPC){const av=PL-486-6;let f=fH;const al=p.ac.length*0.55*f>av?wslash(p.ac,Math.ceil(p.ac.length/2)):[p.ac];f=Math.min(f,av/(Math.max(...al.map(q=>q.length))*0.55));al.forEach((q,j)=>t(486,yg+Math.max(11*sv,f)+j*(f+1),q,f,'start'))}
  ln(MB+60,yg,XGV,yg)}
 mainLn(yc)};
 const pv1=[],pv2=[],PVX1=24,PVX2=24; // both locations' roof earth collectors share the same x and label style
 U1.forEach((u,k)=>row(u,posM[k],k,INV.length,BESS.length,PVX1,pv1));
+if(GPC){const av=PL-486-6,sp=U1[GPR[0]].gp.ac,f=Math.min(9,Math.max(fH,7)),ls=['Grid-port cable (each):'].concat(sp.length*0.55*f>av?wslash(sp,Math.max(8,Math.floor(av/(0.55*f)))):[sp]),u0=U1[GPR[0]],a0=u0.ac.length*0.55*fH>PL-480-12?2:1,yb=yy(posM[0],45)-8*sv-a0*(fH+1)-8;ls.forEach((q,j)=>t(486,yb-(ls.length-1-j)*(f+1),q,j?f:f-0.5,'start',j?'normal':'bold'))}
 U2.forEach((u,k)=>row(u,posL[k],k,INV2.length,BESS2.length,PVX2,pv2));
 let GFC='';const yc0=yy(posM[0],45),yL=yy(posM[n1-1],45),ym=(yc0+yL)/2;
 const pTop=Math.max(yc0-75-(efrM&&indM?14:0),50),pBot=Math.max(yL+(toMain?95:50),GPB?GBot+40:0),peY=pTop+15,trunkTop=Math.min(yy(posM[0],105),peY);
@@ -2308,7 +2310,7 @@ const ipT=k=>g(k)=='IP66'?'IP66 (OUTDOOR)':'IP54 (INDOOR)',efrM=!!g('efrMain'),e
 const DCX=dcSpd?(dcIso?100:55):(dcIso?40:0); // extra vertical room on the PV DC cable for the DC isolator / DC SPD (everything below the inverter moves down by this much)
 // --- fixed vertical layout (native design was 910px tall); stretch everything vertically to fill the fixed A4 page height ---
 const SH=efrI?18:0; // SH: with an isolation-panel EFR the isolation panel is taller (its busbar, breakers and meter sit SH lower) so the CBCT + relay get room above the busbar
-const E1=20,E2=L2?22:0,AR=8; // E1: extra gap between the isolation panel and the main panel (room for the main-cable label + panel title); E2: extra gap above Location 2's panel; AR: load arrow drop
+const E1=L2&&V.loc2to=='iso'?36:20,E2=L2?22:0,AR=8; // E1: extra gap between the isolation panel and the main panel (room for the main-cable label + panel title); E2: extra gap above Location 2's panel; AR: load arrow drop
 // HYBRID mode: every hybrid inverter at Location 1 has a second AC cable (its GRID port) with its own breaker in the main switchgear panel, kept OFF the common busbar.
 // One unit: breaker -> cable straight to the ATS grid-side busbar. Two or more: breakers on a separate GRID SUPPLY BUSBAR + one feeder breaker + one feeder cable to the ATS grid-side busbar.
 // That grid section sits inside the main panel ABOVE the common coupling busbar, so the panel contents move down (PD).
@@ -2325,13 +2327,16 @@ const many=cnt>6,SPDX=many?60:0,MAXSH=L2?1.3:1.8,HX=110,BASE=230; // SPDX: with 
 const hyU=u=>!!u&&u.kind=='inv'&&u.hybrid&&+u.battKwh>0,hy0=hyU(U[0]),hy2=hyU(U2[0]),isIso0=L2&&V.loc2to=='iso',two=L2&&U1.length>0;
 const hxc=[];U.reduce((a,u,i)=>(hxc[i]=a+((i>0&&!(L2&&i==n1)&&hyU(u))?HX:0)),0);const sumHx=hxc.length?hxc[hxc.length-1]:0,hxAt=i=>hxc.length?hxc[Math.min(i,hxc.length-1)]:0;
 const c0=many&&n1>=3?172:196,k0=hy0?208:98; // left margin: main earth line + room for the first column's earth label; k0 = how far left of its inverter the first column reaches (x-95 earth line, x-205 for a hybrid)
-const acX1=(u=>u?Math.max(0,String(u.ac||'').length*0.55*9+24-105):0)(U1[U1.length-1]),g0=two?(many&&n1>=3?185:215)+SPDX+acX1:0,g1=two&&hy2?110:0; // gap between the locations (Location 2's feeder, panel earth line, its first column's earth label)
+const acX1=(u=>u?Math.max(0,String(u.ac||'').length*0.55*9+24-105):0)(U1[U1.length-1]),g1=two&&hy2?110:0;let g0=two?(many&&n1>=3?185:215)+SPDX+acX1:0; // gap between the locations (Location 2's feeder, panel earth line, its first column's earth label)
 const acEst=(u=>u?String(u.ac||'').length*0.55*9:0)(U[(L2?n1:cnt)-1]),R0=L2?30:SPDX+135+Math.max(0,acEst+24-105),R1=L2?166:105; // right margin: with Location 2 only its last column is at the right (the SPD stays after the main columns); otherwise the SPD + busbar end
 const solve=spn=>(A4W-c0-g0-R0)/(k0+spn+g1+R1);
+if(isIso0&&two)for(let it=0;it<5;it++){ // Location 2 on the isolation panel: gap sized so the main panel ends GAPF left of Location 2's feeder (same as the feeder-to-panel gap above it)
+ const s1=Math.min(MAXSH,solve(BASE*(cnt-1)+sumHx)),shA=n=>Math.min(MAXSH,solve((n-1)*(BASE+sumHx/Math.max(1,cnt-1)))),f=Math.max(shA(6),Math.min(shA(4),s1))*Math.min(1,s1/0.44)*(many&&n1>=3?(cnt<=14?1.12:1.06):1),
+  aw=Math.min(String(U1[n1-1].ac||'').length*0.55*9*f,BASE*s1-10*s1),D=Math.max(105*s1+SPDX,8*s1+aw+16);g0=Math.max(60,20+10+95+D+75+(hy2?208:98)*s1-BASE*s1-g1*s1)}
 const x1Lim=1271; // with Location 2 on the isolation panel its feeder x (cx = x1-98sh-75) must stay left of ~1196 so the extended isolation panel still leaves room for the meter + GRID
-const shIso=isIso0?(x1Lim-c0-g0)/(k0+n1*BASE+(hxc.length?hxc[Math.min(n1,hxc.length-1)]:0)+g1-98):1e9;
+const shIso=1e9; // (no cap any more: the feeder is routed over the main panel when the isolation panel can't reach it)
 const sh=Math.min(MAXSH,solve(BASE*(cnt-1)+sumHx),shIso),GAPPX=g0+g1*sh;
-const slack0=A4W-(c0+g0+R0+sh*(k0+BASE*(cnt-1)+sumHx+g1+R1)),x1L=c0+k0*sh+sh*(n1*BASE+hxAt(n1))+g0+g1*sh,room1=isIso0?Math.max(0,x1Lim+98*sh-x1L):1e9;
+const slack0=A4W-(c0+g0+R0+sh*(k0+BASE*(cnt-1)+sumHx+g1+R1)),x1L=c0+k0*sh+sh*(n1*BASE+hxAt(n1))+g0+g1*sh,room1=1e9;
 const colStart=c0+k0*sh+Math.min(slack0/2,room1),colPitch=BASE*sh;
 // FONT scale is decoupled from the geometry scale (sh): text is held at the size it has with 4 units for anything smaller (1-3 units),
 // follows the geometry between 4 and 6 units, and is held at the 6-unit size for anything bigger so it stays readable in print.
@@ -2427,7 +2432,10 @@ if(indM)lamps(100,300);
 ln(85,364,155,364,GR,3);t(98,350,'PANEL EARTH BUS',9,'start','bold');
 ln(120,364,120,yE-PD,GR,1.5,'5 3');
 (L2?['Location 1','panel earth']:['Switchgear','panel earth']).forEach((q,j)=>t(114,(L2?yE-PD-170:534)+j*11,q,10,'end'));DY=0; // two lines so it stays inside the drawing windowDY=0; // left of the earth line, clear of the first column's own earth runs
-const hl=md()=='nm'||md()=='na',og=md()=='og'||md()=='hy',isIso=L2&&V.loc2to=='iso',cx=L2?XPE()+30:0; // cx = x of Location 2's feeder (right of the main columns)
+const srcG=()=>md()=='hy'?(g('hySrc')=='both'?'both':'grid'):md()=='og'?String(g('ogSrc')||''):'';
+const hl=md()=='nm'||md()=='na',og=md()=='og'||md()=='hy',isIso=L2&&V.loc2to=='iso',cxF=L2?XPE()+30:0,cx=isIso?Math.min(cxF,(()=>{ // cx = Location 2 tap on the isolation panel; cxF = feeder down to Location 2's panel. The tap stays far enough left that the isolation panel + meter + GRID fit
+  if(!(og&&srcG()))return md()=='og'?1450:1185;const ef=!!g('efrIso'),HYq=md()=='hy',bo=srcG()=='both',ew=44,x2=ef?70:80,xgB=HYq?(ef?x2+64+ew+12:x2+92):0,xb1=xgB+36,x1=HYq?xb1+60:x2+(ef?ew+92:100),
+  K=HYq?(bo?x1+66:xb1+64):Math.max((bo?x1:x2)+(ef?66:75),ef?x2+64+ew+12:0);return 1290-K})()):cxF,RT=isIso&&cx<cxF-1; // RT: feeder routed over the main panel // cx = x of Location 2's feeder (right of the main columns)
 const HYS=md()=='hy';let GSX=0;const src=HYS?(g('hySrc')=='both'?'both':'grid'):og?String(g('ogSrc')||''):'';let topR=0; // off-grid backup source(s): '' none | dg | grid | both
 const dotS=(x,y,r=2.4)=>s.push(`<circle cx="${x}" cy="${((y+DY)*fy).toFixed(1)}" r="${r}" fill="#fff" stroke="#000" stroke-width="1.2"/>`);
 // standard ATS symbol (changeover switch in an enclosure): inputs I / II on the left / right edges, common (load) terminal at the bottom (flip: at the top)
@@ -2510,7 +2518,7 @@ ln(mx+14,125,mx+90,125,OR);bx(mx+90,100,80,50);tI(mx+130,130,'GRID',13,'middle',
 if(nGP){DY=0; // ---- HYBRID: grid-port supply (absolute coordinates; the common busbar is at 300+PD) ----
  const busY=300+PD,ft=270,xs=GPI.map(i=>Xc(i)-28*sh),hop=(x,y)=>{const r=6;ln(x,y-r-2,x,y-r,OR);s.push(`<path d="M ${x.toFixed(1)} ${((y-r)*fy).toFixed(1)} A ${r} ${r} 0 0 0 ${x.toFixed(1)} ${((y+r)*fy).toFixed(1)}" fill="none" stroke="${OR}" stroke-width="1.5"/>`)}; // hop over the common busbar: crossing, NOT connected
  // feeder from the ATS grid-side busbar down into the main panel (straight down, or round Location 2's feeder when that sits on the isolation panel)
- if(GSX){if(Math.abs(GSX-XGM)>1){const RY=250;ln(GSX,182,GSX,RY,OR);ln(GSX,RY,XGM,RY,OR);ln(XGM,RY,XGM,ft,OR)} /* RY: well clear above the main panel outline (y 270), below the load arrow tip */else ln(GSX,182,GSX,ft,OR)}
+ if(GSX){if(Math.abs(GSX-XGM)>1){const RY=RT?250:250+E1-20;ln(GSX,182,GSX,RY,OR);ln(GSX,RY,XGM,RY,OR);ln(XGM,RY,XGM,ft,OR)} /* RY: well clear above the main panel outline (y 270), below the load arrow tip */else ln(GSX,182,GSX,ft,OR)}
  const drop=(k,x,y)=>{const u=U1[GPI[k]],p=u.gp;brk(x,y,`4P ${p.mccb}A`,BT(p.mccb,p.I)+' · GRID',1);const al=wslash(p.ac,Math.max(8,Math.floor((colPitch-40*sh)/cwid(9))));al.forEach((q,j)=>tc(x+18,y+48+j*LP(9),q,9,'start'));
    ln(x,y+52,x,busY-8,OR);hop(x,busY);ln(x,busY+6,x,400+PD,OR)}; // down past the common busbar (hop) to the inverter's grid-port terminal
  if(nGP==1){ln(XGM,ft,XGM,GB1,OR);ln(XGM,GB1,xs[0],GB1,OR);drop(0,xs[0],GB1)}
@@ -2522,8 +2530,13 @@ if(nGP){DY=0; // ---- HYBRID: grid-port supply (absolute coordinates; the common
 if(L2){
 // ---- Location 2 switchgear panel: sits below the main panel, RIGHT of the main inverters. Its incomer breaker is sized from Location 2's OWN current (loc2panel) and appears at both ends of the interconnecting cable ----
 const l2A=g('loc2panel'),l2T=BT(l2A,V.loc2panelI),busY2=300+DY2+PD+E2,arr=busY2-52,srcY=isIso?(og&&!src?115:125+SH):300+PD;
-if(isIso){ // straight down from the (extended) isolation panel — nothing to cross
- ln(cx,srcY,cx,srcY+10,OR,2);brk(cx,srcY+10,`4P ${l2A}A`,l2T,1);ln(cx,srcY+62,cx,arr,OR,2)}
+const cxT=cx;{const cx=cxF;
+if(isIso){ // from the isolation panel: straight down, or (tap further left) down, across ABOVE the main panel, then down to Location 2
+ ln(cxT,srcY,cxT,srcY+10,OR,2);brk(cxT,srcY+10,`4P ${l2A}A`,l2T,1);
+ if(RT){const RY2=250+E1-18,ry=250,hop=nGP&&GSX&&cxT>Math.min(GSX,XGM)&&cxT<Math.max(GSX,XGM); // RY2: 16 above the main panel; the hybrid grid feeder (y=250) is hopped
+  if(hop){ln(cxT,srcY+62,cxT,ry-6,OR,2);s.push(`<path d="M ${cxT} ${((ry-6)*fy).toFixed(1)} A 6 ${(6*fy).toFixed(1)} 0 0 1 ${cxT} ${((ry+6)*fy).toFixed(1)}" fill="none" stroke="${OR}" stroke-width="2"/>`);ln(cxT,ry+6,cxT,RY2,OR,2)}else ln(cxT,srcY+62,cxT,RY2,OR,2);
+  ln(cxT,RY2,cx,RY2,OR,2);ln(cx,RY2,cx,arr,OR,2)}
+ else ln(cxT,srcY+62,cxT,arr,OR,2)}
 else{ln(cx,300+PD,cx,320+PD,OR,2);brk(cx,320+PD,`4P ${l2A}A`,l2T,1);ln(cx,372+PD,cx,arr,OR,2)}
 t(cx+8,408+PD,g('loc2cable'),9,'start');
 const lastX=n2?Xc(n1+n2-1):cx+60,bL=XPE()-40,bR=n2?lastX+24+50*fs:lastX+18+0.6*11*fs*8;
@@ -2535,7 +2548,7 @@ ln(cx,busY2,bR-8,busY2,OR,5);
 // panel earth: bus bar inside the box with its OWN earth conductor down to Location 2's own earth bus bar (the bar at the bottom, right)
 ln(XPE()-35,busY2+64,XPE()+35,busY2+64,GR,3);t(XPE()-32,busY2+50,'PANEL EARTH BUS',9,'start','bold');ln(XPE(),busY2+64,XPE(),yE,GR,1.5,'5 3'); // same geometry as the main panel's earth bus; the earth drop starts at the middle of the bar
 wrap(`${V.loc2name||'Location 2'} panel earth`,Math.max(8,Math.floor((3*sh+90)/cwid(10)))).forEach((q,j)=>tc(XPE()+6,busY2+104+j*LP(10),q,10,'start'));
-}
+}}
 T1&&T1();if(!L2){ln(120,yE,busEnd,yE,GR,4);t(busEnd,yE-8,'EARTH BUS BAR',11,'end');ln(120,yE,120,yE+28,GR);es(120,yE+28);t(142,yE+40,`${g('earthMain')} — Earth pit  r ≤ ${g('earthR')}Ω`,11)}
 else{ // two SEPARATE earth bus bars, each with its own earth pit, tied together by an equipotential bond
 const xb1=Xc(n1-1)+12,xp=XPE(),xe2=n2?Xc(cnt-1)+20:xp+90;
@@ -2603,11 +2616,11 @@ if(l2iso&&!ats)isoDown.push({kind:'brk',l1:`4P ${l2A}A`,l2:BT(l2A,V.loc2panelI),
 if(indI&&!ats)isoDown.push({kind:'lamps',w:0.6});
 // ---------- widths: one common feeder pitch P for both panels ----------
 const wOf=d=>d.kind=='lamps'?0.6:d.kind=='spd'?0.7:1;
-const sumM=mainDown.reduce((a,d)=>a+wOf(d),0),sumI=isoDown.reduce((a,d)=>a+wOf(d),0),GAP=70;
+const sumM=mainDown.reduce((a,d)=>a+wOf(d),0),sumI=isoDown.reduce((a,d)=>a+wOf(d),0);let GAP=70;
 const mainW=P=>{let x=80+sumM*P;if(nGP)x+=0.4*P+(nGP>1?0.6*P:0)+nGP*P;return Math.max(x-0.35*P+70,efrM?330:250)};
 const isoW=P=>{if(ats){const xa=(l2iso?212:110)+100;return Math.max(HY?(both?xa+300:xa+320):both?xa+270:xa+170,300)}
  const xx=(efrI?240:150)+sumI*P;return Math.max(og?xx+40:Math.max(xx+30,efrI?300:220)+70,og?260:250)};
-let P=165;while(P>34&&24+mainW(P)+GAP+isoW(P)>W-24)P-=1;
+let P=165;while(P>34&&24+mainW(P)+GAP+isoW(P)>W-24)P-=1;if(24+mainW(P)+GAP+isoW(P)>W-24){GAP=44;while(P>26&&24+mainW(P)+GAP+isoW(P)>W-24)P-=1} // very full: closer panels, tighter feeders
 function np(){return md()=='np'}
 const fzD=Math.max(0.72,Math.min(1.15,P/88)),fz=fzD;
 // ---------- MAIN SWITCHGEAR PANEL ----------
