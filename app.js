@@ -171,7 +171,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = (MODE == 'og' || MODE == 'hy') && !ogSrc; $('isoPanelTitle').textContent = (MODE == 'og' || MODE == 'hy') ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
     $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || ((MODE == 'og' || MODE == 'hy') && !ogSrc);
     $('dcIsoTxt').parentElement.hidden = !$('dcIso').value; $('dcSpdTxt').parentElement.hidden = !$('dcSpd').value;
-    $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos, invInfos2, bessInfos2);
+    $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out4').innerHTML = S.renderPanels(V, invInfos, bessInfos, invInfos2, bessInfos2);
     document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}${MODE == 'hy' && x.gp ? ` · GRID PORT ${x.gp.I} A → ${S.brkType(x.gp.mccb, x.gp.I)} ${x.gp.mccb} A · ${x.gp.ac}` : ''}`; });
     document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}`; });
     if (LOC2.on) {
@@ -180,9 +180,9 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     }
   }
   let cur = 'out';
-  [['t1', 'out'], ['t2', 'out2'], ['t3', 'out3']].forEach(([b, o]) => $(b).onclick = () => {
-    cur = o; $('out').hidden = o != 'out'; $('out2').hidden = o != 'out2'; $('out3').hidden = o != 'out3';
-    $('t1').classList.toggle('on', o == 'out'); $('t2').classList.toggle('on', o == 'out2'); $('t3').classList.toggle('on', o == 'out3');
+  const OUTS = [['t1', 'out'], ['t2', 'out2'], ['t4', 'out4'], ['t3', 'out3']], SUF = { out: '_block', out2: '_SLD', out4: '_panels_quotation' };
+  OUTS.forEach(([b, o]) => $(b).onclick = () => {
+    cur = o; OUTS.forEach(([b2, o2]) => { $(o2).hidden = o2 != o; $(b2).classList.toggle('on', o2 == o); });
     $('dl').hidden = $('pr').hidden = o == 'out3'; if (o == 'out3') { drawHistory(); sync(true); }
   });
   $('pr').onclick = () => {
@@ -196,7 +196,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
       try {
         const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
         pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, 297, 210);
-        pdf.save(($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.pdf');
+        pdf.save(($('dno').value || 'SLD') + SUF[cur] + '_' + MODE + '.pdf');
       } catch (err) { alert('PDF export failed (' + err.message + '). Print to PDF from your browser instead.'); }
     };
     img.onerror = () => alert('PDF export failed — your browser blocked rendering the drawing (this needs an internet connection the first time, to load the PDF library). Print to PDF from your browser instead.');
@@ -206,7 +206,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const svgEl = $(cur).querySelector('svg'); if (!svgEl) return;
     try {
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([SLD.toDXF(svgEl)], { type: 'application/dxf' }));
-      a.download = ($('dno').value || 'SLD') + (cur == 'out' ? '_block' : '_SLD') + '_' + MODE + '.dxf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      a.download = ($('dno').value || 'SLD') + SUF[cur] + '_' + MODE + '.dxf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     } catch (err) { alert('CAD export failed (' + err.message + ').'); }
   };
 
@@ -236,7 +236,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const keep = confirm('Reset to the default project?\n\nOK = save the current drawing to History first, then reset.\nCancel = go back (nothing changes).'); if (!keep) return;
     const e = snap('Auto-saved before reset — ' + new Date().toLocaleString()), list = hLoad(); list.unshift(e); hSave(list);
     hApply(Object.assign({}, DEFAULT, { label: 'default project' })); flash('Reset to default. Previous drawing saved in History.');
-    $('out').hidden = false; $('out2').hidden = true; $('out3').hidden = true; $('t1').classList.add('on'); $('t2').classList.remove('on'); $('t3').classList.remove('on'); cur = 'out';
+    $('t1').onclick();
   };
   function hApply(e) {
     MODE = e.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode == MODE));
@@ -247,8 +247,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     Object.keys(e.fields || {}).forEach(k => { const el = $(k); if (el) el.value = e.fields[k]; });
     if (e.fields && e.fields.proj && !e.fields.site) $('site').value = String(e.fields.proj).replace(/^\s*PROPOSED\s+\S+\s+KW\s+SOLAR\s+POWER\s+SYSTEM\s+(FOR\s+)?/i, '').trim() || e.fields.proj;
     update(); flash('Loaded "' + e.label + '".');
-    cur = 'out'; $('out').hidden = false; $('out2').hidden = true; $('out3').hidden = true;
-    $('t1').classList.add('on'); $('t2').classList.remove('on'); $('t3').classList.remove('on');
+    $('t1').onclick();
   }
   // ---- Team sync: the shared history lives in ONE file (history.json) on a separate branch (sld-data) of the same GitHub repository, so every
   // person using the same web link sees the same saved drawings. Reading needs nothing (public repo); saving needs a GitHub access token (fine-grained,

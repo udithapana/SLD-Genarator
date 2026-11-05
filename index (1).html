@@ -8,10 +8,10 @@
 <script src="js/pwa.js"></script></head>
 <body>
 <header><h1>Solar SLD generator</h1>
-<span><button class="alt on" id="t1">Block diagram</button> <button class="alt" id="t2">SLD (standard symbols)</button> <button class="alt" id="t3">History</button></span>
+<span><button class="alt on" id="t1">Block diagram</button> <button class="alt" id="t2">SLD (standard symbols)</button> <button class="alt" id="t4" title="Main switchgear + isolation panel only, no site details — for supplier quotations">Panels (quotation)</button> <button class="alt" id="t3">History</button></span>
 <span id="msg"></span><button class="alt" id="sv">💾 Save to history</button><button class="alt" id="rs" title="Back to the default project (the current drawing is saved to History first)">↺ Reset to default</button><button class="alt" id="dl" title="AutoCAD DXF (mm, A4 sheet, layered)">⬇ Download CAD (.dxf)</button><button id="pr">⬇ Download PDF (A4)</button></header>
 <main><form class="side" id="form" onsubmit="return false"></form>
-<div class="dwg"><div class="paper" id="out"></div><div class="paper" id="out2" hidden></div><div id="out3" hidden></div></div></main>
+<div class="dwg"><div class="paper" id="out"></div><div class="paper" id="out2" hidden></div><div class="paper" id="out4" hidden></div><div id="out3" hidden></div></div></main>
 <script src="js/inverter-data.js"></script>
 <script src="js/rules.js"></script>
 <script src="js/logo.js"></script>

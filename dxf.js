@@ -98,7 +98,7 @@
           const x = n4(X(attrN(e, 'x'))), y = n4(Y(attrN(e, 'y'))), c = col(e.getAttribute('fill')), L = ctx.layer ? ctx.layer + '-TEXT' : useLayer('TEXT', 7);
           if (ctx.layer) useLayer(L, 7);
           head('TEXT', L, null, c && c != '#000' && ACI[c] ? ACI[c] : null);
-          g(10, x); g(20, y); g(30, 0); g(40, n4(sz * CAP * SC)); g(1, txt(s)); g(7, bold ? 'SLDB' : 'SLD'); if (bold) styleUsed.SLDB = 1;
+          g(10, x); g(20, y); g(30, 0); g(40, n4(sz * CAP * SC)); g(1, txt(s)); g(7, bold ? 'SLDB' : 'SLD'); if (bold) styleUsed.SLDB = 1; { const rm = (e.getAttribute('transform') || '').match(/rotate\(\s*([-\d.]+)/); if (rm) g(50, n4(-rm[1])); } // rotated label (SVG y-down: -90 = reads bottom-to-top = +90° in DXF)
           if (a != 'start') { g(72, a == 'middle' ? 1 : 2); g(11, x); g(21, y); g(31, 0); g(73, 0); }
         } else if (tag == 'image' && ctx.layer) {                        // company logo (raster) -> text placeholder in its cell
           const x = attrN(e, 'x'), y = attrN(e, 'y'), w = attrN(e, 'width'), h = attrN(e, 'height');
