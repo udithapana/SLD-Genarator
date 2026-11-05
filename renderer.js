@@ -370,7 +370,7 @@ ln(120,364,120,yE-PD,GR,1.5,'5 3');
 (L2?['Location 1','panel earth']:['Switchgear','panel earth']).forEach((q,j)=>t(114,(L2?yE-PD-170:534)+j*11,q,10,'end'));DY=0; // two lines so it stays inside the drawing windowDY=0; // left of the earth line, clear of the first column's own earth runs
 const srcG=()=>md()=='hy'?(g('hySrc')=='both'?'both':'grid'):md()=='og'?String(g('ogSrc')||''):'';
 const hl=md()=='nm'||md()=='na',og=md()=='og'||md()=='hy',isIso=L2&&V.loc2to=='iso',cxF=L2?XPE()+30:0,cx=isIso?Math.min(cxF,(()=>{ // cx = Location 2 tap on the isolation panel; cxF = feeder down to Location 2's panel. The tap stays far enough left that the isolation panel + meter + GRID fit
-  if(!(og&&srcG()))return md()=='og'?1450:1185;const ef=!!g('efrIso'),HYq=md()=='hy',bo=srcG()=='both',ew=44,x2=ef?70:80,xgB=HYq?(ef?x2+64+ew+12:x2+92):0,xb1=xgB+36,x1=HYq?xb1+60:x2+(ef?ew+92:100),
+  if(!(og&&srcG()))return md()=='og'?1450:1185;const ef=!!g('efrIso'),HYq=md()=='hy',bo=srcG()=='both',ew=44,x2=ef?70:80,xgB=HYq?x2+150+(ef?20:0):0,xb1=HYq?Math.max(xgB+10,x2+162):0,x1=HYq?xb1+60:x2+(ef?ew+92:100),
   K=HYq?(bo?x1+66:xb1+64):Math.max((bo?x1:x2)+(ef?66:75),ef?x2+64+ew+12:0);return 1290-K})()):cxF,RT=isIso&&cx<cxF-1; // RT: feeder routed over the main panel // cx = x of Location 2's feeder (right of the main columns)
 const HYS=md()=='hy';let GSX=0;const src=HYS?(g('hySrc')=='both'?'both':'grid'):og?String(g('ogSrc')||''):'';let topR=0; // off-grid backup source(s): '' none | dg | grid | both
 const dotS=(x,y,r=2.4)=>s.push(`<circle cx="${x}" cy="${((y+DY)*fy).toFixed(1)}" r="${r}" fill="#fff" stroke="#000" stroke-width="1.2"/>`);
@@ -388,14 +388,14 @@ const ulab=(L,str)=>{const gp=mx-14-L-14,x=(L+mx-14)/2,w=(q,z)=>q.length*0.56*z;
  let sz=10,ls=[str];if(w(str,10)>gp){sz=9;if(w(str,9)>gp){const q=str.split(' × ');ls=wslash(q[0],Math.max(8,Math.floor(gp/(0.56*9)))).concat(q[1]?['× '+q[1]]:[])}}
  ls.forEach((q,j)=>tI(x,117-(ls.length-1-j)*11,q,sz,'middle'))};
 if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) built into the isolation panel
- const both=src=='both',A=g('atsA')||g('iso')||g('panel'),efrA=!!g('efrIso'),eset=efrSet('efrIsoSet').slice(0,isIso?8:10),ew=isIso?44:50,x2=isIso?cx+(efrA?70:80):370,xb0=x2+72,xgB=HY?(efrA?x2+64+ew+12:x2+92):0,xb1=xgB+36,x1=HY?xb1+60:x2+(efrA?ew+92:100),BEa=HY?(both?x1+(isIso?66:70):xb1+64):Math.max((both?x1:x2)+(efrA?66:75),efrA?x2+64+ew+12:0),tight=isIso&&efrA,yG=both?167:125;GSX=xgB;
+ const both=src=='both',A=g('atsA')||g('iso')||g('panel'),efrA=!!g('efrIso'),eset=efrSet('efrIsoSet').slice(0,isIso?8:10),ew=isIso?44:50,x2=isIso?cx+(efrA?70:80):370,xb0=x2+72,xgB=HY?x2+150+(efrA?20:0):0,xb1=HY?Math.max(xgB+10,xb0+90):0,x1=HY?xb1+60:x2+(efrA?ew+92:100),BEa=HY?(both?x1+(isIso?66:70):xb1+64):Math.max((both?x1:x2)+(efrA?66:75),efrA?x2+64+ew+12:0),tight=isIso&&efrA,yG=both?167:125;GSX=xgB;
  bx(80,92,BEa-80,98,'8 4');tI(85,86,`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`,9,'start','bold');
  ln(100,125,x2-24,125,OR,4);tI(175,115,`SOLAR BUS ${g('isoBus')||A}A`,9,'middle');ln(x2-24,125,x2,125,OR);if(!isIso)tI(x2-5,120,'SOLAR',7,'end','bold');ln(150,125,150,177,OR);
  if(indI)lamps(225,125);
  atsSym(x2,113,false);tI(x2+30,107,`${both?'ATS-2':'ATS'}  4P ${A}A`,9,'middle','bold');
  // load: ATS output straight down, out of the panel
  ln(x2+30,157,x2+30,205+AR,OR);s.push(`<polygon points="${x2+16},${((205+AR)*fy).toFixed(1)} ${x2+44},${((205+AR)*fy).toFixed(1)} ${x2+30},${((233+AR)*fy).toFixed(1)}" fill="#000"/>`);
- {const LB=both||HY,cap=LB&&!isIso?2:3,ls=(q=>q.length>cap?q.slice(0,cap-1).concat([q.slice(cap-1).join(' ')]):q)(wrap(g('loadName'),HY&&isIso?9:LB?13:18)),sz=ls.length>1?10:11;ls.forEach((q,j)=>LB?tI(x2+14,224+AR+j*12,q,sz,'end','bold'):tI(x2+46,224+AR+j*12,q,sz,'start','bold'))}{const lc=String(g('loadCable')),z=9.5,av=isIso?x2+24-cx-10:1e9;let ls=[lc];if(lc.length*0.56*z>av){const q=lc.split(' × ');ls=wslash(q[0],Math.max(6,Math.floor(av/(0.56*z)))).concat(q[1]?['× '+q[1]]:[])}ls.forEach((q,j)=>t(x2+24,(ls.length>1?200:203)+j*10.5,q,z,'end'))} // never across Location 2's feeder; wrapped lines go DOWN (clear of the panel outline above);
+ {const LB=both||HY,cap=LB&&!isIso?2:3,ls=(q=>q.length>cap?q.slice(0,cap-1).concat([q.slice(cap-1).join(' ')]):q)(wrap(g('loadName'),HY&&isIso?9:LB?13:18)),sz=ls.length>1?10:11;ls.forEach((q,j)=>LB?tI(x2+14,224+AR+j*12,q,sz,'end','bold'):tI(x2+46,224+AR+j*12,q,sz,'start','bold'))}{const lc=String(g('loadCable')),z=9.5,RS=HY||(isIso&&!both),av=RS?(HY?xgB-8:BEa+200)-(x2+38):isIso?x2+24-cx-10:1e9;let ls=[lc];if(lc.length*0.56*z>av){const q=lc.split(' × ');ls=wslash(q[0],Math.max(6,Math.floor(av/(0.56*z)))).concat(q[1]?['× '+q[1]]:[])}ls.forEach((q,j)=>RS?t(x2+38,207+j*10.5,q,z,'start'):t(x2+24,(ls.length>1?200:203)+j*10.5,q,z,'end'))} // never across Location 2's feeder; wrapped lines go DOWN (clear of the panel outline above);
  if(efrA){const yc=172,ry=161,rx=x2+64;ctc(x2+30,yc);ln(x2+30+CTR,yc,rx,yc,'#000',1);const d=relay(rx,ry,ew,eset); // EFR: CBCT on the ATS output (load side), relay trips the ATS (dashed)
   ln(rx+ew/2,ry,rx+ew/2,147,'#000',1,'4 3');ln(rx+ew/2,147,x2+60,147,'#000',1,'4 3')}
  const srcLab=(L,R,y,str,xr)=>{if(str.length*0.56*9<=R-L-28)return cabLab(L,R,y-8,str); // fits between the panel and the source: above its line
@@ -411,7 +411,7 @@ if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) bu
    ln(m+14,y,gx,y,OR);bx(gx,y-25,gw,50);tI(gx+gw/2,y+5,'GRID',cmp2?10:cmp?11:13,'middle','bold');srcLab(BEa,m-14,y,SUPC(),gx+gw);return gx+gw},
   dg=(xs,y)=>{const gx=Math.max(BEa+70,Math.min(BEa+170,1522));ln(xs,y,gx-16,y,OR);gen(gx,y,16);tI(gx,y+34,'DIESEL GENERATOR',8,'middle','bold');if(g('dgKva'))tI(gx,y+44,`${g('dgKva')} kVA`,8,'middle');srcLab(BEa,gx-16,y,g('dgCable')||g('utilCable'),gx+40);return gx+50};
  const brkG=HY&&+g('supBrk')?+g('supBrk'):HY?Math.max(+A||0,nGP?S.gridFeeder(GPI.reduce((a,i)=>a+U1[i].gp.I,0)).mccb:0):0;
- if(HY){ln(x2+60,125,xb0,125,OR);ln(xb0,125,xb1,125,OR,5);tI(xb0+2,117,'GRID-SIDE BUSBAR',6.5,'start','bold'); // ATS grid-side busbar (horizontal): feeds ATS input II and, through the cable dropping from it, the hybrid inverters' grid ports
+ if(HY){ln(x2+60,125,xb0,125,OR);ln(xb0,125,xb1,125,OR,5);tI(xb0+2,117,'GRID-SIDE BUSBAR',6.5,'start','bold');/*label ends before the backup breaker*/ // ATS grid-side busbar (horizontal): feeds ATS input II and, through the cable dropping from it, the hybrid inverters' grid ports
   if(nGP){s.push(`<circle cx="${xgB}" cy="${(125*fy).toFixed(1)}" r="2.6" fill="${OR}"/>`);ln(xgB,125,xgB,182,OR)}
   ln(xb1,125,xb1+16,125,OR);ln(xb1+36,125,xb1+52,125,OR);ln(xb1+36,125,xb1+18,115);ln(xb1+12,121,xb1+20,129);ln(xb1+12,129,xb1+20,121); // incoming breaker in front of the grid-side busbar (horizontal MCCB symbol)
   tI(xb1+26,142,`4P ${brkG}A`,9,'middle','bold');tI(xb1+26,152,BT(brkG),8,'middle')}
