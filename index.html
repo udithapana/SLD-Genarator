@@ -2206,7 +2206,7 @@ bx(PL,pTop,PR-PL,pBot-pTop,'8 4');t(PL,pTop-6,`${L2?'LOCATION 1 — ':''}MAIN SW
 ln(PL,peY,300,peY,GR,1.5,'5 3');t(450,peY-6,L2?'Location 1 panel earth':'Switchgear panel earth',9,'middle');
 ln(bx0,yc0-30,bx0,yL+30+(toMain?45:0),'#000',6);{const lx=GPB?bx0:bx0-(efrM||indM?16:0),fz0=GPB?9:10;t(lx,yc0-57,'COMMON COUPLING',fz0);t(lx,yc0-45,`BUSBAR ${g('bus')}A`,fz0)}
 if(GPB){const top=Math.min(...GYs); // grid-supply side (hybrid): 2+ units -> busbar + feeder breaker; 1 unit -> the cable simply continues
- if(GPR.length>1){const F=S.gridFeeder(GPR.reduce((a,k)=>a+U1[k].gp.I,0));ln(XGV,top,XGV,GBot,'#000',5);t(XGV+5,top+8,'GRID BUS',7,'start','bold');t(XGV+5,top+16,`${F.bus}A`,7,'start','bold');
+ if(GPR.length>1){const F=GF(GPR.reduce((a,k)=>a+U1[k].gp.I,0));ln(XGV,top,XGV,GBot,'#000',5);t(XGV+5,top+8,'GRID BUS',7,'start','bold');t(XGV+5,top+16,`${F.bus}A`,7,'start','bold');
   const bb=yc0-60;ln(XGV,Yg,XGV,bb);bx(XGV-13,bb,26,36);ln(XGV-7,bb+28,XGV+5,bb+10,'#000',1.2);ln(XGV,bb+36,XGV,top);t(XGV-18,bb+14,`4P ${F.mccb}A`,9,'end');t(XGV-18,bb+26,BT(F.mccb,F.I),8,'end');GFC=F.ac}
  else{ln(XGV,Yg,XGV,top);GFC=U1[GPR[0]].gp.ac}}
 const hl=md()=='nm'||md()=='na',og=md()=='og'||md()=='hy',ix=1160;
@@ -2231,7 +2231,7 @@ if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) bu
  bx(1000,yT,BEa-1000,yB-yT,'8 4');t(1000,yT-6,`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`,10,'start','bold');
  ln(1010,ym,x2,ym);t(x2-5,ym-5,'SOLAR',8,'end','bold');if(indI)lampBox(1012,ym+40);
  atsB(x2,ym-12,false);t(x2+30,ym-18,`${both?'ATS-2':'ATS'}  4P ${A}A`,10,'middle','bold');
- {const lx=x2+30;ln(lx,ym+32,lx,ym+100);s.push(`<polygon points="${lx-12},${ym+100} ${lx+12},${ym+100} ${lx},${ym+124}" fill="#000"/>`);const ls=(q=>q.length>2?[q[0],q.slice(1).join(' ')]:q)(wrap(g('loadName'),18));ls.forEach((q,j)=>t(lx,ym+146+j*14,q,12,'middle','bold'));t2(lx,ym+148+ls.length*14,g('loadCable'))}
+ {const lx=x2+30;ln(lx,ym+32,lx,ym+100);s.push(`<polygon points="${lx-12},${ym+100} ${lx+12},${ym+100} ${lx},${ym+124}" fill="#000"/>`);const ls=(q=>q.length>2?[q[0],q.slice(1).join(' ')]:q)(wrap(g('loadName'),18));ls.forEach((q,j)=>t(lx,ym+146+j*14,q,12,'middle','bold'));t2(lx,ym+150+ls.length*14+(String(g('loadCable')).search(/ [(×]/)>0?10:0),g('loadCable'))}
  if(efrA){const cx2=x2+30,cy=ym+60,rx=x2+48;s.push(`<circle cx="${cx2}" cy="${cy}" r="7" fill="none" stroke="#000" stroke-width="1.5"/>`);ln(cx2+7,cy,rx,cy,'#000',1);efrBox(rx,cy-12,efrSet('efrIsoSet')); // EFR: CBCT on the ATS output (load side), relay trips the ATS (dashed)
   ln(rx+33,cy-12,rx+33,ym+40,'#000',1.5,'3 2');ln(rx+33,ym+40,x2+50,ym+40,'#000',1.5,'3 2');ln(x2+50,ym+40,x2+50,ym+32,'#000',1.5,'3 2')}
  const lab=(L,R,y,gx,gw,yb,str)=>{const w=str.length*0.56*10;if(R-L-16>=w)t2((L+R)/2,y-8,str);else t2(Math.min(gx+gw/2,1565-w/2),yb+(str.search(/ [(×]/)>0?10:0),str)}; // source cable: above its line if it fits, else under the source symbol
@@ -2326,7 +2326,7 @@ const hyU=u=>!!u&&u.kind=='inv'&&u.hybrid&&+u.battKwh>0,hy0=hyU(U[0]),hy2=hyU(U2
 const hxc=[];U.reduce((a,u,i)=>(hxc[i]=a+((i>0&&!(L2&&i==n1)&&hyU(u))?HX:0)),0);const sumHx=hxc.length?hxc[hxc.length-1]:0,hxAt=i=>hxc.length?hxc[Math.min(i,hxc.length-1)]:0;
 const c0=many&&n1>=3?172:196,k0=hy0?208:98; // left margin: main earth line + room for the first column's earth label; k0 = how far left of its inverter the first column reaches (x-95 earth line, x-205 for a hybrid)
 const g0=two?(many&&n1>=3?185:215)+SPDX:0,g1=two&&hy2?110:0; // gap between the locations (Location 2's feeder, panel earth line, its first column's earth label)
-const R0=L2?30:SPDX+135,R1=L2?166:105; // right margin: with Location 2 only its last column is at the right (the SPD stays after the main columns); otherwise the SPD + busbar end
+const acEst=(u=>u?String(u.ac||'').length*0.55*9:0)(U[(L2?n1:cnt)-1]),R0=L2?30:SPDX+135+Math.max(0,acEst+24-105),R1=L2?166:105; // right margin: with Location 2 only its last column is at the right (the SPD stays after the main columns); otherwise the SPD + busbar end
 const solve=spn=>(A4W-c0-g0-R0)/(k0+spn+g1+R1);
 const x1Lim=1271; // with Location 2 on the isolation panel its feeder x (cx = x1-98sh-75) must stay left of ~1196 so the extended isolation panel still leaves room for the meter + GRID
 const shIso=isIso0?(x1Lim-c0-g0)/(k0+n1*BASE+(hxc.length?hxc[Math.min(n1,hxc.length-1)]:0)+g1-98):1e9;
@@ -2420,7 +2420,7 @@ const lastU=U[(L2?n1:cnt)-1]||U[0],acW=Math.min(String(lastU.ac).length*cwid(9),
 busEnd=Math.max(L2&&!isIso0?Math.max(spdX+95,XPE()+30+90):spdX+95,nGP?XGM+130:0); // Location 2 on the main panel: the busbar also reaches its tap breaker; hybrid: room for the grid feeder
 
 DY=PD;ln(spdX,300,spdX,335,MG);bx(spdX-9,335,18,34,'',MG);ln(spdX-4,343,spdX+4,352,MG);ln(spdX+4,352,spdX-4,361,MG);ln(spdX,369,spdX,382,MG);es(spdX,382,MG);t(spdX+16,356,'SPD Type 1+2',10);
-ln(90,300,busEnd,300,OR,5);nGP?(()=>{const xs=GPI.map(i=>Xc(i)-28*sh).sort((a,b)=>a-b),q=`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`,lw=k=>{const p=U1[GPI[k]].gp;return Math.max(`4P ${p.mccb}A`.length*cwid(11),(BT(p.mccb,p.I)+' · GRID').length*cwid(9),...wslash(p.ac,Math.max(8,Math.floor((colPitch-40*sh)/cwid(8)))).map(q=>q.length*cwid(8)))},xk=GPI.map((i,k)=>[Xc(i)-28*sh,lw(k)]).sort((a,b)=>a[0]-b[0]),cuts=[250].concat(xk.flatMap(([x,w])=>[x-8,x+22+w])).concat([busEnd-10]);let best=[250,busEnd-10],bw=-1;for(let k=0;k<cuts.length;k+=2){const w=cuts[k+1]-cuts[k];if(w>bw){bw=w;best=[cuts[k],cuts[k+1]]}}const w=z=>z.length*0.6*10;let ls=w(q)<=bw?[q]:[`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A`,'3P+N+PE 400/230V 50Hz'],sz=10;if(Math.max(...ls.map(w))>bw){sz=8;ls=wrap(ls.join(' '),Math.max(10,Math.floor(bw/(0.6*8))))}ls.forEach((z,j)=>t(best[0]+2,289-(ls.length-1-j)*(sz+1),z,sz,'start'))})():(L2?(q=>{const mxw=busEnd-10-250,ls=q.length*0.55*10>mxw?[`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A`,'3P+N+PE 400/230V 50Hz']:[q];ls.forEach((z,j)=>t(250,289-(ls.length-1-j)*11,z,10,'start'))})(`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`):t((300+busEnd)/2,289,`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`,10,'middle'));
+ln(90,300,busEnd,300,OR,5);nGP?(()=>{const xs=GPI.map(i=>Xc(i)-28*sh).sort((a,b)=>a-b),q=`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`,lw=k=>{const p=U1[GPI[k]].gp;return Math.max(`4P ${p.mccb}A`.length*cwid(11),(BT(p.mccb,p.I)+' · GRID').length*cwid(9),...wslash(p.ac,Math.max(8,Math.floor((colPitch-40*sh)/cwid(9)))).map(q=>q.length*cwid(9)))},xk=GPI.map((i,k)=>[Xc(i)-28*sh,lw(k)]).sort((a,b)=>a[0]-b[0]),cuts=[250].concat(xk.flatMap(([x,w])=>[x-8,x+22+w])).concat([busEnd-10]);let best=[250,busEnd-10],bw=-1;for(let k=0;k<cuts.length;k+=2){const w=cuts[k+1]-cuts[k];if(w>bw){bw=w;best=[cuts[k],cuts[k+1]]}}const w=z=>z.length*0.6*10;let ls=w(q)<=bw?[q]:[`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A`,'3P+N+PE 400/230V 50Hz'],sz=10;if(Math.max(...ls.map(w))>bw){sz=8;ls=wrap(ls.join(' '),Math.max(10,Math.floor(bw/(0.6*8))))}ls.forEach((z,j)=>t(best[0]+2,289-(ls.length-1-j)*(sz+1),z,sz,'start'))})():(L2?(q=>{const mxw=busEnd-10-250,ls=q.length*0.55*10>mxw?[`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A`,'3P+N+PE 400/230V 50Hz']:[q];ls.forEach((z,j)=>t(250,289-(ls.length-1-j)*11,z,10,'start'))})(`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`):t((300+busEnd)/2,289,`0.4kV AC COMMON COUPLING BUSBAR ${g('bus')}A  3P+N+PE 400/230V 50Hz`,10,'middle'));
 DY=0;bx(80,250+E1,busEnd-70,128+PD-E1,'8 4');t(L2?170:busEnd,245+E1,`${L2?'LOCATION 1 — ':''}MAIN SWITCHGEAR PANEL ${g('panel')}A`,11,L2?'start':'end','bold');t(busEnd-8,266+E1,ipT('ipMain'),10,'end','bold');DY=PD; // enclosure rating badge, top-right inside the panel outline
 if(indM)lamps(100,300);
 ln(85,364,155,364,GR,3);t(98,350,'PANEL EARTH BUS',9,'start','bold');
@@ -2468,7 +2468,7 @@ if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) bu
  if(HY){ln(x2+60,125,xb0,125,OR);ln(xb0,125,xb1,125,OR,5);t(xb0+2,117,'GRID-SIDE BUSBAR',6.5,'start','bold'); // ATS grid-side busbar (horizontal): feeds ATS input II and, through the cable dropping from it, the hybrid inverters' grid ports
   if(nGP){s.push(`<circle cx="${xgB}" cy="${(125*fy).toFixed(1)}" r="2.6" fill="${OR}"/>`);ln(xgB,125,xgB,182,OR)}
   ln(xb1,125,xb1+16,125,OR);ln(xb1+36,125,xb1+52,125,OR);ln(xb1+36,125,xb1+18,115);ln(xb1+12,121,xb1+20,129);ln(xb1+12,129,xb1+20,121); // incoming breaker in front of the grid-side busbar (horizontal MCCB symbol)
-  t(xb1+26,141,`4P ${brkG}A`,8,'middle');t(xb1+26,151,BT(brkG),7.5,'middle')}
+  t(xb1+26,142,`4P ${brkG}A`,9,'middle','bold');t(xb1+26,152,BT(brkG),8,'middle')}
  if(!both){if(HY){topR=grid(xb1+52,125)}else topR=src=='grid'?grid(x2+60,125):dg(x2+60,125)}
  else{ // ATS-1 selects DG / grid, its output feeds ATS-2's second input
   ln(HY?xb1+52:x2+60,125,x1+30,125,OR);ln(x1+30,125,x1+30,135,OR);atsSym(x1,135,true);t(x1+30,118,`ATS-1  4P ${A}A`,9,'middle','bold');
@@ -2509,11 +2509,11 @@ if(nGP){DY=0; // ---- HYBRID: grid-port supply (absolute coordinates; the common
  const busY=300+PD,ft=270,xs=GPI.map(i=>Xc(i)-28*sh),hop=(x,y)=>{const r=6;ln(x,y-r-2,x,y-r,OR);s.push(`<path d="M ${x.toFixed(1)} ${((y-r)*fy).toFixed(1)} A ${r} ${r} 0 0 0 ${x.toFixed(1)} ${((y+r)*fy).toFixed(1)}" fill="none" stroke="${OR}" stroke-width="1.5"/>`)}; // hop over the common busbar: crossing, NOT connected
  // feeder from the ATS grid-side busbar down into the main panel (straight down, or round Location 2's feeder when that sits on the isolation panel)
  if(GSX){if(Math.abs(GSX-XGM)>1){ln(GSX,182,GSX,262,OR);ln(GSX,262,XGM,262,OR);ln(XGM,262,XGM,ft,OR)}else ln(GSX,182,GSX,ft,OR)}
- const drop=(k,x,y)=>{const u=U1[GPI[k]],p=u.gp;brk(x,y,`4P ${p.mccb}A`,BT(p.mccb,p.I)+' · GRID',1);const al=wslash(p.ac,Math.max(8,Math.floor((colPitch-40*sh)/cwid(8))));al.forEach((q,j)=>tc(x+18,y+48+j*LP(8),q,8,'start'));
+ const drop=(k,x,y)=>{const u=U1[GPI[k]],p=u.gp;brk(x,y,`4P ${p.mccb}A`,BT(p.mccb,p.I)+' · GRID',1);const al=wslash(p.ac,Math.max(8,Math.floor((colPitch-40*sh)/cwid(9))));al.forEach((q,j)=>tc(x+18,y+48+j*LP(9),q,9,'start'));
    ln(x,y+52,x,busY-8,OR);hop(x,busY);ln(x,busY+6,x,400+PD,OR)}; // down past the common busbar (hop) to the inverter's grid-port terminal
  if(nGP==1){ln(XGM,ft,XGM,GB1,OR);ln(XGM,GB1,xs[0],GB1,OR);drop(0,xs[0],GB1)}
- else{const F=S.gridFeeder(GPI.reduce((a,i)=>a+U1[i].gp.I,0)),x0=Math.min(...xs,XGM)-6,x9=Math.max(...xs,XGM)+6;
-  ln(XGM,ft,XGM,276,OR);brk(XGM,276,`4P ${F.mccb}A`,BT(F.mccb,F.I),1);tc(XGM+18,324,F.ac,8,'start');ln(XGM,328,XGM,GB,OR);
+ else{const F=GF(GPI.reduce((a,i)=>a+U1[i].gp.I,0)),x0=Math.min(...xs,XGM)-6,x9=Math.max(...xs,XGM)+6;
+  ln(XGM,ft,XGM,276,OR);brk(XGM,276,`4P ${F.mccb}A`,BT(F.mccb,F.I),1);tc(XGM+18,324,F.ac,9,'start');ln(XGM,328,XGM,GB,OR);
   ln(x0,GB,x9,GB,OR,4);t(XGM+8,GB-5,`GRID SUPPLY BUSBAR ${F.bus}A — from ATS grid side`,8,'start','bold');
   xs.forEach((x,k)=>drop(k,x,GB))}
 }
@@ -2564,7 +2564,7 @@ const HY=md()=='hy',og=md()=='og'||HY,hl=md()=='nm'||md()=='na',L2=!!V.loc2on,l2
 const src=HY?(g('hySrc')=='both'?'both':'grid'):og?String(g('ogSrc')||''):'',both=src=='both',ats=og&&!!src;
 const ipT=k=>g(k)=='IP66'?'IP66 (outdoor)':'IP54 (indoor)',efrM=!!g('efrMain'),efrI=!!g('efrIso')&&(!og||ats),indM=!!g('indMain'),indI=!!g('indIso');
 const U1=INV.map((u,i)=>({...u,kind:'inv',n:i+1})).concat(BESS.map((u,i)=>({...u,kind:'bess',n:i+1})));
-const GP=HY?U1.filter(u=>u.kind=='inv'&&u.hybrid&&u.gp):[],nGP=GP.length,F=nGP>1?S.gridFeeder(GP.reduce((a,u)=>a+u.gp.I,0)):null;
+const GP=HY?U1.filter(u=>u.kind=='inv'&&u.hybrid&&u.gp):[],nGP=GP.length,F=nGP>1?GF(GP.reduce((a,u)=>a+u.gp.I,0)):null;
 const A=g('atsA')||g('iso')||g('panel'),brkG=HY&&+g('supBrk')?+g('supBrk'):HY?Math.max(+A||0,F?F.mccb:0):0,l2A=g('loc2panel');
 const mainBrk=!(U1.length==1&&!l2main&&!efrM); // same rule as the SLD: one unit only -> no main breaker
 const nm=u=>u.kind=='inv'?`INV-${u.n}`:`BESS-${u.n}`,uname=u=>u.kind=='inv'?`Inverter ${u.n} — ${u.name} ${+(+u.kw).toFixed(1)} kW`:`BESS PCS ${u.n} — ${+(+u.kw).toFixed(1)} kW / ${u.kwh} kWh`;
@@ -2577,8 +2577,8 @@ const YA=66,YB=92,BT0=120,BY=both?265:230,BB=BY+115,YTAG=548,EQ=[];
 const brk=(x,y,l1,l2,left,k0)=>{const fz=k0||fzD;L(x,y,x,y+16,OR);L(x,y+34,x,y+52,OR);L(x,y+34,x+10,y+16);L(x-4,y+12,x+4,y+20);L(x-4,y+20,x+4,y+12);R(x+1,y+22,7,7,'','#000',1);
  left?(T(x-8,y+22,l1,10*fz,'end','bold'),T(x-8,y+34,l2,8.5*fz,'end')):(T(x+14,y+22,l1,10*fz,'start','bold'),T(x+14,y+34,l2,8.5*fz,'start'))};
 const bubble=(x,y,n)=>{const w=n>9?24:18;R(x-w/2,y-7,w,14,'','#000',1,'#fff');T(x,y+3.5,'C'+n,8,'middle','bold')};
-const spec=(x,y0,y1,str)=>{const room=y0-y1,sz=8.5*fz,ls=(str.length*0.55*sz<=room)?[str]:(q=>wslash(q[0],Math.max(8,Math.floor(room/(0.55*sz)))).concat(q[1]?['× '+q[1]]:[]))(str.split(' × '));ls.slice(0,3).forEach((q,j)=>T(x+6+j*(sz+2),y0,q,sz,'start','normal',-90))};
-const tag=(x,y,str)=>{if(P>=62){const w=Math.max(44,str.length*5.6+10);R(x-w/2,y,w,18,'','#000',1.2);T(x,y+12.5,str,9,'middle','bold')}else T(x+3,y+2,str,8.5,'end','bold',-90)};
+const spec=(x,y0,y1,str)=>{const room=y0-y1,sz=8.5*fz,ls=(str.length*0.55*sz<=room)?[str]:(q=>wslash(q[0],Math.max(8,Math.floor(room/(0.55*sz)))).concat(q[1]?['× '+q[1]]:[]))(str.split(' × '));ls.slice(0,3).forEach((q,j)=>T(x+5+sz+j*(sz+2),y0,q,sz,'start','normal',-90))};
+const tag=(x,y,str)=>{if(P>=62){const w=Math.max(44,str.length*5.6+10);R(x-w/2,y,w,18,'','#000',1.2);T(x,y+12.5,str,9,'middle','bold')}else T(x+3,y+32,str,8.5,'start','bold',-90)};
 const arrowD=(x,y)=>s.push(`<polygon points="${x-5},${y} ${x+5},${y} ${x},${y+8}" fill="#000"/>`);
 const es=(x,y)=>{L(x,y,x,y+8,GR);L(x-12,y+8,x+12,y+8,GR,2);L(x-8,y+13,x+8,y+13,GR,2);L(x-4,y+18,x+4,y+18,GR,2)};
 const spd=(x)=>{L(x,BY,x,BY+22,MG);R(x-8,BY+22,16,30,'',MG);L(x-3,BY+30,x+3,BY+37,MG);L(x+3,BY+37,x-3,BY+44,MG);L(x,BY+52,x,BY+66,MG);es(x,BY+66);T(x+13,BY+40,'SPD',9*fz,'start','bold');T(x+13,BY+51,'T1+2',8*fz,'start')};
@@ -2594,7 +2594,7 @@ const earthBar=(x)=>{L(x,BB-16,x+48,BB-16,GR,3);T(x,BB-22,'PANEL EARTH BAR',7,'s
 const mainDown=U1.map(u=>({kind:'brk',l1:`${u.poles||'4P'} ${u.mccb}A`,l2:BT(u.mccb,u.I),tag:nm(u),u}));
 mainDown.push({kind:'spd'});if(indM)mainDown.push({kind:'lamps',w:0.6});
 if(l2main)mainDown.push({kind:'brk',l1:`4P ${l2A}A`,l2:BT(l2A,V.loc2panelI),tag:'LOC-2',l2tap:1});
-const gpDown=GP.map(u=>({kind:'brk',l1:`${u.poles||'4P'} ${u.gp.mccb}A`,l2:BT(u.gp.mccb,u.gp.I)+' · GRID',tag:nm(u)+' GP',u,gp:1}));
+const gpDown=GP.map(u=>({kind:'brk',l1:`${u.poles||'4P'} ${u.gp.mccb}A`,l2:BT(u.gp.mccb,u.gp.I),tag:'GP-'+u.n,u,gp:1}));
 const isoDown=[];
 if(!ats){if(og){}else{if(hl)isoDown.push({kind:'brk',l1:`4P ${g('loadBrk')}A`,l2:BT(g('loadBrk')),tag:'LOAD',load:1})}}
 if(l2iso&&!ats)isoDown.push({kind:'brk',l1:`4P ${l2A}A`,l2:BT(l2A,V.loc2panelI),tag:'LOC-2',l2tap:1});
@@ -2603,7 +2603,7 @@ if(indI&&!ats)isoDown.push({kind:'lamps',w:0.6});
 const wOf=d=>d.kind=='lamps'?0.6:d.kind=='spd'?0.7:1;
 const sumM=mainDown.reduce((a,d)=>a+wOf(d),0),sumI=isoDown.reduce((a,d)=>a+wOf(d),0),GAP=70;
 const mainW=P=>{let x=80+sumM*P;if(nGP)x+=0.4*P+(nGP>1?0.6*P:0)+nGP*P;return Math.max(x-0.35*P+70,efrM?330:250)};
-const isoW=P=>{if(ats){const xa=(l2iso?190:110)+100;return Math.max(HY?(both?xa+300:xa+320):both?xa+270:xa+170,300)}
+const isoW=P=>{if(ats){const xa=(l2iso?212:110)+100;return Math.max(HY?(both?xa+300:xa+320):both?xa+270:xa+170,300)}
  const xx=(efrI?240:150)+sumI*P;return Math.max(og?xx+40:Math.max(xx+30,efrI?300:220)+70,og?260:250)};
 let P=165;while(P>34&&24+mainW(P)+GAP+isoW(P)>W-24)P-=1;
 function np(){return md()=='np'}
@@ -2631,11 +2631,11 @@ let gpEntry=0,cGPin=0;
 if(nGP==1){const d=gpDown[0],xx=gxs[0];gpEntry=xx;L(xx,YB,xx,BY+20,OR);brk(xx,BY+20,d.l1,d.l2);L(xx,BY+72,xx,YTAG-8,OR);arrowD(xx,YTAG-8);
  cGPin=cab(IP+' — ATS grid-side busbar',MP+` — grid-port breaker ${d.l1}`,d.u.gp.ac);const n=cab(MP+` — grid-port breaker ${d.l1}`,uname(d.u)+' (grid port)',d.u.gp.ac);
  bubble(xx,BB+18,n);spec(xx,YTAG-14,BB+30,d.u.gp.ac);tag(xx,YTAG,d.tag);T(xx+8,BT0+16,'GRID PORT',8,'start','bold')}
-else if(nGP>1){L(gx0,BY,gx1,BY,OR,4);T(gx0,BY+(-6),`GRID SUPPLY BUSBAR ${F.bus}A`,Math.min(9,(gx1-gx0)/(22*0.58)),'start','bold');gpEntry=xF;
+else if(nGP>1){L(gx0,BY,gx1,BY,OR,4);T(xF+8,BY-6,`GRID SUPPLY BUSBAR ${F.bus}A`,Math.max(6.5,Math.min(9,(gx1-xF-8)/(22*0.58))),'start','bold');gpEntry=xF;
  L(xF,BY,xF,BY-28,OR);brk(xF,BY-80,`4P ${F.mccb}A`,BT(F.mccb,F.I),1,1);L(xF,BY-80,xF,YB,OR);
  cGPin=cab(IP+' — ATS grid-side busbar',MP+` — grid supply feeder ${F.mccb}A`,F.ac);
  gpDown.forEach((d,k)=>{const n=cab(MP+` — grid-port breaker ${d.l1}`,uname(d.u)+' (grid port)',d.u.gp.ac);down(d,gxs[k],n)});
- L(gx0-P*0.2,BT0+4,gx0-P*0.2,BB-4,'#000',0.8,'3 3');}
+}
 // ---------- ISOLATION PANEL / LOAD DB ----------
 const iL=mR+GAP;let iR,xSol,xGO=0;
 if(!ats){
@@ -2651,14 +2651,14 @@ if(!ats){
  if(og)T(iL+30,BB-30,'Outgoing load circuits as per site load schedule',8,'start');
 }else{
  // ATS arrangement: every source enters from the top, the load leaves at the bottom
- const xL2=iL+70;xSol=iL+(l2iso?190:110);const xa=xSol+100,xII=xa+20,yA2=BY+28;
+ const xL2=iL+92;xSol=iL+(l2iso?212:110);const xa=xSol+100,xII=xa+20,yA2=BY+28;
  let xb1=0,xIn2=0,x1=0;
  if(HY){xGO=xa+90;xb1=xa+(both?190:200);xIn2=xb1-30}
  if(both)x1=HY?xIn2:xa+150;
  iR=Math.max(HY?xb1+(both?110:120):both?x1+120:xII+150,iL+300);
  R(iL,BT0,iR-iL,BB-BT0,'8 4');ttl(xSol+14,['ISOLATION','PANEL (ATS)',ipT('ipIso').toUpperCase()]);
  // solar incomer -> solar bus -> ATS-2 input I
- L(xSol,YA,xSol,BY,OR);L(iL+30,BY,xa-20,BY,OR,5);T(iL+34,BY-6,`SOLAR BUS ${g('isoBus')||A}A`,8.5,'start','bold');L(xa-20,BY,xa-20,yA2,OR);
+ L(xSol,YA,xSol,BY,OR);L(iL+30,BY,xa-20,BY,OR,5);T(xSol+5,BY-6,`SOLAR BUS ${g('isoBus')||A}A`,Math.min(8,(xa-20-xSol-8)/(String(`SOLAR BUS ${g('isoBus')||A}A`).length*0.58)),'start','bold');L(xa-20,BY,xa-20,yA2,OR);
  atsS(xa,yA2,both?'ATS-2':'ATS');
  // load out
  L(xa,yA2+46,xa,YTAG-8,OR);arrowD(xa,YTAG-8);{const n=cab(IP+' — ATS output (load)',g('loadName')||'Load',g('loadCable'));bubble(xa,BB+18,n);spec(xa,YTAG-14,BB+30,g('loadCable'));tag(xa,YTAG,'LOAD')}
@@ -2667,7 +2667,7 @@ if(!ats){
  const srcTop=(xx,label,cb,from)=>{L(xx,46,xx,BT0,OR);const w=Math.max(70,label.length*5.4+12);R(xx-w/2,22,w,22,'','#000',1.2);T(xx,37,label,8.5,'middle','bold');const n=cab(from,IP,cb);bubble(xx,98,n);return n};
  const gridLbl='FROM GRID (via energy meter)',dgLbl=`FROM DG${g('dgKva')?' '+g('dgKva')+' kVA':''}`;
  if(HY){ // grid-side busbar: feeds ATS input II and the hybrid inverters' grid ports
-  L(xII,BY,xb1+20,BY,OR,5);T(xII+4,BY-6,'GRID-SIDE BUSBAR',8,'start','bold');L(xII,BY,xII,yA2,OR);
+  L(xII,BY,xb1+20,BY,OR,5);T(xII+6,BY+14,'GRID-SIDE BUSBAR',8,'start','bold');L(xII,BY,xII,yA2,OR);
   L(xIn2,BY,xIn2,BY-28,OR);brk(xIn2,BY-80,`4P ${brkG}A`,BT(brkG),0,1);
   if(!both){L(xIn2,BY-80,xIn2,46,OR);const w=170;R(xIn2-w/2,22,w,22,'','#000',1.2);T(xIn2,37,gridLbl,8.5,'middle','bold');const n=cab('Energy meter (utility GRID)',IP+` — incoming ${brkG}A`,SUPC());bubble(xIn2,98,n)}
   else{const ya=BT0+8;L(xIn2,BY-80,xIn2,ya+46,OR);atsS(xIn2,ya,'ATS-1');T(xIn2+40,ya+52,'(grid / DG)',8,'start');
@@ -2707,9 +2707,9 @@ if(efrI)eqI.push([`Earth fault relay + CBCT (trips ${ats?'the ATS':'the isolator
 if(indI)eqI.push(['Phase indicator lamps','R-Y-B',1]);
 eqI.push(['Panel earth bar','Cu',1]);
 // ---------- tables ----------
-const TY=588,TB=FB-6,TX0=24,TW0=620,TX1=TX0+TW0+20,TW1=W-24-TX1;
+const TY=602,TB=FB-6,TX0=24,TW0=620,TX1=TX0+TW0+20,TW1=W-24-TX1;
 const table=(x0,y0,w,cols,head,rows,title)=>{const n=rows.length+1,rh=Math.min(15,(TB-y0-18)/n),fsz=Math.min(9,rh*0.68);
- T(x0,y0-6,title,11,'start','bold');R(x0,y0,w,rh*n);let cx=x0;cols.forEach((cw,j)=>{if(j)L(cx,y0,cx,y0+rh*n,'#000',0.8);T(cx+4,y0+rh*0.7,head[j],fsz,'start','bold');cx+=cw*w});
+ T(x0,y0-6,title,11,'start','bold');R(x0,y0,w,rh*n);let cx=x0;cols.forEach((cw,j)=>{if(j){let ys=y0;[...rows,{sec:1}].forEach((r,i)=>{const yy=y0+rh*(i+1);if(r.sec){if(yy>ys)L(cx,ys,cx,yy,'#000',0.8);ys=yy+rh}})}T(cx+4,y0+rh*0.7,head[j],fsz,'start','bold');cx+=cw*w});
  L(x0,y0+rh,x0+w,y0+rh,'#000',1.2);rows.forEach((r,i)=>{const yy=y0+rh*(i+1);if(i)L(x0,yy,x0+w,yy,'#000',r.sec?1:0.4);let cx=x0;
   if(r.sec){s.push(`<rect x="${x0}" y="${yy.toFixed(1)}" width="${w}" height="${rh.toFixed(1)}" fill="#eee" stroke="none"/>`);T(x0+4,yy+rh*0.7,r.sec,fsz,'start','bold');return}
   r.forEach((c,j)=>{const cw=cols[j]*w,mc=Math.floor((cw-8)/(0.55*fsz)),q=String(c);T(cx+4,yy+rh*0.7,q.length>mc?q.slice(0,mc-1)+'…':q,fsz,'start',j==0&&r.b?'bold':'normal');cx+=cw})})};
@@ -2730,6 +2730,8 @@ return page(out.join('')+s.join(''));
 }
 // Backup (grid-side) supply cable: from the supply-connection table / user edit, else the auto utility cable
 const SUPC=()=>g('supCable')||g('utilCable');
+// Hybrid backup main breaker (main panel grid-supply feeder, fed from the ATS grid-side busbar) + its cable: auto from the grid-port currents, or the user's edit
+const GF=sum=>{const F=S.gridFeeder(sum),b=+g('bkBrk'),c=g('bkCable');if(b>0){F.mccb=b;F.bus=b}if(c)F.ac=c;return F};
 // Single-phase supply: every breaker becomes 2-pole and busbars single phase (text labels only - layout unchanged)
 const PH1=svg=>!V.sp?svg:svg.replace(/>([^<]+)</g,(m,q)=>'>'+q.replace(/\b4P\b/g,'2P').replace(/3P\+N\+PE,? 400\/230V/g,'1P+N+PE 230V').replace(/3P\+N\+PE/g,'1P+N+PE').replace(/SPD Type 1\+2, 3P\+N/g,'SPD Type 1+2, 1P+N').replace(/\b3P\+N\b/g,'1P+N')+'<');
 S.renderPanels = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderPanels()); };
@@ -2901,7 +2903,7 @@ S.renderSLD = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || 
     ['Drawing', [['site', 'Site name', 'RODESHA ENTERPRISES MORATUWA'], ['loc', 'Location', '25 Lunawa Station Rd, Moratuwa'], ['dno', 'Drawing no', 'RR_2026_118'], ['rev', 'Revision', 'Preliminary'], ['date', 'Date', today(), 3], ['totalKw', 'Total DC capacity (kWp)', '', 2], ['opt', 'Option label', 'Option 1']]],
     ['INV'], ['BESS'], ['LOC2'],
     ['Solar array', [['modWp', 'Panel Wp', '620']]],
-    ['Cables & switchgear', [['mainCable', 'Main cable to isolator', '', 1], ['utilCable', 'Utility cable', '', 1], ['supply', 'Supply connection (CEB)', '', 4], ['supBrk', 'Backup main breaker (A)', '', 1], ['supCable', 'Backup main cable', '', 1], ['earthMain', 'Earth bus feeder', '', 1], ['pvEarth', 'PV array main earth (roof)', '', 1], ['panel', 'Main switchgear panel (A)', '', 1], ['bus', 'Common coupling busbar (A)', '', 1], ['iso', 'Isolator (A)', '', 1], ['isoBus', 'Isolation panel busbar (A)', '', 1], ['meterLbl', 'Meter label', '', 1], ['earthR', 'Earth resistance (Ω max)', '10'], ['loadName', 'Load / DB name', 'LOAD'], ['loadBrk', 'Load feeder MCCB (A)', '100'], ['loadCable', 'Load feeder cable', '', 1]]],
+    ['Cables & switchgear', [['mainCable', 'Main cable to isolator', '', 1], ['utilCable', 'Utility cable', '', 1], ['supply', 'Supply connection (CEB)', '', 4], ['supBrk', 'Utility main breaker (A)', '', 1], ['supCable', 'Utility supply cable', '', 1], ['bkBrk', 'Backup main breaker (A)', '', 1], ['bkCable', 'Backup main cable', '', 1], ['earthMain', 'Earth bus feeder', '', 1], ['pvEarth', 'PV array main earth (roof)', '', 1], ['panel', 'Main switchgear panel (A)', '', 1], ['bus', 'Common coupling busbar (A)', '', 1], ['iso', 'Isolator (A)', '', 1], ['isoBus', 'Isolation panel busbar (A)', '', 1], ['meterLbl', 'Meter label', '', 1], ['earthR', 'Earth resistance (Ω max)', '10'], ['loadName', 'Load / DB name', 'LOAD'], ['loadBrk', 'Load feeder MCCB (A)', '100'], ['loadCable', 'Load feeder cable', '', 1]]],
     ['PROT'],
     ['Sign-off', [['designed', 'Designed by', 'K.U.S.Panagoda'], ['drawn', 'Drawn by', 'K.U.S.Panagoda'], ['checked', 'Checked by', 'Kavish / Uditha'], ['director', 'Director / CTO', 'Champika Periyapperuma'], ['exec', 'Project executive', 'Kavish Weerasinghe']]]];
   const fld = ([k, l, v, flag]) => {
@@ -3053,13 +3055,14 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const SR = $('supply').value === '' ? null : (window.SLD_SUPPLY || [])[+$('supply').value], SP = !!(SR && SR.phase == 1);
     { const gps = MODE == 'hy' ? invInfos.filter(x => x.hybrid && x.gp) : [];
       d.supBrk = SR ? SR.A : Math.max(+d.iso || 0, gps.length ? S.gridFeeder(gps.reduce((a, x) => a + x.gp.I, 0)).mccb : 0);
-      d.supCable = SR ? SR.cable : d.utilCable; }
-    if (SP) ['mainCable', 'utilCable', 'loadCable', 'dgCable', 'supCable'].forEach(k => { if (typeof d[k] == 'string') d[k] = d[k].replace(/\b4C\b/g, '2C').replace(/\(4 Runs/g, '(2 Runs'); }); // single phase: 2-core cables
+      d.supCable = SR ? SR.cable : d.utilCable;
+      const BF = gps.length > 1 ? S.gridFeeder(gps.reduce((a, x) => a + x.gp.I, 0)) : null; d.bkBrk = BF ? BF.mccb : ''; d.bkCable = BF ? BF.ac : ''; } // backup main = main-panel grid-supply feeder (2+ hybrid grid ports)
+    if (SP) ['mainCable', 'utilCable', 'loadCable', 'dgCable', 'supCable', 'bkCable'].forEach(k => { if (typeof d[k] == 'string') d[k] = d[k].replace(/\b4C\b/g, '2C').replace(/\(4 Runs/g, '(2 Runs'); }); // single phase: 2-core cables
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = ((invInfos.reduce((a, i) => a + i.mods, 0) + (LOC2.on ? invInfos2.reduce((a, i) => a + i.mods, 0) : 0)) * wp / 1000).toFixed(2);
     const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2panelI: d2 ? d2.T : 0, panelI: d.T, loc2bus: d2 ? d2.bus : 0, sp: SP }; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => V[el.id] = el.value);
     $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = MODE == 'np' || ((MODE == 'og' || MODE == 'hy') && !(ogSrc && k != 'loadBrk')));
-    $('ogBox').hidden = MODE != 'og' && MODE != 'hy'; $('ogSrc').parentElement.hidden = MODE == 'hy'; $('hySrcL').hidden = MODE != 'hy'; document.querySelectorAll('.gpL').forEach(el => el.hidden = MODE != 'hy'); $('atsA').parentElement.hidden = !ogSrc; $('supBrk').parentElement.hidden = MODE != 'hy'; $('supCable').parentElement.hidden = !(MODE == 'hy' || ogSrc == 'grid' || ogSrc == 'both'); ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
+    $('ogBox').hidden = MODE != 'og' && MODE != 'hy'; $('ogSrc').parentElement.hidden = MODE == 'hy'; $('hySrcL').hidden = MODE != 'hy'; document.querySelectorAll('.gpL').forEach(el => el.hidden = MODE != 'hy'); $('atsA').parentElement.hidden = !ogSrc; $('supBrk').parentElement.hidden = MODE != 'hy'; $('bkBrk').parentElement.hidden = $('bkCable').parentElement.hidden = !(MODE == 'hy' && invInfos.filter(x => x.hybrid && x.gp).length > 1); $('supCable').parentElement.hidden = !(MODE == 'hy' || ogSrc == 'grid' || ogSrc == 'both'); ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
     $('ogBox').querySelector('b').textContent = MODE == 'hy' ? 'ATS in the isolation panel (hybrid)' : 'Backup source — ATS in the isolation panel';
     $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = (MODE == 'og' || MODE == 'hy') && !ogSrc; $('isoPanelTitle').textContent = (MODE == 'og' || MODE == 'hy') ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
     $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || ((MODE == 'og' || MODE == 'hy') && !ogSrc);
