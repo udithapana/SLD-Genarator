@@ -45,7 +45,7 @@ for ph, b, m, cur, ac, gi, gac, ea in ws.iter_rows(min_col=2, max_col=9, values_
     if isinstance(gi, (int, float)) and gi > 0: d['gpI'] = gi; d['gpAc'] = cab(gac)
     k = kva.get(model) or kw_of(model)
     if k: d['kw'] = k
-    if phase == 1: d['phase'] = 1
+    if phase == 1 or re.search(r'/2C/', d['ac'] or ''): d['phase'] = 1  # 2-core AC cable = single phase (rows without a phase note, e.g. Sunways STH-..KTL-LS/LSS)
     out.append(d)
 # "Supply" sheet: CEB supply connection -> backup (grid-side) main breaker (A) + supply cable
 sup = []

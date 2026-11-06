@@ -133,7 +133,7 @@ ln(480,yc,MB,yc);{const av=PL-480-12;let f=GPB?fH:fz(9);const al=u.ac.length*0.5
 if(GPB&&k<n1&&u.gp&&u.hybrid&&!B&&U1[k]===u){const ye1=yy(i,75),yg=yy(i,122),p=u.gp,bh=Math.max(40*sv,11); // GRID-port cable: inverter -> its own breaker (not on the common busbar) -> grid-supply vertical
  ln(480,ye1,540,ye1);ln(540,ye1,540,yg);ln(540,yg,MB,yg);bx(MB,yg-bh/2,60,bh);if(EFTB=='gp'){efrBox(MB-3,yg+bh/2+6,efrSet('efrMainSet'));ln(MB+30,yg+bh/2,MB+30,yg+bh/2+6,'#000',1.5,'3 2')} // single grid port: EFR on that (backup-side) breaker
 
- if(sm)t(MB+30,yg+2.5,`${p.mccb}A GRID`,fz(9));else{t(MB+30,yg-3*sv,`4P ${p.mccb}A`,fz(11));t(MB+30,yg+12*sv,'GRID PORT',fz(8))}
+ if(sm)t(MB+30,yg+2.5,`${p.mccb}A GRID`,fz(9));else{t(MB+30,yg-3*sv,`${u.poles||'4P'} ${p.mccb}A`,fz(11));t(MB+30,yg+12*sv,'GRID PORT',fz(8))}
  if(!GPC){const av=PL-486-6;let f=fH;const al=p.ac.length*0.55*f>av?wslash(p.ac,Math.ceil(p.ac.length/2)):[p.ac];f=Math.min(f,av/(Math.max(...al.map(q=>q.length))*0.55));al.forEach((q,j)=>t(486,yg+Math.max(11*sv,f)+j*(f+1),q,f,'start'))}
  ln(MB+60,yg,XGV,yg)}
 mainLn(yc)};
@@ -463,7 +463,7 @@ if(nGP){DY=0; // ---- HYBRID: grid-port supply (absolute coordinates; the common
  const busY=300+PD,ft=270,xs=GPI.map(i=>Xc(i)-28*sh),hop=(x,y)=>{const r=6;ln(x,y-r-2,x,y-r,OR);s.push(`<path d="M ${x.toFixed(1)} ${((y-r)*fy).toFixed(1)} A ${r} ${r} 0 0 0 ${x.toFixed(1)} ${((y+r)*fy).toFixed(1)}" fill="none" stroke="${OR}" stroke-width="1.5"/>`)}; // hop over the common busbar: crossing, NOT connected
  // feeder from the ATS grid-side busbar down into the main panel (straight down, or round Location 2's feeder when that sits on the isolation panel)
  if(GSX){if(Math.abs(GSX-XGM)>1){const RY=RT?250:250+E1-20;ln(GSX,182,GSX,RY,OR);ln(GSX,RY,XGM,RY,OR);ln(XGM,RY,XGM,ft,OR)} /* RY: well clear above the main panel outline (y 270), below the load arrow tip */else ln(GSX,182,GSX,ft,OR)}
- const d0h=rdim().h,drop=(k,x,y,lt)=>{const u=U1[GPI[k]],p=u.gp;brk(x,y,`4P ${p.mccb}A`,BT(p.mccb,p.I)+' · GRID',1,lt);const al=wslash(p.ac,Math.max(8,Math.floor((colPitch-40*sh)/cwid(9))));al.forEach((q,j)=>tc(x+18,y+48+j*LP(9),q,9,'start'));
+ const d0h=rdim().h,drop=(k,x,y,lt)=>{const u=U1[GPI[k]],p=u.gp;brk(x,y,`${u.poles||'4P'} ${p.mccb}A`,BT(p.mccb,p.I)+' · GRID',1,lt);const al=wslash(p.ac,Math.max(8,Math.floor((colPitch-40*sh)/cwid(9))));al.forEach((q,j)=>tc(x+18,y+48+j*LP(9),q,9,'start'));
    ln(x,y+52,x,busY-8,OR);hop(x,busY);ln(x,busY+6,x,400+PD,OR)}; // down past the common busbar (hop) to the inverter's grid-port terminal
  if(nGP==1){const xg=xs[0],DB=EFT=='gp'?34:0;ln(XGM,ft,XGM,GB1,OR);ln(XGM,GB1,xg,GB1,OR);if(DB)ln(xg,GB1,xg,GB1+DB,OR);drop(0,xg,GB1+DB,EFT=='gp'&&XGM<=xg); // relay on the right -> breaker labels go left
   if(EFT=='gp'){const set=efrSet('efrMainSet'),w=efrW(set),yc=GB1+17,Lf=XGM>xg,rx=Lf?xg-16-w:xg+16,yb=GB1+DB+25,xv=Lf?rx+w-6:rx+6;ctc(xg,yc);ln(Lf?xg-CTR:xg+CTR,yc,Lf?rx+w:rx,yc,'#000',1);const d=relay(rx,yc-d0h/2,w,set);
