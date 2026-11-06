@@ -191,7 +191,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
       document.querySelectorAll('#bessList2 .inf').forEach((el, i) => { const x = bessInfos2[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}`; });
     }
   }
-  let cur = 'out';
+  let cur = 'out2'; // the SLD (standard symbols) is the main view
   const OUTS = [['t1', 'out'], ['t2', 'out2'], ['t4', 'out4'], ['t3', 'out3']], SUF = { out: '_block', out2: '_SLD', out4: '_panels_quotation' };
   OUTS.forEach(([b, o]) => $(b).onclick = () => {
     cur = o; OUTS.forEach(([b2, o2]) => { $(o2).hidden = o2 != o; $(b2).classList.toggle('on', o2 == o); });
@@ -254,7 +254,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const keep = confirm('Reset to the default project?\n\nOK = save the current drawing to History first, then reset.\nCancel = go back (nothing changes).'); if (!keep) return;
     const e = snap('Auto-saved before reset — ' + new Date().toLocaleString()), list = hLoad(); list.unshift(e); hSave(list);
     OPEN = null; updBtn(); hApply(Object.assign({}, DEFAULT, { label: 'default project' })); flash('Reset to default. Previous drawing saved in History.');
-    $('t1').onclick();
+    $('t2').onclick();
   };
   function hApply(e, quiet) {
     MODE = e.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x.dataset.mode == MODE));
@@ -265,7 +265,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     Object.keys(e.fields || {}).forEach(k => { const el = $(k); if (el) el.value = e.fields[k]; });
     if (e.fields && e.fields.proj && !e.fields.site) $('site').value = String(e.fields.proj).replace(/^\s*PROPOSED\s+\S+\s+KW\s+SOLAR\s+POWER\s+SYSTEM\s+(FOR\s+)?/i, '').trim() || e.fields.proj;
     update(); if (quiet) return; flash('Loaded "' + e.label + '".');
-    $('t1').onclick();
+    $('t2').onclick();
   }
   // ---- Team sync: the shared history lives in ONE file (history.json) on a separate branch (sld-data) of the same GitHub repository, so every
   // person using the same web link sees the same saved drawings. Reading needs nothing (public repo); saving needs a GitHub access token (fine-grained,
