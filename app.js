@@ -235,17 +235,23 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const def = (fields.dno || 'Drawing') + ' — ' + (fields.opt || '') + ' (' + MODE + ')';
     return { id: Date.now(), ts: new Date().toISOString(), label: label || def, mode: MODE, fields, manual: [...manual], invs: withNames(INVS), bess: JSON.parse(JSON.stringify(BESSU)), loc2: JSON.parse(JSON.stringify(LOC2)), invs2: withNames(INVS2), bess2: JSON.parse(JSON.stringify(BESSU2)) };
   };
+  // ---- Update saved: the drawing opened from History (or just saved) can be overwritten in place instead of saved as a new entry ----
+  let OPEN = null; const updBtn = () => { const e = OPEN != null && hLoad().find(x => x.id == OPEN); $('upd').hidden = !e; if (e) $('upd').title = 'Overwrite "' + e.label + '" with the current changes'; };
+  $('upd').onclick = () => { const list = hLoad(), i = list.findIndex(x => x.id == OPEN); if (i < 0) { updBtn(); return; } const old = list[i];
+    if (!confirm('Update "' + old.label + '" with the current changes?\n(The previous version is replaced.)')) return;
+    const e = snap(old.label); e.id = old.id; e.label = old.label; e.by = old.by || ''; e.upd = SY().name || ''; e.ts = new Date().toISOString(); list.splice(i, 1); list.unshift(e);
+    hSave(list); flash('Updated "' + e.label + '".'); if (cur == 'out3') drawHistory(); if (SY().token) sync(true); };
   let DEFAULT = null; // the untouched start-up configuration (set after the first render)
   $('sv').onclick = () => {
     const e = snap(), label = prompt('Save this revision as:', e.label); if (label == null) return;
     const list = hLoad(); e.label = label || e.label; e.by = SY().name || ''; list.unshift(e);
-    hSave(list); flash('Saved to history.'); if (cur == 'out3') drawHistory(); if (SY().token) sync(true);
+    hSave(list); OPEN = e.id; updBtn(); flash('Saved to history.'); if (cur == 'out3') drawHistory(); if (SY().token) sync(true);
   };
   // Reset: back to the default project. The current configuration is first saved to history (so nothing is lost), unless the user declines.
   $('rs').onclick = () => {
     const keep = confirm('Reset to the default project?\n\nOK = save the current drawing to History first, then reset.\nCancel = go back (nothing changes).'); if (!keep) return;
     const e = snap('Auto-saved before reset — ' + new Date().toLocaleString()), list = hLoad(); list.unshift(e); hSave(list);
-    hApply(Object.assign({}, DEFAULT, { label: 'default project' })); flash('Reset to default. Previous drawing saved in History.');
+    OPEN = null; updBtn(); hApply(Object.assign({}, DEFAULT, { label: 'default project' })); flash('Reset to default. Previous drawing saved in History.');
     $('t1').onclick();
   };
   function hApply(e, quiet) {
@@ -299,7 +305,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const sha = (await ref.json()).object.sha, mk = await gh('/git/refs', { method: 'POST', body: JSON.stringify({ ref: 'refs/heads/' + BR, sha }) });
     if (!mk.ok && mk.status != 422) throw new Error('Cannot create the ' + BR + ' branch (' + mk.status + ' — token needs Contents: write)');
   }
-  const mergeH = (a, b, del) => { const m = new Map(); a.concat(b).forEach(e => { if (e && e.id != null && !del.has(String(e.id)) && !m.has(String(e.id))) m.set(String(e.id), e) }); return [...m.values()].sort((x, y) => (y.ts || '').localeCompare(x.ts || '')).slice(0, HMAX); };
+  const mergeH = (a, b, del) => { const m = new Map(); a.concat(b).forEach(e => { if (e && e.id != null && !del.has(String(e.id))) { const k = String(e.id), o = m.get(k); if (!o || (e.ts || '') > (o.ts || '')) m.set(k, e); } }); /* same drawing on both sides: the newer (updated) copy wins */ return [...m.values()].sort((x, y) => (y.ts || '').localeCompare(x.ts || '')).slice(0, HMAX); };
   async function sync(quiet) {
     const c = SY(); if (!/^[\w.-]+\/[\w.-]+$/.test(c.repo)) { syState = 'Enter the repository as owner/name.'; if (cur == 'out3') drawHistory(); return; }
     if (syBusy) return; syBusy = true; syState = 'Syncing…'; if (cur == 'out3') drawHistory();
@@ -330,7 +336,8 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
   }
   function drawHistory() {
     const list = hLoad();
-    $('out3').innerHTML = syncBox() + (list.length ? list.map(e => `<div class="hist-item" data-id="${e.id}"><div><b>${esc(e.label)}</b><span>${esc(e.by ? e.by + ' · ' : '')}${new Date(e.ts).toLocaleString()}</span></div><div class="btns"><button type="button" class="alt" data-a="load">Load</button><button type="button" class="alt ic" data-a="del">Delete</button></div></div>`).join('')
+    updBtn();
+    $('out3').innerHTML = syncBox() + (list.length ? list.map(e => `<div class="hist-item" data-id="${e.id}"><div><b>${esc(e.label)}</b><span>${esc(e.by ? e.by + ' · ' : '')}${e.upd != null ? 'updated' + (e.upd && e.upd != e.by ? ' by ' + esc(e.upd) : '') + ' ' : ''}${new Date(e.ts).toLocaleString()}${e.id == OPEN ? ' · <b>open now</b>' : ''}</span></div><div class="btns"><button type="button" class="alt" data-a="load">Load</button><button type="button" class="alt ic" data-a="del">Delete</button></div></div>`).join('')
       : '<p class="hist-empty">No saved revisions yet — use "💾 Save to history" above to keep a copy of the current configuration.</p>');
   }
   $('out3').addEventListener('click', e => {
@@ -343,7 +350,7 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
     if (a == 'sy-imp') { const f = document.createElement('input'); f.type = 'file'; f.accept = '.json,application/json'; f.onchange = () => { const r = new FileReader(); r.onload = () => { try { const d = JSON.parse(r.result), del = new Set(lsGet(DELK, [])); hSave(mergeH(hLoad(), d.entries || [], del)); drawHistory(); flash('Imported ' + (d.entries || []).length + ' entries.'); if (SY().token) sync(true); } catch (er) { flash('Not a valid history file.'); } }; r.readAsText(f.files[0]); }; f.click(); return; }
     const item = e.target.closest('.hist-item'); if (!item) return;
     const id = +item.dataset.id, list = hLoad(), e2 = list.find(x => x.id == id); if (!e2) return;
-    if (e.target.dataset.a == 'load') hApply(e2);
+    if (e.target.dataset.a == 'load') { hApply(e2); OPEN = e2.id; updBtn(); }
     else if (e.target.dataset.a == 'del') { if (confirm('Delete "' + e2.label + '"?' + (SY().token ? '\n(Also removed from the shared history.)' : ''))) { hSave(list.filter(x => x.id != id)); lsSet(DELK, lsGet(DELK, []).concat(String(id))); drawHistory(); if (SY().token) sync(true); } }
   });
   drawInvs(); drawBess(); drawLoc2Shell(); update(); DEFAULT = snap('default project');
