@@ -8,7 +8,10 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 let V = {}, INV = [], BESS = [], INV2 = [], BESS2 = [];
 const LOGO = G.SLD_LOGO || '';
 const g = id => String(V[id] == null ? '' : V[id]).trim();
-const CFGN = () => ({ nm: 'Net metering', na: 'Net accounting', np: 'Net plus', og: 'Off-grid', hy: 'Hybrid' }[V.mode] || 'Net metering'), md = () => V.mode || 'nm';
+// Net zero / Net plus one are drawn like Hybrid (net metering / net accounting + ATS, hybrid inverters + batteries); Net plus enterprise like Net plus (hybrid inverters + batteries, night export)
+const BASEM = { nz: 'hy', n1: 'hy', ne: 'np' };
+const CFGN = () => ({ nm: 'Net metering', na: 'Net accounting', np: 'Net plus', og: 'Off-grid', hy: 'Hybrid', nz: 'Net zero', n1: 'Net plus one', ne: 'Net plus enterprise' }[V.mode] || 'Net metering'), md = () => BASEM[V.mode] || V.mode || 'nm';
+const CFGD = () => CFGN() + ({ nz: ' (export prohibited)', n1: ' (TOU)', ne: ' (TOU, night export)' }[V.mode] || ''); // title-block wording
 const dfmt = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('/') : iso;
 const wslash = (s, n) => { const p = String(s).split('/'), out = []; let cur = ''; p.forEach(w => { const cand = cur ? cur + '/' + w : w; if (cur && cand.length > n) { out.push(cur + '/'); cur = w; } else cur = cand; }); if (cur) out.push(cur); return out; }; // wrap a cable spec at '/' boundaries
 const BT = (a, I) => S.brkType(a, I); // MCB (32/40/63 A), MCCB (100-1600 A), ACB (2000-4000 A); 'ADJ.' = adjustable trip unit when the load current I is below 20 % of the rating
@@ -40,7 +43,7 @@ if(LOGO)s.push(`<image href="${LOGO}" xlink:href="${LOGO}" x="${x0+8}" y="${y0+6
  if(wd(title,14)<=av)T(d1+15,y0+21,title,14,'start','bold');else if(wd(title,12)<=av)T(d1+15,y0+21,title,12,'start','bold');
  else{const mc=Math.floor(av/(0.6*11)),ws=title.split(' '),ls=[''];ws.forEach(w=>{const c=ls[ls.length-1]?ls[ls.length-1]+' '+w:w;if(c.length>mc&&ls[ls.length-1])ls.push(w);else ls[ls.length-1]=c});
   const two=ls.length>2?[ls[0],clip(ls.slice(1).join(' '),mc)]:ls;two.forEach((q,j)=>T(d1+15,y0+14+j*13,clip(q,mc),11,'start','bold'))}}T(d1+15,y0+45,'SINGLE LINE DIAGRAM',19,'start','bold');
-T(d1+15,y0+67,clip(`Configuration: ${CFGN()}      Location: ${g('loc')}`,92),11,'start');
+T(d1+15,y0+67,clip(`Configuration: ${CFGD()}      Location: ${g('loc')}`,92),11,'start');
 L(d1,y0+81,d2,y0+81);L(420,y0+81,420,yb);L(660,y0+81,660,yb);
 T(d1+15,y0+97,clip('Drawing No: '+g('dno'),34),11,'start');T(435,y0+97,clip('Revision: '+g('rev'),30),11,'start');T(675,y0+97,'Date: '+dfmt(g('date')),11,'start');
 // equipment cells — inverters, solar modules, BESS PCS and batteries are listed separately
@@ -697,7 +700,7 @@ const out=[];out.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="
  q.push('<g data-layer="TITLEBLOCK">');q.push(`<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${H}" fill="none" stroke="#000" stroke-width="1.5"/>`);[d1,d2,d3].forEach(x=>q.push(`<line x1="${x}" y1="${y0}" x2="${x}" y2="${y0+H}" stroke="#000" stroke-width="1.5"/>`));
  if(LOGO)q.push(`<image href="${LOGO}" xlink:href="${LOGO}" x="${x0+8}" y="${y0+6}" width="${d1-x0-16}" height="${H-12}" preserveAspectRatio="xMidYMid meet"/>`);
  Tt(d1+15,y0+30,'SWITCHGEAR PANELS — FOR QUOTATION',19,'start','bold');Tt(d1+15,y0+54,'Main switchgear panel & isolation panel: schematic, equipment schedule and cable schedule',11);
- Tt(d1+15,y0+76,`System configuration: ${CFGN()}${HY?' (hybrid)':''}`,11);Tt(d1+15,y0+96,`Reference: ${g('dno')||'—'}`,11);Tt(d1+330,y0+96,`Date: ${dfmt(g('date'))}`,11);
+ Tt(d1+15,y0+76,`System configuration: ${CFGD()}${HY&&V.mode=='hy'?' (hybrid)':''}`,11);Tt(d1+15,y0+96,`Reference: ${g('dno')||'—'}`,11);Tt(d1+330,y0+96,`Date: ${dfmt(g('date'))}`,11);
  ['Supplier to quote per the schedules above, stating:','• make / model and breaking capacity (kA) of each device','• enclosure size / material and busbar size','• glands / terminations to suit each cable (C1, C2 …)','• delivery period'].forEach((t,j)=>Tt(d2+12,y0+18+j*15.5,t,j?9.5:10,'start',j?'normal':'bold'));
  Tt(d3+12,y0+22,'Contact',10,'start','bold');Tt(d3+12,y0+40,'Regen Renewables (Pvt) Ltd.',10);Tt(d3+12,y0+56,'31/10 Castle Street, Colombo 8, Sri Lanka',9.5);Tt(d3+12,y0+72,'www.regen.lk',9.5);
  q.push('</g>');out.push(q.join(''))}

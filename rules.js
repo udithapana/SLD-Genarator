@@ -48,7 +48,7 @@
     const Ti = invCurrents.reduce((a, c) => a + c, 0), Tb = bessCurrents.reduce((a, c) => a + c, 0), T = Math.max(Ti, Tb);
     const iso = up(MARGIN * T, STD), sets = Math.ceil(T / 250) || 1, c = cabFor(T / sets);
     return { T, iso, panel: iso, bus: up(iso, BUS), isoBus: up(iso, BUS),
-      meterLbl: { nm: 'BI-DIRECTIONAL METER', na: 'IMPORT / EXPORT METER', np: 'GENERATION METER', og: 'UTILITY IMPORT METER', hy: 'BI-DIRECTIONAL METER' }[mode] || '',
+      meterLbl: { nm: 'BI-DIRECTIONAL METER', na: 'IMPORT / EXPORT METER', np: 'GENERATION METER', og: 'UTILITY IMPORT METER', hy: 'BI-DIRECTIONAL METER', nz: 'IMPORT METER (ZERO EXPORT)', n1: 'IMPORT / EXPORT METER (TOU)', ne: 'EXPORT METER (TOU)' }[mode] || '',
       mainCable: `${c[1]}mm² 1C/Cu/XLPE/PVC (4 Runs${sets > 1 ? ' × ' + sets + ' sets' : ''})`,
       utilCable: `${c[1]}mm² 4C/Cu/XLPE/PVC${sets > 1 ? ' × ' + sets : ''}`, earthMain: `${earFor(T)}mm² Cu` };
   };
