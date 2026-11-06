@@ -347,6 +347,27 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
     else if (e.target.dataset.a == 'del') { if (confirm('Delete "' + e2.label + '"?' + (SY().token ? '\n(Also removed from the shared history.)' : ''))) { hSave(list.filter(x => x.id != id)); lsSet(DELK, lsGet(DELK, []).concat(String(id))); drawHistory(); if (SY().token) sync(true); } }
   });
   drawInvs(); drawBess(); drawLoc2Shell(); update(); DEFAULT = snap('default project');
+  // ---- Preview zoom: − / % (fit) / + buttons, Ctrl + mouse wheel (or touch-pad pinch) at the pointer, two-finger pinch on phones; drag to pan when zoomed ----
+  { const D = $('dwg'), PAP = ['out', 'out2', 'out4']; let Z = 1, base = 0;
+    const paper = () => $(cur) && cur != 'out3' ? $(cur) : null;
+    const fitW = () => { const p = paper(); if (!p) return 0; const w = p.style.width; p.style.width = ''; D.classList.remove('zoomed'); const r = p.getBoundingClientRect().width; p.style.width = w; return r; };
+    const apply = (nz, cx, cy) => { const p = paper(); if (!p) return; nz = Math.max(1, Math.min(6, Math.round(nz * 100) / 100));
+      const r = D.getBoundingClientRect(), px = (cx ?? r.left + D.clientWidth / 2) - r.left, py = (cy ?? r.top + D.clientHeight / 2) - r.top, ox = D.scrollLeft + px, oy = D.scrollTop + py, k = nz / Z;
+      if (Z == 1) base = fitW(); Z = nz;
+      PAP.forEach(id => { $(id).style.width = Z > 1 ? (base * Z) + 'px' : ''; }); D.classList.toggle('zoomed', Z > 1);
+      D.scrollLeft = ox * k - px; D.scrollTop = oy * k - py; $('zPct').textContent = Math.round(Z * 100) + '%'; };
+    $('zIn').onclick = () => apply(Z * 1.25); $('zOut').onclick = () => apply(Z / 1.25); $('zPct').onclick = () => apply(1);
+    D.addEventListener('wheel', e => { if (!(e.ctrlKey || e.metaKey) || !paper()) return; e.preventDefault(); apply(Z * Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY); }, { passive: false });
+    let pan = null; D.addEventListener('mousedown', e => { if (Z <= 1 || e.button || e.target.closest('.zoombar')) return; pan = { x: e.clientX, y: e.clientY, l: D.scrollLeft, t: D.scrollTop }; D.classList.add('panning'); e.preventDefault(); });
+    addEventListener('mousemove', e => { if (!pan) return; D.scrollLeft = pan.l - (e.clientX - pan.x); D.scrollTop = pan.t - (e.clientY - pan.y); });
+    addEventListener('mouseup', () => { pan = null; D.classList.remove('panning'); });
+    let pin = null; const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    D.addEventListener('touchstart', e => { if (e.touches.length == 2) pin = { d: dist(e.touches), z: Z }; }, { passive: true });
+    D.addEventListener('touchmove', e => { if (!pin || e.touches.length != 2) return; e.preventDefault(); apply(pin.z * dist(e.touches) / pin.d, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2); }, { passive: false });
+    D.addEventListener('touchend', () => { pin = null; });
+    addEventListener('resize', () => { if (Z > 1) { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } });
+    ['t1', 't2', 't4', 't3'].forEach(b => $(b).addEventListener('click', () => { $('zb').hidden = b == 't3'; if (Z > 1 && b != 't3') { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } }));
+  }
   // ---- Back / Forward: every change to the drawing inputs is remembered (this session only, up to 100 steps) ----
   const UNDO = [], REDO = [], keyOf = e => JSON.stringify([e.mode, e.fields, e.manual, e.invs, e.bess, e.loc2, e.invs2, e.bess2]);
   UNDO.push(snap('start')); undoBtns();

@@ -73,3 +73,13 @@ fieldset>button{margin-top:10px}
 .lock-card h2{margin:0;font-size:20px}.lock-card p{margin:0;font-size:13px;color:var(--mu)}.lock-card label{font-size:13px}
 .lock-card button{padding:10px;font-size:15px}.lock-msg{color:#c0392b!important;min-height:1em}
 .lock-card.wide{max-width:520px}.lock-card textarea{width:100%;font:12px monospace;box-sizing:border-box}.sync-who{align-self:end;font-size:13px;padding:8px 0}
+
+/* preview zoom: buttons stay in the corner of the preview; when zoomed the drawing can be dragged to pan */
+.dwgw{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}.dwgw>.dwg{flex:1 1 auto}
+.zoombar{position:absolute;top:8px;right:22px;z-index:5;display:flex;gap:2px;background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:2px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.zoombar button{min-width:30px;padding:3px 8px;font-size:13px;line-height:1.2;background:var(--card);color:var(--tx);border:0;border-radius:4px;cursor:pointer}
+.zoombar button:hover{background:var(--in)}
+#zPct{min-width:52px;font-size:12px}
+.dwg.zoomed .paper{max-width:none!important;margin:0}
+.dwg.zoomed{cursor:grab}.dwg.panning{cursor:grabbing;user-select:none}
+@media print{.zoombar{display:none}.paper{width:auto!important}}
