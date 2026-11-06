@@ -83,3 +83,10 @@ fieldset>button{margin-top:10px}
 .dwg.zoomed .paper{max-width:none!important;margin:0}
 .dwg.zoomed{cursor:grab}.dwg.panning{cursor:grabbing;user-select:none}
 @media print{.zoombar{display:none}.paper{width:auto!important}}
+
+.hsearch{margin:0 0 12px}.hsearch input{font-size:14px;padding:8px 10px}
+.hfold{border:1px solid var(--bd);border-radius:8px;margin:0 0 10px;padding:0 10px;background:rgba(127,127,127,.03)}
+.hfold>summary{cursor:pointer;padding:9px 2px;font-weight:600;list-style:none}.hfold>summary::-webkit-details-marker{display:none}
+.hfold>summary::before{content:'▸ ';color:var(--mu)}.hfold[open]>summary::before{content:'▾ '}
+.hfold>summary span{font-weight:400;color:var(--mu);font-size:12px}
+.hfold[open]{padding-bottom:2px}

@@ -89,6 +89,13 @@ fieldset>button{margin-top:10px}
 .dwg.zoomed .paper{max-width:none!important;margin:0}
 .dwg.zoomed{cursor:grab}.dwg.panning{cursor:grabbing;user-select:none}
 @media print{.zoombar{display:none}.paper{width:auto!important}}
+
+.hsearch{margin:0 0 12px}.hsearch input{font-size:14px;padding:8px 10px}
+.hfold{border:1px solid var(--bd);border-radius:8px;margin:0 0 10px;padding:0 10px;background:rgba(127,127,127,.03)}
+.hfold>summary{cursor:pointer;padding:9px 2px;font-weight:600;list-style:none}.hfold>summary::-webkit-details-marker{display:none}
+.hfold>summary::before{content:'▸ ';color:var(--mu)}.hfold[open]>summary::before{content:'▾ '}
+.hfold>summary span{font-weight:400;color:var(--mu);font-size:12px}
+.hfold[open]{padding-bottom:2px}
 </style>
 <script>// Installable-app setup (PWA). Builds the web-app manifest in code so it works even when only
 // index.html is uploaded to GitHub, and gives this app its OWN id so Chrome never confuses it
@@ -3327,7 +3334,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   const fixIdx = list => list.forEach(s => { const n = s.mn || LEG_INV[s.m], k = n ? D.findIndex(d => d.model == n) : -1; if (k >= 0) s.m = k; else if (!D[s.m]) s.m = 0; });
   const snap = label => { // snapshot of the whole configuration (same shape as a history entry)
     const fields = {}; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => fields[el.id] = el.value);
-    const def = (fields.dno || 'Drawing') + ' — ' + (fields.opt || '') + ' (' + MODE + ')';
+    const def = ((fields.site || '').trim() || fields.dno || 'Drawing') + ' - ' + ((fields.opt || '').trim() || 'Option 1'); // e.g. "RODESHA ENTERPRISES MORATUWA - Option 1"
     return { id: Date.now(), ts: new Date().toISOString(), label: label || def, mode: MODE, fields, manual: [...manual], invs: withNames(INVS), bess: JSON.parse(JSON.stringify(BESSU)), loc2: JSON.parse(JSON.stringify(LOC2)), invs2: withNames(INVS2), bess2: JSON.parse(JSON.stringify(BESSU2)) };
   };
   // ---- Update saved: the drawing opened from History (or just saved) can be overwritten in place instead of saved as a new entry ----
@@ -3429,12 +3436,26 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
 <div class="btns">${USERS && !c.token ? '<button type="button" class="alt on" data-a="sy-in">🔑 Sign in</button>' : ''}<button type="button" class="alt${USERS && !c.token ? '' : ' on'}" data-a="sy-go">⟳ ${USERS ? 'Sync now' : 'Save settings &amp; sync'}</button><button type="button" class="alt" data-a="sy-exp">⬇ Export file</button><button type="button" class="alt" data-a="sy-imp">⬆ Import file</button><button type="button" class="alt" data-a="sy-off">${USERS ? 'Sign out' : 'Disconnect'}</button></div>
 <details><summary>How to set it up (once)</summary><ol><li>On GitHub: <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b>.</li><li>Repository access: <b>Only select repositories</b> → this app's repository. Permissions → <b>Contents: Read and write</b>.</li><li>Paste the token above (stored only in this browser) and press <b>Save settings &amp; sync</b>. Everyone who uses the same link and the same repository sees the same History; people without a token can still open and load shared drawings.</li></ol>The history is stored in the <code>${BR}</code> branch (file <code>${FILE}</code>), so saving never redeploys the website. Anyone with a token for the repository can write there — share tokens only with your team.</details></div>`;
   }
-  function drawHistory() {
-    const list = hLoad();
-    updBtn();
-    $('out3').innerHTML = syncBox() + (list.length ? list.map(e => `<div class="hist-item" data-id="${e.id}"><div><b>${esc(e.label)}</b><span>${esc(e.by ? e.by + ' · ' : '')}${e.upd != null ? 'updated' + (e.upd && e.upd != e.by ? ' by ' + esc(e.upd) : '') + ' ' : ''}${new Date(e.ts).toLocaleString()}${e.id == OPEN ? ' · <b>open now</b>' : ''}</span></div><div class="btns"><button type="button" class="alt" data-a="load">Load</button><button type="button" class="alt ic" data-a="del">Delete</button></div></div>`).join('')
-      : '<p class="hist-empty">No saved revisions yet — use "💾 Save to history" above to keep a copy of the current configuration.</p>');
+  // History: search box + one folder per person (the person who last saved / updated the drawing); entries without a name go to "Others"
+  let HQ = ''; const FOPEN = new Set();
+  const who = e => String(e.upd || e.by || '').trim() || 'Others';
+  const histItem = e => `<div class="hist-item" data-id="${e.id}"><div><b>${esc(e.label)}</b><span>${esc(e.by ? e.by + ' · ' : '')}${e.upd != null ? 'updated' + (e.upd && e.upd != e.by ? ' by ' + esc(e.upd) : '') + ' ' : ''}${new Date(e.ts).toLocaleString()}${e.fields && e.fields.dno ? ' · ' + esc(e.fields.dno) : ''}${e.id == OPEN ? ' · <b>open now</b>' : ''}</span></div><div class="btns"><button type="button" class="alt" data-a="load">Load</button><button type="button" class="alt ic" data-a="del">Delete</button></div></div>`;
+  function histList() {
+    const list = hLoad(); if (!list.length) return '<p class="hist-empty">No saved revisions yet — use "💾 Save to history" above to keep a copy of the current configuration.</p>';
+    const q = HQ.trim().toLowerCase().split(/\s+/).filter(Boolean), hay = e => [e.label, e.by, e.upd, e.mode, ...(e.fields ? [e.fields.site, e.fields.dno, e.fields.loc, e.fields.opt, e.fields.proj] : [])].filter(Boolean).join(' ').toLowerCase();
+    const hits = q.length ? list.filter(e => q.every(w => hay(e).includes(w))) : list;
+    if (!hits.length) return '<p class="hist-empty">No saved drawing matches "' + esc(HQ) + '".</p>';
+    const F = new Map(); hits.forEach(e => { const k = who(e); if (!F.has(k)) F.set(k, []); F.get(k).push(e); });
+    const keys = [...F.keys()].sort((a, b) => (a == 'Others') - (b == 'Others') || a.localeCompare(b));
+    return keys.map(k => { const es = F.get(k).sort((a, b) => (b.ts || '').localeCompare(a.ts || '')), op = q.length || keys.length == 1 || FOPEN.has(k) || es.some(e => e.id == OPEN);
+      return `<details class="hfold" data-f="${esc(k)}"${op ? ' open' : ''}><summary>📁 ${esc(k)} <span>(${es.length})</span></summary>${es.map(histItem).join('')}</details>`; }).join('');
   }
+  function drawHistory() {
+    updBtn();
+    $('out3').innerHTML = syncBox() + `<div class="hsearch"><input id="hq" type="search" placeholder="🔍 Search saved drawings — site, option, drawing no., name…" value="${esc(HQ)}"></div><div id="hlist">${histList()}</div>`;
+  }
+  $('out3').addEventListener('input', e => { if (e.target.id == 'hq') { HQ = e.target.value; $('hlist').innerHTML = histList(); } });
+  $('out3').addEventListener('toggle', e => { const d = e.target; if (d.classList && d.classList.contains('hfold') && !HQ.trim()) d.open ? FOPEN.add(d.dataset.f) : FOPEN.delete(d.dataset.f); }, true);
   $('out3').addEventListener('click', e => {
     const a = e.target.dataset && e.target.dataset.a;
     if (a == 'sy-in') { lockScreen('', true); return; }
