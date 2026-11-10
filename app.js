@@ -75,7 +75,7 @@
       <button type="button" class="alt" id="addMv"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add transformer</button></div></fieldset>`
     : `<fieldset><legend>${g}</legend>` + fs.map(fld).join('') + (g == 'Cables & switchgear' ? '<button type="button" class="alt" id="rst">↺ Reset all to auto</button>' : '') + '</fieldset>').join('');
   // Drawing notice: preliminary / for-approval drawings carry "Not for construction…"; as-built drawings show only the copyright / confidentiality notice
-  $('rev').parentElement.insertAdjacentHTML('afterend', '<label>Drawing notice<select id="ncNote"><option value="">Design / for approval — copyright + “Not for construction…”</option><option value="asbuilt">As-built — copyright notice only</option></select></label>');
+  $('rev').parentElement.insertAdjacentHTML('afterend', '<label>Drawing notice<select id="ncNote"><option value="">Design / for approval — copyright + “Not for construction…”</option><option value="asbuilt">As-built — copyright notice only</option></select></label><label>Module string details<select id="strHide"><option value="">Show — modules per string and string count</option><option value="1">Hide — total panels and kWp only</option></select></label>');
   // ---- Left panel tabs: the form's sections grouped into a few short tabs (all fields stay in the page, only hidden) ----
   const TABS = [['sys', 'System', ['System configuration', 'Solar array', 'Inverters', 'Battery (BESS)']], ['loc2', 'Location 2', ['Second location']],
     ['sw', 'Cables & breakers', ['Cables & switchgear']], ['prot', 'Protection', ['Panels & protection']], ['mv', 'MV scope', ['MV scope']], ['proj', 'Project', ['Drawing', 'Sign-off']]];
@@ -225,6 +225,8 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
         util: ut, iso: isoIn, nvdOn: $('mvNvdOn').value != 'no', sw: sw || 'lbs', swL: $('mvSwL').value, load: grid && $('mvLoadOn').value != 'no' ? ($('mvLoad').value || 'LOAD') : '', loadDdlo: $('mvLoadDdlo').value };
       $('t5').hidden = !on; if (!on && !$('out5').hidden && $('t2').onclick) $('t2').onclick(); $('out5').innerHTML = on ? S.renderMV(V, invInfos, bessInfos, invInfos2, bessInfos2) : ''; }
     $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out4').innerHTML = S.renderPanels(V, invInfos, bessInfos, invInfos2, bessInfos2);
+    { const ip = $('invPick'), opts = S.invUnits(V, invInfos, bessInfos, invInfos2, bessInfos2), was = +ip.value || 0; ip.innerHTML = opts.map((t, i) => `<option value="${i}">${esc(t)}</option>`).join(''); ip.value = String(Math.min(was, opts.length - 1));
+      $('out6').innerHTML = S.renderInv(V, invInfos, bessInfos, invInfos2, bessInfos2, ip.value, $('invLay').value); } /* inverter detail sheet for the picked unit */
     document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}${BM() == 'hy' && x.gp ? ` · GRID PORT ${x.gp.I} A → ${S.brkType(x.gp.mccb, x.gp.I)} ${x.gp.mccb} A · ${x.gp.ac}` : ''}`; });
     document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}`; });
     if (LOC2.on) {
@@ -233,11 +235,15 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     }
   }
   let cur = 'out2'; // the SLD (standard symbols) is the main view
-  const OUTS = [['t1', 'out'], ['t2', 'out2'], ['t5', 'out5'], ['t4', 'out4'], ['t3', 'out3']], SUF = { out: '_block', out2: '_SLD', out4: '_panels_quotation', out5: '_MV_scope' };
+  const OUTS = [['t1', 'out'], ['t2', 'out2'], ['t5', 'out5'], ['t6', 'out6'], ['t4', 'out4'], ['t3', 'out3']], SUF = { out: '_block', out2: '_SLD', out4: '_panels_quotation', out5: '_MV_scope' };
+  const sufOf = () => cur == 'out6' ? '_' + (($('invPick').selectedOptions[0] || {}).text || 'inverter').split(' — ')[0].replace(/\s+/g, '_') + ($('invPick').selectedOptions[0] && / · /.test($('invPick').selectedOptions[0].text) ? '_' + $('invPick').selectedOptions[0].text.split(' · ').pop().replace(/\W+/g, '_') : '') : SUF[cur];
   OUTS.forEach(([b, o]) => $(b).onclick = () => {
     cur = o; OUTS.forEach(([b2, o2]) => { $(o2).hidden = o2 != o; $(b2).classList.toggle('on', o2 == o); });
-    $('dl').hidden = $('pr').hidden = o == 'out3'; if (o == 'out3') { drawHistory(); sync(true); }
+    $('dl').hidden = $('pr').hidden = o == 'out3'; $('invPick').hidden = $('invLay').hidden = o != 'out6'; if (o == 'out3') { drawHistory(); sync(true); }
   });
+  $('invPick').onchange = () => update();
+  try { if (localStorage.getItem('sld_invlay') == 'v') { $('invLay').value = 'v'; setTimeout(update, 0); } } catch (e) { } /* this app's own key only */
+  $('invLay').onchange = () => { try { localStorage.setItem('sld_invlay', $('invLay').value); } catch (e) { } update(); };
   $('pr').onclick = () => {
     const svgEl = $(cur).querySelector('svg'); if (!svgEl) return;
     const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svgEl));
@@ -249,7 +255,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
       try {
         const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
         pdf.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, 297, 210);
-        pdf.save(($('dno').value || 'SLD') + SUF[cur] + '_' + MODE + '.pdf');
+        pdf.save(($('dno').value || 'SLD') + sufOf() + '_' + MODE + '.pdf');
       } catch (err) { alert('PDF export failed (' + err.message + '). Print to PDF from your browser instead.'); }
     };
     img.onerror = () => alert('PDF export failed — your browser blocked rendering the drawing (this needs an internet connection the first time, to load the PDF library). Print to PDF from your browser instead.');
@@ -259,7 +265,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     const svgEl = $(cur).querySelector('svg'); if (!svgEl) return;
     try {
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([SLD.toDXF(svgEl)], { type: 'application/dxf' }));
-      a.download = ($('dno').value || 'SLD') + SUF[cur] + '_' + MODE + '.dxf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      a.download = ($('dno').value || 'SLD') + sufOf() + '_' + MODE + '.dxf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     } catch (err) { alert('CAD export failed (' + err.message + ').'); }
   };
 
@@ -413,7 +419,7 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
   });
   drawInvs(); drawBess(); drawLoc2Shell(); update(); DEFAULT = snap('default project');
   // ---- Preview zoom: − / % (fit) / + buttons, Ctrl + mouse wheel (or touch-pad pinch) at the pointer, two-finger pinch on phones; drag to pan when zoomed ----
-  { const D = $('dwg'), PAP = ['out', 'out2', 'out4', 'out5']; let Z = 1, base = 0;
+  { const D = $('dwg'), PAP = ['out', 'out2', 'out4', 'out5', 'out6']; let Z = 1, base = 0;
     const paper = () => $(cur) && cur != 'out3' ? $(cur) : null;
     const fitW = () => { const p = paper(); if (!p) return 0; const w = p.style.width; p.style.width = ''; D.classList.remove('zoomed'); const r = p.getBoundingClientRect().width; p.style.width = w; return r; };
     const apply = (nz, cx, cy) => { const p = paper(); if (!p) return; nz = Math.max(1, Math.min(6, Math.round(nz * 100) / 100));
@@ -431,7 +437,7 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
     D.addEventListener('touchmove', e => { if (!pin || e.touches.length != 2) return; e.preventDefault(); apply(pin.z * dist(e.touches) / pin.d, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2); }, { passive: false });
     D.addEventListener('touchend', () => { pin = null; });
     addEventListener('resize', () => { if (Z > 1) { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } });
-    ['t1', 't2', 't5', 't4', 't3'].forEach(b => $(b).addEventListener('click', () => { $('zb').hidden = b == 't3'; if (Z > 1 && b != 't3') { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } }));
+    ['t1', 't2', 't5', 't6', 't4', 't3'].forEach(b => $(b).addEventListener('click', () => { $('zb').hidden = b == 't3'; if (Z > 1 && b != 't3') { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } }));
   }
   // ---- Back / Forward: every change to the drawing inputs is remembered (this session only, up to 100 steps) ----
   const UNDO = [], REDO = [], keyOf = e => JSON.stringify([e.mode, e.fields, e.manual, e.invs, e.bess, e.loc2, e.invs2, e.bess2]);
