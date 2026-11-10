@@ -18,7 +18,7 @@
     ['INV'], ['BESS'], ['LOC2'],
     ['Solar array', [['modWp', 'Panel Wp', '620']]],
     ['Cables & switchgear', [['mainCable', 'Main cable to isolator', '', 1], ['utilCable', 'Utility cable (to meter / grid)', '', 1], ['supply', 'Supply connection (CEB)', '', 4], ['supBrk', 'Utility main breaker (A)', '', 1], ['supCable', 'Utility supply cable', '', 1], ['bkBrk', 'Backup main breaker (A)', '', 1], ['bkCable', 'Backup main cable', '', 1], ['earthMain', 'Earth bus feeder', '', 1], ['pvEarth', 'PV array main earth (roof)', '', 1], ['panel', 'Main switchgear panel (A)', '', 1], ['bus', 'Common coupling busbar (A)', '', 1], ['iso', 'Isolator (A)', '', 1], ['isoBus', 'Isolation panel busbar (A)', '', 1], ['meterLbl', 'Meter label', '', 1], ['earthR', 'Earth resistance (Ω max)', '10'], ['loadName', 'Load / DB name', 'LOAD'], ['loadBrk', 'Load feeder MCCB (A)', '100'], ['loadCable', 'Load feeder cable', '', 1]]],
-    ['PROT'],
+    ['PROT'], ['MV'],
     ['Sign-off', [['designed', 'Designed by', 'K.U.S.Panagoda'], ['drawn', 'Drawn by', 'K.U.S.Panagoda'], ['checked', 'Checked by', 'Kavish / Uditha'], ['director', 'Director / CTO', 'Champika Periyapperuma'], ['exec', 'Project executive', 'Kavish Weerasinghe']]]];
   const fld = ([k, l, v, flag]) => {
     if (flag == 1) AUTO.add(k); if (flag == 2) RO.add(k);
@@ -62,12 +62,19 @@
     : g == 'BESS' ? '<fieldset><legend>Battery (BESS)</legend><div id="bessList"></div><button type="button" class="alt" id="addBess"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add battery</button></fieldset>'
     : g == 'LOC2' ? '<fieldset><legend>Second location</legend><div id="loc2Body"></div></fieldset>'
     : g == 'PROT' ? PROT_HTML
+    : g == 'MV' ? `<fieldset><legend>MV scope</legend><p class="hint" id="mvHint"></p>
+      <label>MV scope SLD (separate sheet)<select id="mvOn"><option value="">Off</option><option value="1">On — add the "MV scope" drawing</option></select></label>
+      <div id="mvBody"><label>Drawing layout<select id="mvLay"><option value="h">Left → right (horizontal)</option><option value="v">Bottom → up (standard SLD style)</option></select></label><label>MV voltage<select id="mvKV"><option value="33">33 kV</option><option value="11">11 kV</option></select></label>
+      ${[['mvVG', 'Transformer vector group', 'Dyn11'], ['mvNVD', 'NVD transformer (VT) ratio', '', 1], ['mvSA', 'Surge arrester', '', 1], ['mvRelayF', 'Protection relay functions', 'NVD 59N · U/O voltage 27/59 · U/O frequency 81'], ['mvGantry', 'Gantry name', 'Medium voltage gantry'], ['mvCEB', 'Utility side', '', 1], ['mvCEBddlo', 'Utility DDLO label', '', 1]].map(fld).join('')}
+      <input type="hidden" id="mvData" value="">
+      <b class="sub">Step-up transformers (one per LV panel)</b><div id="mvList"></div>
+      <button type="button" class="alt" id="addMv"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add transformer</button></div></fieldset>`
     : `<fieldset><legend>${g}</legend>` + fs.map(fld).join('') + (g == 'Cables & switchgear' ? '<button type="button" class="alt" id="rst">↺ Reset all to auto</button>' : '') + '</fieldset>').join('');
   // Drawing notice: preliminary / for-approval drawings carry "Not for construction…"; as-built drawings show only the copyright / confidentiality notice
   $('rev').parentElement.insertAdjacentHTML('afterend', '<label>Drawing notice<select id="ncNote"><option value="">Design / for approval — copyright + “Not for construction…”</option><option value="asbuilt">As-built — copyright notice only</option></select></label>');
   // ---- Left panel tabs: the form's sections grouped into a few short tabs (all fields stay in the page, only hidden) ----
   const TABS = [['sys', 'System', ['System configuration', 'Solar array', 'Inverters', 'Battery (BESS)']], ['loc2', 'Location 2', ['Second location']],
-    ['sw', 'Cables & breakers', ['Cables & switchgear']], ['prot', 'Protection', ['Panels & protection']], ['proj', 'Project', ['Drawing', 'Sign-off']]];
+    ['sw', 'Cables & breakers', ['Cables & switchgear']], ['prot', 'Protection', ['Panels & protection']], ['mv', 'MV scope', ['MV scope']], ['proj', 'Project', ['Drawing', 'Sign-off']]];
   (() => {
     const form = $('form'), fsets = [...form.querySelectorAll(':scope > fieldset')], byName = n => fsets.find(f => f.querySelector('legend').textContent.trim() == n);
     const bar = document.createElement('div'); bar.className = 'tabs'; bar.setAttribute('role', 'tablist');
@@ -123,6 +130,17 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   $('addInv').onclick = () => { INVS.push({ ...INVS[INVS.length - 1] }); drawInvs(); update(); };
   $('bessList').addEventListener('input', e => { const a = e.target.dataset.a, i = +e.target.closest('.inv').dataset.i; BESSU[i][a] = e.target.value; update(); });
   $('bessList').addEventListener('click', e => { const b = e.target.closest('[data-a=rm]'); if (b) { BESSU.splice(+b.closest('.inv').dataset.i, 1); drawBess(); update(); } });
+  // ---- MV scope: step-up transformers (blank field = automatic value); kept as JSON in the hidden #mvData field so History / Back-Forward keep it ----
+  const MVK = [['src', 'LV source (panel)'], ['kva', 'Transformer (kVA)'], ['brk', 'LV breaker (A)'], ['lvc', 'LV cable to transformer'], ['mvc', 'MV cable'], ['len', 'MV cable length (m)'], ['ddlo', 'DDLO']];
+  let MVL = [{}], MVA = [];
+  const mvLoad = () => { try { const a = JSON.parse($('mvData').value || '[]'); MVL = Array.isArray(a) && a.length ? a : [{}]; } catch (e) { MVL = [{}]; } };
+  const mvSave = () => { $('mvData').value = JSON.stringify(MVL); };
+  function drawMV() { $('mvList').innerHTML = MVL.map((t, i) => `<div class="inv mvt" data-i="${i}"><div class="hd"><b>Transformer ${i + 1}</b>${MVL.length > 1 ? `<button type="button" class="alt ic" data-mvdel="${i}">Remove</button>` : ''}</div>
+      ${MVK.map(([k, l]) => `<label>${l} <span class="tag">auto</span><input data-mv="${k}" value="${esc(t[k] || '')}" placeholder="auto"></label>`).join('')}<div class="inf"></div></div>`).join(''); }
+  $('mvList').addEventListener('input', e => { const k = e.target.dataset.mv; if (!k) return; const i = +e.target.closest('.mvt').dataset.i; MVL[i][k] = e.target.value; mvSave(); });
+  $('mvList').addEventListener('click', e => { const b = e.target.closest('[data-mvdel]'); if (!b) return; MVL.splice(+b.dataset.mvdel, 1); mvSave(); drawMV(); update(); });
+  $('addMv').onclick = () => { MVL.push({}); mvSave(); drawMV(); update(); };
+  mvSave(); drawMV();
   $('addBess').onclick = () => { BESSU.push(BESSU.length ? { ...BESSU[BESSU.length - 1] } : { kwh: 100, kw: 50, model: 'BESS', ov: '', acOv: '', dc: 'DC cable' }); drawBess(); update(); };
   $('loc2Body').addEventListener('input', e => {
     const a = e.target.dataset.a;
@@ -183,6 +201,20 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = (BM() == 'og' || BM() == 'hy') && !ogSrc; $('isoPanelTitle').textContent = (BM() == 'og' || BM() == 'hy') ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
     $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || ((BM() == 'og' || BM() == 'hy') && !ogSrc);
     $('dcIsoTxt').parentElement.hidden = !$('dcIso').value; $('dcSpdTxt').parentElement.hidden = !$('dcSpd').value;
+    { const on = !!$('mvOn').value, kv = $('mvKV').value || '33', kwT = invInfos.reduce((a, i) => a + i.kw, 0) + (LOC2.on ? invInfos2.reduce((a, i) => a + i.kw, 0) : 0), STDK = [100, 160, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150];
+      $('mvBody').hidden = !on; $('tab_mv').textContent = on ? 'MV scope ●' : 'MV scope';
+      $('mvHint').textContent = 'For systems of 1000 kVA and above the LV system connects to the CEB MV network through step-up transformers. This system: ' + (+kwT.toFixed(1)) + ' kW AC' + (kwT >= 1000 ? ' — MV scope recommended.' : '.');
+      const au = { mvNVD: kv + '/0.11 kV', mvSA: kv + ' kV surge arrester', mvCEB: 'CEB ' + kv + ' kV network', mvCEBddlo: 'DDLO ' + kv + ' kV (CEB)' };
+      Object.keys(au).forEach(k => { if (!manual.has(k)) $(k).value = au[k]; });
+      let MVA0 = 0; MVA = MVL.map((t, i) => { const L2s = i == 1 && LOC2.on, kw = i == 0 ? invInfos.reduce((a, x) => a + x.kw, 0) : L2s ? invInfos2.reduce((a, x) => a + x.kw, 0) : 0,
+        a = { src: i == 0 ? (LOC2.on ? 'Location 1 — main switchgear panel' : 'Main switchgear panel') : L2s ? (LOC2.name || 'Location 2') + ' switchgear panel' : 'LV panel ' + (i + 1),
+          kva: String(kw ? (STDK.find(v => v >= kw) || 3150) : (i && MVA0 ? MVA0 : 1000)), brk: String(i == 0 ? $('panel').value : L2s && d2 ? d2.panel : ''), lvc: i == 0 ? $('utilCable').value : L2s && d2 ? d2.utilCable : '',
+          mvc: '120mm² 3C/Al/XLPE/SWA/PVC (' + kv + ' kV)', len: '', ddlo: 'DDLO ' + kv + ' kV' }, r = {};
+        MVK.forEach(([k]) => r[k] = String(t[k] || '').trim() || a[k]); if (!i) MVA0 = +r.kva; r.kw = kw; r.hvI = +r.kva / (Math.sqrt(3) * +kv); r.lvI = +r.kva / (Math.sqrt(3) * 0.4); return r; });
+      document.querySelectorAll('#mvList .mvt').forEach((el, i) => { const r = MVA[i]; el.querySelectorAll('[data-mv]').forEach(inp => inp.placeholder = r[inp.dataset.mv] || (inp.dataset.mv == 'len' ? 'e.g. 220' : 'auto'));
+        el.querySelector('.inf').textContent = `${r.kva} kVA · LV ${r.lvI.toFixed(0)} A @ 0.4 kV · MV ${r.hvI.toFixed(1)} A @ ${kv} kV` + (r.kw ? ` · source ${+r.kw.toFixed(1)} kW AC` : ''); });
+      V.mv = { on, kv, lay: $('mvLay').value, vg: $('mvVG').value, nvd: $('mvNVD').value, sa: $('mvSA').value, relayF: $('mvRelayF').value, gantry: $('mvGantry').value, ceb: $('mvCEB').value, cebDdlo: $('mvCEBddlo').value, list: MVA };
+      $('t5').hidden = !on; if (!on && !$('out5').hidden && $('t2').onclick) $('t2').onclick(); $('out5').innerHTML = on ? S.renderMV(V, invInfos, bessInfos, invInfos2, bessInfos2) : ''; }
     $('out').innerHTML = S.renderBlock(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out2').innerHTML = S.renderSLD(V, invInfos, bessInfos, invInfos2, bessInfos2); $('out4').innerHTML = S.renderPanels(V, invInfos, bessInfos, invInfos2, bessInfos2);
     document.querySelectorAll('#invList .inf').forEach((el, i) => { const x = invInfos[i]; el.textContent = `${x.kw} kW · ${x.I} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}${x.derived ? ' (cable derived – not in file)' : ''}${x.hybrid && x.battKwh ? ` · + ${x.battKwh} kWh integrated battery` : ''}${BM() == 'hy' && x.gp ? ` · GRID PORT ${x.gp.I} A → ${S.brkType(x.gp.mccb, x.gp.I)} ${x.gp.mccb} A · ${x.gp.ac}` : ''}`; });
     document.querySelectorAll('#bessList .inf').forEach((el, i) => { const x = bessInfos[i]; el.textContent = `${x.I.toFixed(1)} A · AC ${x.ac} · ${S.brkType(x.mccb, x.I)} ${x.mccb} A · ${x.earth}`; });
@@ -192,7 +224,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     }
   }
   let cur = 'out2'; // the SLD (standard symbols) is the main view
-  const OUTS = [['t1', 'out'], ['t2', 'out2'], ['t4', 'out4'], ['t3', 'out3']], SUF = { out: '_block', out2: '_SLD', out4: '_panels_quotation' };
+  const OUTS = [['t1', 'out'], ['t2', 'out2'], ['t5', 'out5'], ['t4', 'out4'], ['t3', 'out3']], SUF = { out: '_block', out2: '_SLD', out4: '_panels_quotation', out5: '_MV_scope' };
   OUTS.forEach(([b, o]) => $(b).onclick = () => {
     cur = o; OUTS.forEach(([b2, o2]) => { $(o2).hidden = o2 != o; $(b2).classList.toggle('on', o2 == o); });
     $('dl').hidden = $('pr').hidden = o == 'out3'; if (o == 'out3') { drawHistory(); sync(true); }
@@ -263,6 +295,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     LOC2 = JSON.parse(JSON.stringify(e.loc2 || { on: false, to: 'main', name: 'Location 2', cableOv: '', pvEarthOv: '' })); INVS2 = JSON.parse(JSON.stringify(e.invs2 || [])); BESSU2 = JSON.parse(JSON.stringify(e.bess2 || []));
     fixIdx(INVS); fixIdx(INVS2); drawInvs(); drawBess(); drawLoc2Shell();
     Object.keys(e.fields || {}).forEach(k => { const el = $(k); if (el) el.value = e.fields[k]; });
+    mvLoad(); drawMV();
     if (e.fields && e.fields.proj && !e.fields.site) $('site').value = String(e.fields.proj).replace(/^\s*PROPOSED\s+\S+\s+KW\s+SOLAR\s+POWER\s+SYSTEM\s+(FOR\s+)?/i, '').trim() || e.fields.proj;
     update(); if (quiet) return; flash('Loaded "' + e.label + '".');
     $('t2').onclick();
@@ -371,7 +404,7 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
   });
   drawInvs(); drawBess(); drawLoc2Shell(); update(); DEFAULT = snap('default project');
   // ---- Preview zoom: − / % (fit) / + buttons, Ctrl + mouse wheel (or touch-pad pinch) at the pointer, two-finger pinch on phones; drag to pan when zoomed ----
-  { const D = $('dwg'), PAP = ['out', 'out2', 'out4']; let Z = 1, base = 0;
+  { const D = $('dwg'), PAP = ['out', 'out2', 'out4', 'out5']; let Z = 1, base = 0;
     const paper = () => $(cur) && cur != 'out3' ? $(cur) : null;
     const fitW = () => { const p = paper(); if (!p) return 0; const w = p.style.width; p.style.width = ''; D.classList.remove('zoomed'); const r = p.getBoundingClientRect().width; p.style.width = w; return r; };
     const apply = (nz, cx, cy) => { const p = paper(); if (!p) return; nz = Math.max(1, Math.min(6, Math.round(nz * 100) / 100));
@@ -389,7 +422,7 @@ ${USERS ? `<div class="sync-who">${c.token ? 'Signed in as <b>' + esc(c.name) + 
     D.addEventListener('touchmove', e => { if (!pin || e.touches.length != 2) return; e.preventDefault(); apply(pin.z * dist(e.touches) / pin.d, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2); }, { passive: false });
     D.addEventListener('touchend', () => { pin = null; });
     addEventListener('resize', () => { if (Z > 1) { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } });
-    ['t1', 't2', 't4', 't3'].forEach(b => $(b).addEventListener('click', () => { $('zb').hidden = b == 't3'; if (Z > 1 && b != 't3') { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } }));
+    ['t1', 't2', 't5', 't4', 't3'].forEach(b => $(b).addEventListener('click', () => { $('zb').hidden = b == 't3'; if (Z > 1 && b != 't3') { const z = Z; Z = 1; PAP.forEach(id => $(id).style.width = ''); D.classList.remove('zoomed'); apply(z); } }));
   }
   // ---- Back / Forward: every change to the drawing inputs is remembered (this session only, up to 100 steps) ----
   const UNDO = [], REDO = [], keyOf = e => JSON.stringify([e.mode, e.fields, e.manual, e.invs, e.bess, e.loc2, e.invs2, e.bess2]);

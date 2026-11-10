@@ -29,7 +29,7 @@ const FRAME=W=>`<g data-layer="FRAME"><rect x="10" y="10" width="${W-20}" height
 const TITLE=kwp=>g('site')?`PROPOSED ${kwp} kW SOLAR POWER SYSTEM FOR ${String(g('site')).trim().toUpperCase()}`:String(g('proj')||'').replace(/\{kw\}/gi,kwp);
 // Title block (ISO 7200-style ruled grid): logo | title + (Drawing No | Revision | Date) strip | 2×2 equipment cells (inverters, solar modules, BESS PCS, batteries) | ruled approvals table.
 // Drawn in absolute page coordinates (no diagram stretch) and sits the same distance from the left, right and bottom page border (BM).
-function TB(s,W,wp,qty,kwp,title){
+function TB(s,W,wp,qty,kwp,title,dtitle,cfgTxt){
 const H=105,BM=10,y0=A4H-BM-H,yb=y0+H,x0=BM,x1=W-BM,d1=150,d2=790,d3=W-330,ed=(d2+d3)/2,eh=H/2;
 const T=(x,y,str,sz,a='start',w='normal')=>s.push(`<text xml:space="preserve" x="${x}" y="${y.toFixed(1)}" font-size="${sz}" text-anchor="${a}" font-weight="${w}" fill="#000">${esc(str)}</text>`);
 const L=(a,b,c,d,sw=1)=>s.push(`<line x1="${a}" y1="${b.toFixed(1)}" x2="${c}" y2="${d.toFixed(1)}" stroke="#000" stroke-width="${sw}"/>`);
@@ -42,8 +42,8 @@ if(LOGO)s.push(`<image href="${LOGO}" xlink:href="${LOGO}" x="${x0+8}" y="${y0+6
 {const av=d2-d1-25,wd=(q,z)=>q.length*0.6*z; // project title: shrink, then wrap onto two lines, so it never runs into the equipment cells
  if(wd(title,14)<=av)T(d1+15,y0+21,title,14,'start','bold');else if(wd(title,12)<=av)T(d1+15,y0+21,title,12,'start','bold');
  else{const mc=Math.floor(av/(0.6*11)),ws=title.split(' '),ls=[''];ws.forEach(w=>{const c=ls[ls.length-1]?ls[ls.length-1]+' '+w:w;if(c.length>mc&&ls[ls.length-1])ls.push(w);else ls[ls.length-1]=c});
-  const two=ls.length>2?[ls[0],clip(ls.slice(1).join(' '),mc)]:ls;two.forEach((q,j)=>T(d1+15,y0+14+j*13,clip(q,mc),11,'start','bold'))}}T(d1+15,y0+45,'SINGLE LINE DIAGRAM',19,'start','bold');
-T(d1+15,y0+67,clip(`Configuration: ${CFGD()}      Location: ${g('loc')}`,92),11,'start');
+  const two=ls.length>2?[ls[0],clip(ls.slice(1).join(' '),mc)]:ls;two.forEach((q,j)=>T(d1+15,y0+14+j*13,clip(q,mc),11,'start','bold'))}}T(d1+15,y0+45,dtitle||'SINGLE LINE DIAGRAM',19,'start','bold');
+T(d1+15,y0+67,clip(`${cfgTxt||'Configuration: '+CFGD()}      Location: ${g('loc')}`,92),11,'start');
 L(d1,y0+81,d2,y0+81);L(420,y0+81,420,yb);L(660,y0+81,660,yb);
 T(d1+15,y0+97,clip('Drawing No: '+g('dno'),34),11,'start');T(435,y0+97,clip('Revision: '+g('rev'),30),11,'start');T(675,y0+97,'Date: '+dfmt(g('date')),11,'start');
 // equipment cells — inverters, solar modules, BESS PCS and batteries are listed separately
@@ -712,6 +712,164 @@ const SUPC=()=>g('supCable')||g('utilCable');
 const GF=sum=>{const F=S.gridFeeder(sum),b=+g('bkBrk'),c=g('bkCable');if(b>0){F.mccb=b;F.bus=b}if(c)F.ac=c;return F};
 // Single-phase supply: every breaker becomes 2-pole and busbars single phase (text labels only - layout unchanged)
 const PH1=svg=>!V.sp?svg:svg.replace(/>([^<]+)</g,(m,q)=>'>'+q.replace(/\b4P\b/g,'2P').replace(/3P\+N\+PE,? 400\/230V/g,'1P+N+PE 230V').replace(/3P\+N\+PE/g,'1P+N+PE').replace(/SPD Type 1\+2, 3P\+N/g,'SPD Type 1+2, 1P+N').replace(/\b3P\+N\b/g,'1P+N')+'<');
+
+// ===== MV scope SLD (systems of 1000 kVA and above): LV panel feeder -> step-up transformer -> NVD VT + surge arrester -> MV cable -> DDLO -> MV gantry busbar -> DDLO -> utility DDLO -> CEB MV network.
+// Symbols per IEC 60617: circuit breaker, current transformer, two-winding transformer (star-earthed LV / delta HV), voltage transformer, surge arrester, cable sealing ends, drop-out fuse (DDLO), busbar, earth. =====
+function renderMV(){
+const W=A4W,s=[],M=V.mv||{list:[]},kv=M.kv||'33',OR='#d9822b',MV='#b0282e',GR='#0a7a2f',BK='#000',n=Math.max(1,M.list.length);
+const T=(x,y,str,sz=10,a='start',w='normal',fill='#000')=>s.push(`<text xml:space="preserve" x="${(+x).toFixed(1)}" y="${(+y).toFixed(1)}" font-size="${(sz<12?sz*1.2:sz).toFixed(1)}" text-anchor="${a}" font-weight="${w}" fill="${fill}">${esc(str)}</text>`); // small labels 20 % larger for print
+const L=(a,b,c,d,col=BK,w=1.5,da='')=>s.push(`<line x1="${(+a).toFixed(1)}" y1="${(+b).toFixed(1)}" x2="${(+c).toFixed(1)}" y2="${(+d).toFixed(1)}" stroke="${col}" stroke-width="${w}"${da?` stroke-dasharray="${da}"`:''}/>`);
+const R=(x,y,w,h,col=BK,sw=1.3,da='',fill='none')=>s.push(`<rect x="${(+x).toFixed(1)}" y="${(+y).toFixed(1)}" width="${(+w).toFixed(1)}" height="${(+h).toFixed(1)}" fill="${fill}" stroke="${col}" stroke-width="${sw}"${da?` stroke-dasharray="${da}"`:''}/>`);
+const C=(x,y,r,col=BK,sw=1.5,fill='none')=>s.push(`<circle cx="${(+x).toFixed(1)}" cy="${(+y).toFixed(1)}" r="${r}" fill="${fill}" stroke="${col}" stroke-width="${sw}"/>`);
+const PG=(pts,col=BK,fill='none',sw=1.3)=>s.push(`<polygon points="${pts.map(p=>p.map(v=>(+v).toFixed(1)).join(',')).join(' ')}" fill="${fill}" stroke="${col}" stroke-width="${sw}"/>`);
+const earth=(x,y,col=GR)=>{L(x,y,x,y+8,col);L(x-10,y+8,x+10,y+8,col,2);L(x-6.5,y+12,x+6.5,y+12,col,2);L(x-3,y+16,x+3,y+16,col,2)};
+const wr=(q,n)=>{const p=String(q).split(' × '),ls=wslash(p[0],n);return p[1]?ls.concat(['× '+p[1]]):ls};
+// ---- symbols ----
+const cbH=(x,y,col)=>{ // circuit breaker, horizontal: fixed contact with x, moving blade
+ L(x-24,y,x-8,y,col);L(x+8,y,x+24,y,col);L(x-8,y,x+8,y-11,BK,1.6);L(x+5,y-3,x+11,y+3,BK,1.3);L(x+5,y+3,x+11,y-3,BK,1.3)};
+const ct=(x,y,col)=>{C(x,y,7,BK,1.3);L(x-7,y,x+7,y,col)};
+const tx=(x,y,col1,col2)=>{ // two-winding transformer: LV circle (star, neutral earthed) + HV circle (delta)
+ C(x-14,y,18,BK,1.6);C(x+14,y,18,BK,1.6);
+ const sx=x-20,sy=y;L(sx,sy,sx,sy-7,BK,1.1);L(sx,sy,sx-6,sy+4,BK,1.1);L(sx,sy,sx+6,sy+4,BK,1.1); // star
+ PG([[x+20,y-7],[x+14,y+5],[x+26,y+5]],BK,'none',1.1); // delta
+ L(x-14,y+18,x-14,y+30,GR,1.3);earth(x-14,y+30)};
+const vt=(x,y)=>{C(x,y,8,BK,1.4);C(x,y-12,8,BK,1.4)}; // voltage transformer (NVD)
+const sa=(x,y)=>{R(x-6,y,12,24,BK,1.4);L(x,y+3,x,y+19,BK,1.2);PG([[x-3,y+15],[x+3,y+15],[x,y+21]],BK,BK,1)}; // surge arrester
+const se=(x,y,dir)=>PG([[x,y],[x+dir*10,y-6],[x+dir*10,y+6]],MV,MV,1); // cable sealing end
+const ddlo=(x,y,col)=>{ // drop-out fuse (expulsion fuse cut-out): hinge, fuse tube on a tilted blade, upper contact
+ L(x-30,y,x-14,y,col);C(x-14,y,2.2,BK,1.2,'#fff');const a=-28*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a),L0=30,hx=x-14,hy=y;
+ const p=(t,o)=>[hx+ux*t-uy*o,hy+uy*t+ux*o];L(hx,hy,...p(L0,0),BK,1.5);PG([p(8,-4),p(22,-4),p(22,4),p(8,4)],BK,'#fff',1.3);L(...p(10,0),...p(20,0),BK,1);
+ L(x+14,y,x+30,y,col);L(x+14,y,x+14,y-7,BK,1.4)};
+// ---- geometry ----
+const yTop=78,yBot=FB-8,list=M.list.length?M.list:[{src:'LV panel',kva:'1000',brk:'',lvc:'',mvc:'',len:'',ddlo:'DDLO '+kv+' kV'}];
+const AV=yBot-yTop-60,P=Math.min(250,AV/n),k=Math.min(1,P/215),off=(AV-P*n)/2,rowY=i=>yTop+50+off+P*(i+0.5); // rows centred in the window
+const X={bus:56,cb:120,ct:196,lvOut:350,tx:556,node:628,c0:672,c1:870,dd:924,gb:1046,gx0:1004,gx1:1196,od:1110,cd:1290,ceb:1376},XM=480;
+// scope boxes
+const y0=Math.max(yTop+6,rowY(0)-P/2-30),y1=Math.min(yBot,rowY(n-1)+P/2+20); // scope boxes wrap the rows
+R(X.gx0,y0+24,X.gx1-X.gx0,y1-y0-30,GR,1.4,'6 4');T(X.gx0+8,y0+40,(M.gantry||'Medium voltage gantry').toUpperCase(),10,'start','bold');
+R(XM,y0,X.gx1+14-XM,y1-y0,MV,1.8,'10 5');T(XM+10,y0+16,'REGEN MV SCOPE',13,'start','bold',MV);
+T(30,y0+16,'REGEN LV SCOPE (see the LV SLD)',11,'start','bold');T(X.gx1+30,y0+16,'CEB SCOPE',11,'start','bold');
+// gantry busbar
+const yA=rowY(0),yB=rowY(n-1),yO=(yA+yB)/2;L(X.gb,Math.min(yA,yO)-22*k-14,X.gb,Math.max(yB,yO)+22*k+14,MV,5);T(X.gb+8,Math.min(yA,yO)-22*k-18,`${kv} kV BUSBAR`,9,'start','bold');
+list.forEach((r,i)=>{const y=rowY(i),hv=k;
+ // LV panel feeder box
+ R(26,y-80*hv-6,X.lvOut-26,150*hv+14,BK,1.1,'6 4');T(34,y-80*hv+8,(r.src||'LV panel').toUpperCase(),9,'start','bold');
+ L(X.bus,y-32*hv,X.bus,y+32*hv,OR,5);T(X.bus-4,y+32*hv+13,'LV BUSBAR',7.5,'start','bold');
+ L(X.bus,y,X.cb-24,y,OR);cbH(X.cb,y,OR);const bt=r.brk?`4P ${r.brk}A ${BT(+r.brk,r.lvI)}`:'LV breaker';T(X.cb,y+17,bt,8.5,'middle','bold');
+ L(X.cb+24,y,X.ct-7,y,OR);ct(X.ct,y,OR);L(X.ct+7,y,X.lvOut,y,OR);T(X.ct,y+19,'CT',8,'middle');
+ // power analyzer + protection relay (top of the LV box)
+ const ry=y-62*hv,pa=[X.ct-46,ry],pr=[X.ct+20,ry];R(pa[0],pa[1],60,24);T(pa[0]+30,pa[1]+10,'POWER',7.5,'middle','bold');T(pa[0]+30,pa[1]+19,'ANALYZER',7.5,'middle','bold');
+ R(pr[0],pr[1],96,24);T(pr[0]+48,pr[1]+10,'PROTECTION RELAY',7.5,'middle','bold');T(pr[0]+48,pr[1]+19,'(NVD / 27 / 59 / 81)',6.5,'middle');
+ L(X.ct,y-7,X.ct,ry+24,BK,1,'3 2');L(pa[0]+30,ry+24,pa[0]+30,ry+30,BK,1,'3 2');L(pa[0]+30,ry+30,X.ct,ry+30,BK,1,'3 2'); // CT secondary to the analyzer
+ L(pr[0]+10,ry+24,pr[0]+10,ry+34,BK,1,'4 3');L(pr[0]+10,ry+34,X.cb+6,ry+34,BK,1,'4 3');L(X.cb+6,ry+34,X.cb+6,y-6,BK,1,'4 3'); // trip -> LV breaker
+ // LV cable to the transformer
+ const lv=wr(r.lvc||'LV cable',Math.floor((XM-X.lvOut-12)/(0.56*8)));lv.forEach((q,j)=>T((X.lvOut+XM)/2,y-8-(lv.length-1-j)*10,q,8,'middle')); // between the LV box and the MV-scope borderL(X.lvOut,y,X.tx-32,y,OR);
+ // step-up transformer
+ tx(X.tx,y);L(X.tx+32,y,X.node,y,MV);[`STEP-UP TRANSFORMER`,`${r.kva} kVA · 0.4/${kv} kV`,M.vg||'Dyn11'].forEach((q,j)=>T(X.tx,y-58*hv+j*11,q,j?8.5:8.5,'middle',j?'normal':'bold'));
+ // NVD VT (up) + surge arrester (down) at the transformer HV terminal
+ L(X.node,y,X.node,y-26*hv,MV);vt(X.node,y-26*hv-8);T(X.node+14,y-26*hv-14,'NVD TRANSFORMER (VT)',7.5,'start','bold');T(X.node+14,y-26*hv-4,M.nvd||kv+'/0.11 kV',7.5,'start');
+ const sig=y-82*hv;L(X.node,y-26*hv-28,X.node,sig,BK,1,'4 3');L(X.node,sig,pr[0]+70,sig,BK,1,'4 3');L(pr[0]+70,sig,pr[0]+70,ry,BK,1,'4 3'); // VT -> protection relay
+ L(X.node,y,X.node,y+14*hv,MV);sa(X.node,y+14*hv);L(X.node,y+14*hv+24,X.node,y+14*hv+30,GR,1.3);earth(X.node,y+14*hv+30);T(X.node+12,y+14*hv+16,(M.sa||kv+' kV surge arrester').toUpperCase(),7.5,'start','bold');
+ // MV cable with sealing ends
+ L(X.node,y,X.c0,y,MV);se(X.c0,y,1);L(X.c0+10,y,X.c1-10,y,MV,2.2);se(X.c1,y,-1);L(X.c1,y,X.dd-30,y,MV);
+ const mc=wr(r.mvc||'MV cable',34);['MV CABLE'].concat(mc).forEach((q,j,a)=>T((X.c0+X.c1)/2,y-9-(a.length-1-j)*10,q,8,'middle',j?'normal':'bold'));T((X.c0+X.c1)/2,y+15,'L = '+(r.len?r.len+' m':'— m'),8,'middle');
+ // feeder DDLO -> gantry busbar
+ ddlo(X.dd,y,MV);T(X.dd,y+16,r.ddlo||('DDLO '+kv+' kV'),8,'middle','bold');L(X.dd+30,y,X.gb,y,MV);C(X.gb,y,2.6,MV,1,MV);
+ T(X.c1-4,y+28,`MV ${(+r.hvI||0).toFixed(1)} A`,7.5,'end');T(X.lvOut-6,y+28,`LV ${(+r.lvI||0).toFixed(0)} A`,7.5,'end');
+});
+// outgoing: gantry DDLO -> utility DDLO -> CEB network
+L(X.gb,yO,X.od-30,yO,MV);C(X.gb,yO,2.6,MV,1,MV);ddlo(X.od,yO,MV);T(X.od,yO+16,'DDLO '+kv+' kV',8,'middle','bold');L(X.od+30,yO,X.cd-30,yO,MV);
+ddlo(X.cd,yO,MV);T(X.cd,yO+16,M.cebDdlo||('DDLO '+kv+' kV (CEB)'),8,'middle','bold');L(X.cd+30,yO,X.ceb,yO,MV);
+R(X.ceb,yO-26,150,52,BK,1.6);const cw=wr(M.ceb||('CEB '+kv+' kV network'),20);cw.forEach((q,j)=>T(X.ceb+75,yO-(cw.length-1)*6+4+j*12,q.toUpperCase(),10,'middle','bold'));
+// legend + transformer schedule (right side)
+const LG=[[OR,'LV AC (0.4 kV)',''],[MV,`MV AC (${kv} kV)`,''],[BK,'Protection / signal','4 3'],[GR,'Earthing','']];
+const lx=1376,ly=96;LG.forEach(([c,l,d],j)=>{L(lx,ly+j*16,lx+40,ly+j*16,c,2,d);T(lx+50,ly+4+j*16,l,10)});
+const tx0=1236,ty0=Math.max(yO+60,ly+90),cols=[26,150,50,50,52],hd=['No','LV source','kVA','LV A','MV A'],rh=15;
+T(tx0,ty0-6,'TRANSFORMER SCHEDULE',10,'start','bold');R(tx0,ty0,cols.reduce((a,b)=>a+b,0),rh*(list.length+1),BK,1);
+let cx=tx0;cols.forEach((w,j)=>{if(j)L(cx,ty0,cx,ty0+rh*(list.length+1),BK,0.8);T(cx+4,ty0+11,hd[j],8,'start','bold');cx+=w});L(tx0,ty0+rh,tx0+cols.reduce((a,b)=>a+b,0),ty0+rh,BK,1);
+list.forEach((r,i)=>{let cx=tx0;const yy=ty0+rh*(i+2)-4,src=String(r.src||'');[String(i+1),src.length>26?src.slice(0,25)+'…':src,r.kva,(+r.lvI||0).toFixed(0),(+r.hvI||0).toFixed(1)].forEach((q,j)=>{T(cx+4,yy,q,8);cx+=cols[j]});if(i)L(tx0,ty0+rh*(i+1),tx0+cols.reduce((a,b)=>a+b,0),ty0+rh*(i+1),BK,0.4)});
+const rf=wr(M.relayF||'',60);T(tx0,ty0+rh*(list.length+1)+18,'Protection relay functions:',8.5,'start','bold');rf.forEach((q,j)=>T(tx0,ty0+rh*(list.length+1)+30+j*11,q,8.5));
+// sheet
+s.unshift('<g data-layer="DIAGRAM">');s.push('</g>');
+s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
+s.push(`<text xml:space="preserve" x="28" y="42" font-size="15" text-anchor="start" font-weight="bold" fill="#000">${esc('SINGLE LINE DIAGRAM — MV SCOPE — '+g('opt'))}</text>`);
+const wp=+g('modWp')||0,qty=INV.concat(V.loc2on?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),kva=list.reduce((a,r)=>a+(+r.kva||0),0);
+TB(s,W,wp,qty,kwp,TITLE(kwp),'SINGLE LINE DIAGRAM — MV SCOPE',`MV connection: ${kv} kV, ${list.length} × step-up transformer (${kva} kVA)`);
+return page(s.join(''))}
+
+// ===== MV scope, vertical layout (bottom -> up, like the standard LV SLD): LV panels at the bottom, step-up transformers above them,
+// the MV gantry busbar across the top, then the utility DDLO and the CEB network. Same IEC 60617 symbols as the horizontal layout. =====
+function renderMVv(){
+const W=A4W,s=[],M=V.mv||{list:[]},kv=M.kv||'33',OR='#d9822b',MV='#b0282e',GR='#0a7a2f',BK='#000';
+const list=M.list.length?M.list:[{src:'LV panel',kva:'1000',brk:'',lvc:'',mvc:'',len:'',ddlo:'DDLO '+kv+' kV',lvI:0,hvI:0}],n=list.length;
+const T=(x,y,str,sz=10,a='start',w='normal',fill='#000')=>s.push(`<text xml:space="preserve" x="${(+x).toFixed(1)}" y="${(+y).toFixed(1)}" font-size="${(sz<12?sz*1.2:sz).toFixed(1)}" text-anchor="${a}" font-weight="${w}" fill="${fill}">${esc(str)}</text>`);
+const L=(a,b,c,d,col=BK,w=1.5,da='')=>s.push(`<line x1="${(+a).toFixed(1)}" y1="${(+b).toFixed(1)}" x2="${(+c).toFixed(1)}" y2="${(+d).toFixed(1)}" stroke="${col}" stroke-width="${w}"${da?` stroke-dasharray="${da}"`:''}/>`);
+const R=(x,y,w,h,col=BK,sw=1.3,da='',fill='none')=>s.push(`<rect x="${(+x).toFixed(1)}" y="${(+y).toFixed(1)}" width="${(+w).toFixed(1)}" height="${(+h).toFixed(1)}" fill="${fill}" stroke="${col}" stroke-width="${sw}"${da?` stroke-dasharray="${da}"`:''}/>`);
+const C=(x,y,r,col=BK,sw=1.5,fill='none')=>s.push(`<circle cx="${(+x).toFixed(1)}" cy="${(+y).toFixed(1)}" r="${r}" fill="${fill}" stroke="${col}" stroke-width="${sw}"/>`);
+const PG=(pts,col=BK,fill='none',sw=1.3)=>s.push(`<polygon points="${pts.map(p=>p.map(v=>(+v).toFixed(1)).join(',')).join(' ')}" fill="${fill}" stroke="${col}" stroke-width="${sw}"/>`);
+const earth=(x,y,col=GR)=>{L(x,y,x,y+8,col);L(x-10,y+8,x+10,y+8,col,2);L(x-6.5,y+12,x+6.5,y+12,col,2);L(x-3,y+16,x+3,y+16,col,2)};
+const wr=(q,m)=>{const p=String(q).split(' × '),ls=wslash(p[0],m);return p[1]?ls.concat(['× '+p[1]]):ls};
+// ---- vertical symbols (power flows upwards) ----
+const cbV=(x,y,col)=>{L(x,y+52,x,y+36,col);L(x,y+16,x,y,col);L(x,y+36,x+11,y+19,BK,1.6);L(x-3,y+13,x+3,y+19,BK,1.3);L(x-3,y+19,x+3,y+13,BK,1.3)}; // breaker: bottom contact .. top (x)
+const ctV=(x,y,col)=>{C(x,y,7,BK,1.3);L(x,y-7,x,y+7,col)};
+const txV=(x,y)=>{C(x,y-14,18,BK,1.6);C(x,y+14,18,BK,1.6);PG([[x,y-21],[x-6,y-9],[x+6,y-9]],BK,'none',1.1); // HV delta (top)
+ const sy=y+20;L(x,sy,x,sy-7,BK,1.1);L(x,sy,x-6,sy+4,BK,1.1);L(x,sy,x+6,sy+4,BK,1.1); // LV star (bottom)
+ L(x-18,y+14,x-34,y+14,GR,1.3);L(x-34,y+14,x-34,y+26,GR,1.3);earth(x-34,y+26)}; // LV neutral earthed
+const vtH=(x,y)=>{C(x,y,8,BK,1.4);C(x+12,y,8,BK,1.4)};
+const saV=(x,y)=>{R(x-6,y,12,24,BK,1.4);L(x,y+3,x,y+19,BK,1.2);PG([[x-3,y+15],[x+3,y+15],[x,y+21]],BK,BK,1)};
+const seV=(x,y,dir)=>PG([[x,y],[x-6,y+dir*10],[x+6,y+dir*10]],MV,MV,1); // sealing end, tip at the cable end
+const ddloV=(x,y,col)=>{L(x,y+30,x,y+14,col);C(x,y+14,2.2,BK,1.2,'#fff');const a=-(90-28)*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a),p=(t,o)=>[x+ux*t-uy*o,y+14+uy*t+ux*o];
+ L(x,y+14,...p(30,0),BK,1.5);PG([p(8,-4),p(22,-4),p(22,4),p(8,4)],BK,'#fff',1.3);L(...p(10,0),...p(20,0),BK,1);L(x,y-14,x,y-30,col);L(x,y-14,x-7,y-14,BK,1.4)};
+// ---- geometry ----
+const xL=40,xR=W-40,colW=Math.min(300,(xR-xL)/n),x0=(xL+xR)/2-colW*n/2,cx=i=>x0+colW*(i+0.35); // column = power line; labels to its right
+const Y={ceb:72,cd:170,gTop:212,gd:250,gb:300,gBot:322,fd:356,c1:404,c0:500,node:540,tx:596,lvc0:640,lvTop:700,ct:742,cb:768,bus:842,lvBot:874};
+const xc=(cx(0)+cx(n-1))/2;
+// scope boxes
+R(x0+4,Y.gTop-26,colW*n-8,Y.lvTop-Y.gTop+12,MV,1.8,'10 5');T(x0+colW*n-14,Y.gTop-10,'REGEN MV SCOPE',13,'end','bold',MV);
+R(x0+14,Y.gTop,colW*n-28,Y.gBot-Y.gTop,GR,1.4,'6 4');T(x0+colW*n-24,Y.gTop+16,(M.gantry||'Medium voltage gantry').toUpperCase(),10,'end','bold'); // titles at the right end, clear of the vertical feeders
+T(x0+4,Y.lvBot+20,'REGEN LV SCOPE (see the LV SLD)',11,'start','bold');T(xc+90,Y.ceb+10,'CEB SCOPE',11,'start','bold');
+// gantry busbar + outgoing (up) to the CEB network
+L(Math.min(cx(0),xc)-30,Y.gb,Math.max(cx(n-1),xc)+30,Y.gb,MV,5);T(Math.max(cx(n-1),xc)+36,Y.gb+4,`${kv} kV BUSBAR`,9,'start','bold');
+L(xc,Y.gb,xc,Y.gd+30,MV);C(xc,Y.gb,2.6,MV,1,MV);ddloV(xc,Y.gd,MV);T(xc+14,Y.gd+4,'DDLO '+kv+' kV',8,'start','bold');L(xc,Y.gd-30,xc,Y.cd+30,MV);
+ddloV(xc,Y.cd,MV);T(xc+14,Y.cd+4,M.cebDdlo||('DDLO '+kv+' kV (CEB)'),8,'start','bold');L(xc,Y.cd-30,xc,Y.ceb+50,MV);
+R(xc-80,Y.ceb,160,50,BK,1.6);const cw=wr(M.ceb||('CEB '+kv+' kV network'),20);cw.forEach((q,j)=>T(xc,Y.ceb+25-(cw.length-1)*6+4+j*12,q.toUpperCase(),10,'middle','bold'));
+list.forEach((r,i)=>{const x=cx(i),xt=x+16;
+ // feeder DDLO + MV cable (sealing ends) from the transformer up to the gantry busbar
+ L(x,Y.gb,x,Y.fd-30,MV);C(x,Y.gb,2.6,MV,1,MV);ddloV(x,Y.fd,MV);T(xt,Y.fd+4,r.ddlo||('DDLO '+kv+' kV'),8,'start','bold');
+ L(x,Y.fd+30,x,Y.c1,MV);seV(x,Y.c1,1);L(x,Y.c1+10,x,Y.c0-10,MV,2.2);seV(x,Y.c0,-1);L(x,Y.c0,x,Y.tx-32,MV);
+ const mc=['MV CABLE'].concat(wr(r.mvc||'MV cable',Math.floor((colW-40)/(0.56*9.6))),['L = '+(r.len?r.len+' m':'— m'),`MV ${(+r.hvI||0).toFixed(1)} A`]);mc.forEach((q,j)=>T(xt,Y.c1+20+j*12,q,8,'start',j?'normal':'bold'));
+ // NVD VT (right) and surge arrester (left) at the transformer HV terminal
+ L(x,Y.node,x+20,Y.node,MV);vtH(x+28,Y.node);T(x+50,Y.node-4,'NVD TRANSFORMER (VT)',7.5,'start','bold');T(x+50,Y.node+8,M.nvd||kv+'/0.11 kV',7.5,'start');
+ L(x,Y.node,x-24,Y.node,MV);L(x-24,Y.node,x-24,Y.node+4,MV);saV(x-24,Y.node+4);L(x-24,Y.node+28,x-24,Y.node+32,GR,1.3);earth(x-24,Y.node+32);
+ T(x-36,Y.node-6,'SA',8,'end','bold');
+ // step-up transformer
+ txV(x,Y.tx);[`STEP-UP TRANSFORMER`,`${r.kva} kVA · 0.4/${kv} kV`,M.vg||'Dyn11'].forEach((q,j)=>T(x+26,Y.tx-8+j*12,q,8.5,'start',j?'normal':'bold'));
+ // LV cable from the LV panel up to the transformer
+ L(x,Y.tx+32,x,Y.lvTop,OR);const lv=wr(r.lvc||'LV cable',Math.floor((colW-40)/(0.56*9.6)));lv.concat([`LV ${(+r.lvI||0).toFixed(0)} A`]).forEach((q,j)=>T(xt,Y.lvc0+4+j*12,q,8,'start'));
+ // LV panel: busbar -> breaker -> CT -> out (up); power analyzer + protection relay to the right
+ R(x-84,Y.lvTop,colW-10,Y.lvBot-Y.lvTop,BK,1.1,'6 4');const st=String(r.src||'LV panel').toUpperCase();T(x-78,Y.lvBot-8,st.length>34?st.slice(0,33)+'…':st,8.5,'start','bold');
+ L(x-44,Y.bus,x+44,Y.bus,OR,5);T(x+50,Y.bus+4,'LV BUSBAR',7.5,'start','bold');L(x,Y.bus,x,Y.cb+52,OR);cbV(x,Y.cb,OR);L(x,Y.cb,x,Y.ct+7,OR);ctV(x,Y.ct,OR);L(x,Y.ct-7,x,Y.lvTop,OR);
+ T(x-10,Y.cb+30,r.brk?`4P ${r.brk}A`:'LV breaker',8.5,'end','bold');if(r.brk)T(x-10,Y.cb+42,BT(+r.brk,r.lvI),7.5,'end');T(x-12,Y.ct+4,'CT',8,'end');
+ const bx=x+40,pa=[bx,Y.ct-12],pr=[bx,Y.ct+22];R(pa[0],pa[1],96,22);T(pa[0]+48,pa[1]+15,'POWER ANALYZER',7,'middle','bold');R(pr[0],pr[1],96,30);T(pr[0]+48,pr[1]+12,'PROTECTION RELAY',7,'middle','bold');T(pr[0]+48,pr[1]+24,'(NVD / 27 / 59 / 81)',6,'middle');
+ L(x+7,Y.ct,bx,Y.ct,BK,1,'3 2');L(pr[0],pr[1]+22,x+12,pr[1]+22,BK,1,'4 3');L(x+12,pr[1]+22,x+12,Y.cb+24,BK,1,'4 3');L(x+12,Y.cb+24,x+6,Y.cb+24,BK,1,'4 3'); // CT -> analyzer, relay trip -> breaker
+ const sg=x+colW*0.65-14; /* VT signal runs at the right of the column, clear of the transformer / cable labels */L(pr[0]+96,pr[1]+8,sg,pr[1]+8,BK,1,'4 3');L(sg,pr[1]+8,sg,Y.node+16,BK,1,'4 3');L(sg,Y.node+16,x+40,Y.node+16,BK,1,'4 3');L(x+40,Y.node+16,x+40,Y.node+8,BK,1,'4 3'); // VT -> relay
+});
+// legend + transformer schedule (top corners)
+const LG=[[OR,'LV AC (0.4 kV)',''],[MV,`MV AC (${kv} kV)`,''],[BK,'Protection / signal','4 3'],[GR,'Earthing','']];
+const lx=W-200,ly=70;LG.forEach(([c,l,d],j)=>{L(lx,ly+j*16,lx+40,ly+j*16,c,2,d);T(lx+50,ly+4+j*16,l,10)});
+const tx0=24,ty0=70,cols=[26,150,50,50,52],tw=cols.reduce((a,b)=>a+b,0),rh=14,nr=Math.min(list.length,6);
+T(tx0+4,ty0-6+14,'',1);T(tx0,ty0+8,'TRANSFORMER SCHEDULE',10,'start','bold');const tt=ty0+14;R(tx0,tt,tw,rh*(nr+1),BK,1);
+let c0=tx0;['No','LV source','kVA','LV A','MV A'].forEach((h,j)=>{if(j)L(c0,tt,c0,tt+rh*(nr+1),BK,0.8);T(c0+4,tt+10.5,h,7.5,'start','bold');c0+=cols[j]});L(tx0,tt+rh,tx0+tw,tt+rh,BK,1);
+list.slice(0,nr).forEach((r,i)=>{let cx2=tx0;const yy=tt+rh*(i+2)-3.5,src=String(r.src||'');[String(i+1),src.length>24?src.slice(0,23)+'…':src,r.kva,(+r.lvI||0).toFixed(0),(+r.hvI||0).toFixed(1)].forEach((q,j)=>{T(cx2+4,yy,q,7.5);cx2+=cols[j]});if(i)L(tx0,tt+rh*(i+1),tx0+tw,tt+rh*(i+1),BK,0.4)});
+const rf=wr(M.relayF||'',52);T(tx0+tw+16,tt+10,'Protection relay functions:',8,'start','bold');rf.forEach((q,j)=>T(tx0+tw+16,tt+22+j*11,q,8));
+// sheet
+s.unshift('<g data-layer="DIAGRAM">');s.push('</g>');
+s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
+s.push(`<text xml:space="preserve" x="28" y="42" font-size="15" text-anchor="start" font-weight="bold" fill="#000">${esc('SINGLE LINE DIAGRAM — MV SCOPE — '+g('opt'))}</text>`);
+const wp=+g('modWp')||0,qty=INV.concat(V.loc2on?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),kva=list.reduce((a,r)=>a+(+r.kva||0),0);
+TB(s,W,wp,qty,kwp,TITLE(kwp),'SINGLE LINE DIAGRAM — MV SCOPE',`MV connection: ${kv} kV, ${list.length} × step-up transformer (${kva} kVA)`);
+return page(s.join(''))}
+S.renderMV = (v, inv, bess, inv2, bess2) => { V = v; INV = inv || []; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return (v.mv && v.mv.lay == 'v') ? renderMVv() : renderMV(); };
 S.renderPanels = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderPanels()); };
 S.renderBlock = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderBlock()); };
 S.renderSLD = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderSLD()); };
