@@ -606,7 +606,7 @@ earthBar(mL+10);
 // hybrid grid-port section (kept OFF the common busbar)
 let gpEntry=0,cGPin=0;
 if(nGP==1){const d=gpDown[0],xx=gxs[0];gpEntry=xx;L(xx,YB,xx,BY+20,OR);brk(xx,BY+20,d.l1,d.l2);
- if(EFTP=='gp'){const set=(g('efrMainSet')||'50N/51N').slice(0,16),yc=BY-22,w=Math.max(54,set.length*4.2+12),rx=xx-40-w,ry=BY-60;ctr(xx,yc);L(xx-7,yc,rx+w-20,yc,'#000',1);L(rx+w-20,yc,rx+w-20,ry+26,'#000',1);relay(rx,ry,set);L(rx+w,ry+13,xx-12,ry+13,'#000',1,'4 3');L(xx-12,ry+13,xx-12,BY+46,'#000',1,'4 3');L(xx-12,BY+46,xx-5,BY+46,'#000',1,'4 3')} // single grid port: EFR on that (backup-side) breakerL(xx,BY+72,xx,YTAG-8,OR);arrowD(xx,YTAG-8);
+ if(EFTP=='gp'){const set=(g('efrMainSet')||'50N/51N').slice(0,16),yc=BY-22,w=Math.max(54,set.length*4.2+12),rx=xx-40-w,ry=BY-60;ctr(xx,yc);L(xx-7,yc,rx+w-20,yc,'#000',1);L(rx+w-20,yc,rx+w-20,ry+26,'#000',1);relay(rx,ry,set);L(rx+w,ry+13,xx-12,ry+13,'#000',1,'4 3');L(xx-12,ry+13,xx-12,BY+46,'#000',1,'4 3');L(xx-12,BY+46,xx-5,BY+46,'#000',1,'4 3')} /* single grid port: EFR on that (backup-side) breaker */L(xx,BY+72,xx,YTAG-8,OR);arrowD(xx,YTAG-8);
  cGPin=cab(IP+' — ATS grid-side busbar',MP+` — grid-port breaker ${d.l1}`,d.u.gp.ac);const n=cab(MP+` — grid-port breaker ${d.l1}`,uname(d.u)+' (grid port)',d.u.gp.ac);
  bubble(xx,BB+18,n);spec(xx,YTAG-14,BB+30,d.u.gp.ac);tag(xx,YTAG,d.tag);T(xx+8,BT0+16,'GRID PORT',8,'start','bold')}
 else if(nGP>1){L(gx0,BY,gx1,BY,OR,4);T(xF+8,BY-6,`GRID SUPPLY BUSBAR ${F.bus}A`,Math.max(6.5,Math.min(9,(gx1-xF-8)/(22*0.58))),'start','bold');gpEntry=xF;
@@ -662,7 +662,7 @@ if(!ats){
 earthBar(iL+10);
 // ---------- interconnecting cables between the two panels ----------
 L(xIn,YA,xSol,YA,OR);bubble((xIn+xSol)/2,YA,cMain);T((xIn+xSol)/2+16,YA-5,g('mainCable'),8.5,'start');
-if(nGP&&HY&&ats){const hx=xSol>gpEntry&&xSol<xGO?xSol:0;if(hx){L(gpEntry,YB,hx-6,YB,OR);s.push(`<path d="M ${hx-6} ${YB} A 6 6 0 0 1 ${hx+6} ${YB}" fill="none" stroke="${OR}" stroke-width="1.5"/>`);L(hx+6,YB,xGO,YB,OR)}else L(gpEntry,YB,xGO,YB,OR); // crosses the solar incomer: hop (not connected)bubble((gpEntry+Math.min(xGO,mR))/2,YB,cGPin);T((gpEntry+Math.min(xGO,mR))/2+16,YB-5,nGP>1?F.ac:GP[0].gp.ac,8.5,'start');
+if(nGP&&HY&&ats){const hx=xSol>gpEntry&&xSol<xGO?xSol:0;if(hx){L(gpEntry,YB,hx-6,YB,OR);s.push(`<path d="M ${hx-6} ${YB} A 6 6 0 0 1 ${hx+6} ${YB}" fill="none" stroke="${OR}" stroke-width="1.5"/>`);L(hx+6,YB,xGO,YB,OR)}else L(gpEntry,YB,xGO,YB,OR); /* crosses the solar incomer: hop (not connected) */bubble((gpEntry+Math.min(xGO,mR))/2,YB,cGPin);T((gpEntry+Math.min(xGO,mR))/2+16,YB-5,nGP>1?F.ac:GP[0].gp.ac,8.5,'start');
 }
 // ---------- equipment schedule ----------
 const grp=(arr)=>{const m=new Map();arr.forEach(([a,b])=>{const k=a+'|'+b;m.set(k,(m.get(k)||0)+1)});return[...m].map(([k,n])=>{const[a,b]=k.split('|');return[a,b,n]})};
@@ -746,9 +746,9 @@ const AV=yBot-yTop-60,P=Math.min(250,AV/n),k=Math.min(1,P/215),off=(AV-P*n)/2,ro
 const X={bus:56,cb:120,ct:196,lvOut:350,tx:556,node:628,c0:672,c1:870,dd:924,gb:1046,gx0:1004,gx1:1196,od:1110,cd:1290,ceb:1376},XM=480;
 // scope boxes
 const y0=Math.max(yTop+6,rowY(0)-P/2-30),y1=Math.min(yBot,rowY(n-1)+P/2+20); // scope boxes wrap the rows
-R(X.gx0,y0+24,X.gx1-X.gx0,y1-y0-30,GR,1.4,'6 4');T(X.gx0+8,y0+40,(M.gantry||'Medium voltage gantry').toUpperCase(),10,'start','bold');
-R(XM,y0,X.gx1+14-XM,y1-y0,MV,1.8,'10 5');T(XM+10,y0+16,'REGEN MV SCOPE',13,'start','bold',MV);
-T(30,y0+16,'REGEN LV SCOPE (see the LV SLD)',11,'start','bold');T(X.gx1+30,y0+16,'CEB SCOPE',11,'start','bold');
+const G=26;R(X.gx0,y0+G,X.gx1-X.gx0,y1-y0-2*G,GR,1.4,'6 4');T(X.gx0+8,y0+G+16,(M.gantry||'Medium voltage gantry').toUpperCase(),10,'start','bold');
+R(XM,y0,X.gx1+G-XM,y1-y0,MV,1.8,'10 5');T(XM+10,y0+16,'REGEN MV SCOPE',13,'start','bold',MV);
+T(30,y0+16,'REGEN LV SCOPE (see the LV SLD)',11,'start','bold');T(X.gx1+G+14,y0+16,'CEB SCOPE',11,'start','bold');
 // gantry busbar
 const yA=rowY(0),yB=rowY(n-1),yO=(yA+yB)/2;L(X.gb,Math.min(yA,yO)-22*k-14,X.gb,Math.max(yB,yO)+22*k+14,MV,5);T(X.gb+8,Math.min(yA,yO)-22*k-18,`${kv} kV BUSBAR`,9,'start','bold');
 list.forEach((r,i)=>{const y=rowY(i),hv=k;
@@ -763,7 +763,7 @@ list.forEach((r,i)=>{const y=rowY(i),hv=k;
  L(X.ct,y-7,X.ct,ry+24,BK,1,'3 2');L(pa[0]+30,ry+24,pa[0]+30,ry+30,BK,1,'3 2');L(pa[0]+30,ry+30,X.ct,ry+30,BK,1,'3 2'); // CT secondary to the analyzer
  L(pr[0]+10,ry+24,pr[0]+10,ry+34,BK,1,'4 3');L(pr[0]+10,ry+34,X.cb+6,ry+34,BK,1,'4 3');L(X.cb+6,ry+34,X.cb+6,y-6,BK,1,'4 3'); // trip -> LV breaker
  // LV cable to the transformer
- const lv=wr(r.lvc||'LV cable',Math.floor((XM-X.lvOut-12)/(0.56*8)));lv.forEach((q,j)=>T((X.lvOut+XM)/2,y-8-(lv.length-1-j)*10,q,8,'middle')); // between the LV box and the MV-scope borderL(X.lvOut,y,X.tx-32,y,OR);
+ const lv=wr(r.lvc||'LV cable',Math.floor((XM-X.lvOut-12)/(0.56*8)));lv.forEach((q,j)=>T((X.lvOut+XM)/2,y-8-(lv.length-1-j)*10,q,8,'middle')); /* between the LV box and the MV-scope border */L(X.lvOut,y,X.tx-32,y,OR);
  // step-up transformer
  tx(X.tx,y);L(X.tx+32,y,X.node,y,MV);[`STEP-UP TRANSFORMER`,`${r.kva} kVA · 0.4/${kv} kV`,M.vg||'Dyn11'].forEach((q,j)=>T(X.tx,y-58*hv+j*11,q,j?8.5:8.5,'middle',j?'normal':'bold'));
  // NVD VT (up) + surge arrester (down) at the transformer HV terminal
@@ -821,12 +821,12 @@ const seV=(x,y,dir)=>PG([[x,y],[x-6,y+dir*10],[x+6,y+dir*10]],MV,MV,1); // seali
 const ddloV=(x,y,col)=>{L(x,y+30,x,y+14,col);C(x,y+14,2.2,BK,1.2,'#fff');const a=-(90-28)*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a),p=(t,o)=>[x+ux*t-uy*o,y+14+uy*t+ux*o];
  L(x,y+14,...p(30,0),BK,1.5);PG([p(8,-4),p(22,-4),p(22,4),p(8,4)],BK,'#fff',1.3);L(...p(10,0),...p(20,0),BK,1);L(x,y-14,x,y-30,col);L(x,y-14,x-7,y-14,BK,1.4)};
 // ---- geometry ----
-const xL=40,xR=W-40,colW=Math.min(300,(xR-xL)/n),x0=(xL+xR)/2-colW*n/2,cx=i=>x0+colW*(i+0.35); // column = power line; labels to its right
+const xL=40,xR=W-40,colW=n==1?420:Math.min(300,(xR-xL)/n),x0=(xL+xR)/2-colW*n/2,cx=i=>x0+colW*(i+0.35); // column = power line; labels to its right
 const Y={ceb:72,cd:170,gTop:212,gd:250,gb:300,gBot:322,fd:356,c1:404,c0:500,node:540,tx:596,lvc0:640,lvTop:700,ct:742,cb:768,bus:842,lvBot:874};
 const xc=(cx(0)+cx(n-1))/2;
 // scope boxes
 R(x0+4,Y.gTop-26,colW*n-8,Y.lvTop-Y.gTop+12,MV,1.8,'10 5');T(x0+colW*n-14,Y.gTop-10,'REGEN MV SCOPE',13,'end','bold',MV);
-R(x0+14,Y.gTop,colW*n-28,Y.gBot-Y.gTop,GR,1.4,'6 4');T(x0+colW*n-24,Y.gTop+16,(M.gantry||'Medium voltage gantry').toUpperCase(),10,'end','bold'); // titles at the right end, clear of the vertical feeders
+R(x0+30,Y.gTop,colW*n-60,Y.gBot-Y.gTop,GR,1.4,'6 4');T(x0+colW*n-40,Y.gTop+16,(M.gantry||'Medium voltage gantry').toUpperCase(),10,'end','bold'); // titles at the right end, clear of the vertical feeders
 T(x0+4,Y.lvBot+20,'REGEN LV SCOPE (see the LV SLD)',11,'start','bold');T(xc+90,Y.ceb+10,'CEB SCOPE',11,'start','bold');
 // gantry busbar + outgoing (up) to the CEB network
 L(Math.min(cx(0),xc)-30,Y.gb,Math.max(cx(n-1),xc)+30,Y.gb,MV,5);T(Math.max(cx(n-1),xc)+36,Y.gb+4,`${kv} kV BUSBAR`,9,'start','bold');
