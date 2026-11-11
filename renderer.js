@@ -14,6 +14,9 @@ const CFGN = () => ({ nm: 'Net metering', na: 'Net accounting', np: 'Net plus', 
 // MV project (MV scope on) in a grid-tie configuration: the site load is fed from the utility's MV gantry (not from the LV isolation panel), the LV side feeds the step-up transformer;
 // the isolation panel is optional and a protection relay (NVD / 27 / 59 / 81) sits in the isolation panel (when included) or else in the main switchgear panel
 const MVG = () => !!(V.mv && V.mv.on) && md() != 'og' && md() != 'hy', MVISO = () => !MVG() || !!V.mv.iso, MVRF = () => V.mv && V.mv.nvdOn === false ? '27/59/81' : 'NVD/27/59/81';
+const UW = u => +u.wp || +g('modWp') || 0; // panel Wp of one inverter (per-inverter module override, else the global panel)
+const KWP = () => ALLI().reduce((a, i) => a + i.mods * UW(i), 0) / 1000; // total DC kWp (handles mixed modules)
+const MODS = () => { const m = new Map(); ALLI().forEach(i => m.set(UW(i), (m.get(UW(i)) || 0) + i.mods)); return [...m].filter(([, n]) => n > 0).map(([w, n]) => `${w} W × ${n} Nos`); };
 const HS = () => g('strHide') == '1'; // hide module string details (modules per string, string count) on every drawing
 const CFGD = () => CFGN() + ({ nz: ' (export prohibited)', n1: ' (TOU)', ne: ' (TOU, night export)' }[V.mode] || ''); // title-block wording
 const dfmt = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('/') : iso;
@@ -56,7 +59,7 @@ const wr=(arr,n)=>{const out=[];let cur='';arr.forEach(e=>{const c=cur?cur+'  + 
 const I=ALLI(),B=ALLB(),hy=I.filter(i=>i.hybrid&&+i.battKwh>0);
 const kwI=I.reduce((a,i)=>a+i.kw,0),kwB=B.reduce((a,b)=>a+ +b.kw,0),kwhT=B.reduce((a,b)=>a+ +b.kwh,0)+hy.reduce((a,i)=>a+ +i.battKwh,0),f=n=>+(+n).toFixed(1);
 const cells=[
- ['Solar modules',[`${wp} W × ${qty} Nos`,`${kwp} kWp DC`]],
+ ['Solar modules',(m=>m.length>2?wr(m,34):m.length?m:[`${wp} W × ${qty} Nos`])(MODS()).concat([`${kwp} kWp DC`])],
  [`Inverters (${I.length} Nos · ${f(kwI)} kW AC)`,I.length?wr(grp(I,i=>`${i.name} ${f(i.kw)} kW`),42):['—']],
  [`BESS PCS (${B.length} Nos${B.length?` · ${f(kwB)} kW`:''})`,B.length?wr(grp(B,b=>`${f(b.kw)} kW bi-directional`),42):['None']],
  [`Batteries (${f(kwhT)} kWh)`,kwhT?wr(grp(B,b=>`${f(b.kwh)} kWh BESS`).concat(grp(hy,i=>`${f(i.battKwh)} kWh (hybrid)`)),42):['None']]];
@@ -70,7 +73,7 @@ ap.forEach(([a,k],i)=>{if(i)L(d3,y0+i*rh,x1,y0+i*rh);T(d3+8,y0+i*rh+14,a,10,'sta
 function renderBlock(){
 const L2=!!V.loc2on,isIso=L2&&V.loc2to=='iso',toMain=L2&&!isIso;
 const U1=units(),U2=L2?INV2.map(u=>({...u,kind:'inv'})).concat(BESS2.map(u=>({...u,kind:'bess'}))):[],U=U1.concat(U2),n1=Math.max(1,U1.length),n2=U2.length,R=n1;
-const wp=+g('modWp')||0,qty=ALLI().reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),kw=ALLI().reduce((a,i)=>a+i.kw,0);
+const wp=+g('modWp')||0,qty=ALLI().reduce((a,i)=>a+i.mods,0),kwp=KWP().toFixed(2),kw=ALLI().reduce((a,i)=>a+i.kw,0);
 const strs=ALLI().reduce((a,i)=>a+i.strs,0),title=TITLE(kwp);
 const W=A4W,GR='#0a7a2f',s=[],MG='#a020a0';
 const mvg=MVG(),mvIso=MVISO(),mvRI=mvg&&mvIso,mvRM=mvg&&!mvIso; // MV project (see MVG)
@@ -112,10 +115,10 @@ const GYs=GPR.map(k=>yy(posM[k],122)),Yg=GPB?Math.max(yy(posM[0],45)-75-(efrM&&i
 const mainLn=yc=>{if(GPB&&yc>Yg&&yc<GBot){ln(MB+60,yc,XGV-6,yc);s.push(`<path d="M ${XGV-6} ${yc} A 6 6 0 0 1 ${XGV+6} ${yc}" fill="none" stroke="#000" stroke-width="1.5"/>`);ln(XGV+6,yc,bx0,yc)}else ln(MB+60,yc,bx0,yc)}; // hop over the grid vertical: crossing, NOT connected
 const row=(u,i,k,nI,nB,cx,pv)=>{const y0=yy(i,0),yc=yy(i,45),B=u.kind=='bess',Y=(j,n,o)=>sm?y0+(j+1)*90*sv/(n+1)+2.5:yy(i,o);
 bx(40,y0,170,90*sv);
-if(!B&&sm4)t(125,y0+45*sv+2.2,`PV ARRAY · ${u.mods} × ${wp} Wp · ${(u.mods*wp/1000).toFixed(2)} kWp`,6,'middle','bold');
+if(!B&&sm4)t(125,y0+45*sv+2.2,`PV ARRAY · ${u.mods} × ${UW(u)} Wp · ${(u.mods*UW(u)/1000).toFixed(2)} kWp`,6,'middle','bold');
 else if(B&&sm4)t(125,y0+45*sv+2.2,`BATTERY (BESS) · ${u.kwh} kWh`,6,'middle','bold');
-else if(!B&&sm3){const kp=(u.mods*wp/1000).toFixed(2)+' kWp';t(125,Y(0,2,24),`PV ARRAY · ${u.mods} × ${wp} Wp`,fz(12),'middle','bold');t(125,Y(1,2,44),HS()?kp:`Strings: ${u.cfg} · ${kp}`,fz(10))}
-else if(!B){const n=sm2?3:4,kp=(u.mods*wp/1000).toFixed(2)+' kWp';t(125,Y(0,n,24),'PV ARRAY',fz(13),'middle','bold');t(125,Y(1,n,44),`${u.mods} × ${wp} Wp`,fz(12));if(HS())t(125,Y(2,n,61),kp,fz(11));else if(sm2)t(125,Y(2,n,61),`Strings: ${u.cfg} · ${kp}`,fz(10));else{t(125,Y(2,n,61),'Strings: '+u.cfg,fz(10));t(125,Y(3,n,78),kp,fz(11))}}
+else if(!B&&sm3){const kp=(u.mods*UW(u)/1000).toFixed(2)+' kWp';t(125,Y(0,2,24),`PV ARRAY · ${u.mods} × ${UW(u)} Wp`,fz(12),'middle','bold');t(125,Y(1,2,44),HS()?kp:`Strings: ${u.cfg} · ${kp}`,fz(10))}
+else if(!B){const n=sm2?3:4,kp=(u.mods*UW(u)/1000).toFixed(2)+' kWp';t(125,Y(0,n,24),'PV ARRAY',fz(13),'middle','bold');t(125,Y(1,n,44),`${u.mods} × ${UW(u)} Wp`,fz(12));if(HS())t(125,Y(2,n,61),kp,fz(11));else if(sm2)t(125,Y(2,n,61),`Strings: ${u.cfg} · ${kp}`,fz(10));else{t(125,Y(2,n,61),'Strings: '+u.cfg,fz(10));t(125,Y(3,n,78),kp,fz(11))}}
 else if(sm3){t(125,Y(0,2,30),`BATTERY (BESS) · ${u.kwh} kWh`,fz(12),'middle','bold');t(125,Y(1,2,52),u.model,fz(11))}
 else{t(125,Y(0,3,30),'BATTERY (BESS)',fz(13),'middle','bold');t(125,Y(1,3,52),u.kwh+' kWh',fz(12));t(125,Y(2,3,70),u.model,fz(11))}
 {const dcc=B?'#b35a00':'#c00',it=B?[]:[dcIso?['DC','ISOLATOR','#000']:null,dcSpd?['DC','SPD',MG]:null].filter(Boolean),n=it.length,w=38,gp=4,x0=210+(90-(n*w+(n-1)*gp))/2,dh=sm4?10:Math.max(14,24*sv),one=sv<0.65;
@@ -245,7 +248,7 @@ ln(two?(pv2.length?PVX2:240):(pv1.length?PVX1:240),yE,600,yE,GR,5);t(420,yE-10,t
 ln(420,yE,420,yE+30,GR,1.5);ln(400,yE+30,440,yE+30,GR,2);ln(407,yE+36,433,yE+36,GR,2);ln(414,yE+42,426,yE+42,GR,2);
 t(455,yE+40,`Earth pit   r ≤ ${g('earthR')}Ω`,11,'start');
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
-t(20,32,`${qty} panels (×${wp} Wp) ${HS()?'':` — ${strs} strings${(cf=>cf.length>70?'':' ('+cf+')')(ALLI().map(i=>i.cfg).join(' | '))}`} — ${kwp} kWp DC / ${+kw.toFixed(1)} kW AC${ALLB().length?' / '+ALLB().reduce((a,b)=>a+ +b.kwh,0)+' kWh BESS':''}`,12,'start');
+t(20,32,`${qty} panels (${MODS().length>1?MODS().join(' + '):'×'+wp+' Wp'}) ${HS()?'':` — ${strs} strings${(cf=>cf.length>70?'':' ('+cf+')')(ALLI().map(i=>i.cfg).join(' | '))}`} — ${kwp} kWp DC / ${+kw.toFixed(1)} kW AC${ALLB().length?' / '+ALLB().reduce((a,b)=>a+ +b.kwh,0)+' kWh BESS':''}`,12,'start');
 t(W-20,32,CFGN()+' — '+g('opt'),14,'end','bold');
 TB(s,W,wp,qty,kwp,title);
 return page(s.join(''))}
@@ -254,7 +257,7 @@ function renderSLD(){
 const L2=!!V.loc2on,mk=(I,B)=>I.map(u=>({...u,kind:'inv'})).concat(B.map(u=>({...u,kind:'bess'})));
 // columns are laid out in ONE row so both locations share exactly the same symbol size: the main columns first (left), then Location 2's (right)
 const U1=mk(INV,BESS),U2=L2?mk(INV2,BESS2):[],U=U1.concat(U2),n1=Math.max(1,U1.length),cnt=Math.max(1,U.length+(L2&&!U2.length?1:0)),n2=U2.length; // Location 2's columns sit to the RIGHT of the main ones (a virtual empty column keeps room for its panel if it has no units)
-const wp=+g('modWp')||0,qty=INV.concat(L2?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),title=TITLE(kwp);
+const wp=+g('modWp')||0,qty=INV.concat(L2?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=KWP().toFixed(2),title=TITLE(kwp);
 const OR='#d9822b',BL='#1f6fd0',GR='#0a7a2f',MG='#a020a0',s=[],W=A4W;
 // panel options (Panels & protection): enclosure IP rating, EFR (CBCT + relay), phase indicator lamps, DC-side isolator / SPD
 const mvg=MVG(),mvIso=MVISO(),mvRI=mvg&&mvIso,mvRM=mvg&&!mvIso; // MV project: protection relay in the isolation panel (mvRI) or, without one, in the main switchgear panel (mvRM)
@@ -337,9 +340,9 @@ dl.forEach((s,j)=>tc(x-8*sh,492-(dl.length-1-j)*11,s,9,'end'));
 for(let r=0;r<2;r++)for(let c=0;c<3;c++)bx(x-36*sh+c*24*sh,505+DCX+r*20,24*sh,20);
 const st='Strings: '+u.cfg,sw=tight&&st.length*cwid(9)>2*(65*sh-4);
 const pp=Math.max(13,12.5/fy),py=k=>568+DCX+k*pp; // line pitch of the PV array text: never tighter than the text height, however far the sheet is vertically compressed
-tc(x,py(0),'PV ARRAY',11,'middle','bold');tc(x,py(1),`${u.mods} × ${wp} Wp`,10,'middle');
-if(HS())tc(x,py(2),(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle');else if(sw){tc(x,py(2),'Strings:',9,'middle');tc(x,py(3),u.cfg,9,'middle');tc(x,py(4),(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle')}
-else{tc(x,py(2),st,9,'middle');tc(x,py(3),(u.mods*wp/1000).toFixed(2)+' kWp',10,'middle')}
+tc(x,py(0),'PV ARRAY',11,'middle','bold');tc(x,py(1),`${u.mods} × ${UW(u)} Wp`,10,'middle');
+if(HS())tc(x,py(2),(u.mods*UW(u)/1000).toFixed(2)+' kWp',10,'middle');else if(sw){tc(x,py(2),'Strings:',9,'middle');tc(x,py(3),u.cfg,9,'middle');tc(x,py(4),(u.mods*UW(u)/1000).toFixed(2)+' kWp',10,'middle')}
+else{tc(x,py(2),st,9,'middle');tc(x,py(3),(u.mods*UW(u)/1000).toFixed(2)+' kWp',10,'middle')}
 ln(x-36*sh,545+DCX,x-65*sh,545+DCX,GR,1.5);ln(x-65*sh,545+DCX,x-65*sh,PVC,GR,1.5);s.push(`<circle cx="${(x-65*sh).toFixed(1)}" cy="${((PVC+DY)*fy).toFixed(1)}" r="2.8" fill="${GR}"/>`);pvx.push(x-65*sh); // module-side earth: solid line to this location's roof earth collector (not to the equipment earth)
 if(hb){const bl=x-125*sh; // battery on the LEFT of the inverter, between the inverter and its earth line: the DC cable never reaches (so never crosses) the earth line; the battery earth joins that line = one common earth to the bus bar
 ln(x-45*sh,458,bl,458,BL,2);ln(bl,458,bl,505,BL,2); // leaves the inverter's left side (below its earth connection), clear of the PV DC-cable label
@@ -820,7 +823,7 @@ const rf=wr(M.relayF||'',60);T(tx0,ty0+rh*(list.length+1)+18,'Protection relay f
 s.unshift('<g data-layer="DIAGRAM">');s.push('</g>');
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
 s.push(`<text xml:space="preserve" x="28" y="42" font-size="15" text-anchor="start" font-weight="bold" fill="#000">${esc('SINGLE LINE DIAGRAM — MV SCOPE — '+g('opt'))}</text>`);
-const wp=+g('modWp')||0,qty=INV.concat(V.loc2on?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),kva=list.reduce((a,r)=>a+(+r.kva||0),0);
+const wp=+g('modWp')||0,qty=INV.concat(V.loc2on?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=KWP().toFixed(2),kva=list.reduce((a,r)=>a+(+r.kva||0),0);
 TB(s,W,wp,qty,kwp,TITLE(kwp),'SINGLE LINE DIAGRAM — MV SCOPE',`MV connection: ${kv} kV, ${list.length} × step-up transformer (${kva} kVA)`);
 return page(s.join(''))}
 
@@ -907,7 +910,7 @@ const rf=wr(M.relayF||'',52);T(tx0+tw+16,tt+10,'Protection relay functions:',8,'
 s.unshift('<g data-layer="DIAGRAM">');s.push('</g>');
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
 s.push(`<text xml:space="preserve" x="28" y="42" font-size="15" text-anchor="start" font-weight="bold" fill="#000">${esc('SINGLE LINE DIAGRAM — MV SCOPE — '+g('opt'))}</text>`);
-const wp=+g('modWp')||0,qty=INV.concat(V.loc2on?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2),kva=list.reduce((a,r)=>a+(+r.kva||0),0);
+const wp=+g('modWp')||0,qty=INV.concat(V.loc2on?INV2:[]).reduce((a,i)=>a+i.mods,0),kwp=KWP().toFixed(2),kva=list.reduce((a,r)=>a+(+r.kva||0),0);
 TB(s,W,wp,qty,kwp,TITLE(kwp),'SINGLE LINE DIAGRAM — MV SCOPE',`MV connection: ${kv} kV, ${list.length} × step-up transformer (${kva} kVA)`);
 return page(s.join(''))}
 // ===== Inverter detail SLD (one inverter / BESS PCS per sheet): PV strings grouped per MPPT (each '+' group of the Strings field = one MPPT,
@@ -927,7 +930,7 @@ const L2=!!V.loc2on,all=[];
 INV.forEach((u,i)=>all.push({u:{...u,kind:'inv'},loc:1,no:i+1}));BESS.forEach((u,i)=>all.push({u:{...u,kind:'bess'},loc:1,no:i+1}));
 if(L2){INV2.forEach((u,i)=>all.push({u:{...u,kind:'inv'},loc:2,no:i+1}));BESS2.forEach((u,i)=>all.push({u:{...u,kind:'bess'},loc:2,no:i+1}))}
 const it=all[Math.max(0,Math.min(all.length-1,+sel||0))];if(!it)return page('');
-const u=it.u,B=u.kind=='bess',wp=+g('modWp')||0,locN=it.loc==2?(V.loc2name||'Location 2'):'',
+const u=it.u,B=u.kind=='bess',wp=UW(u),locN=it.loc==2?(V.loc2name||'Location 2'):'',
  utag=(B?'BESS PCS ':'INVERTER ')+it.no+(L2?` (${it.loc==2?locN:'Location 1'})`:''),
  pnl=it.loc==2?`${String(locN).toUpperCase()} SWITCHGEAR PANEL ${V.loc2panel||''}A`:`${L2?'LOCATION 1 — ':''}MAIN SWITCHGEAR PANEL ${g('panel')}A`,bus=it.loc==2?V.loc2bus:g('bus');
 const dcIso=!!g('dcIso'),dcSpd=!!g('dcSpd'),hasBat=!B&&u.hybrid&&+u.battKwh>0,gp=!B&&md()=='hy'&&it.loc==1&&u.hybrid&&u.gp;
@@ -998,7 +1001,7 @@ if(S&&!hideS){const tx=PX1,tw=PX2-PX1,ty=pBot+62,cols=[0.18,0.17,0.25,0.2,0.2],h
 // ---- sheet ----
 s.unshift('<g data-layer="DIAGRAM">');s.push('</g>');
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
-const qty=ALLI().reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2);
+const qty=ALLI().reduce((a,i)=>a+i.mods,0),kwp=KWP().toFixed(2);
 TB(s,W,wp,qty,kwp,TITLE(kwp),'SINGLE LINE DIAGRAM — '+utag+' DETAIL',B?`${u.kw} kW PCS · ${u.kwh} kWh`:`${u.name} · ${u.kw} kW · ${hideS?'':S+' strings / '}${m} MPPT${m>1?'s':''}`);
 return page(s.join(''))}
 // ===== Inverter detail SLD — bottom -> up layout (same direction as the main SLD): PV strings at the bottom, DC cables / external DC isolators /
@@ -1016,7 +1019,7 @@ const L2=!!V.loc2on,all=[];
 INV.forEach((u,i)=>all.push({u:{...u,kind:'inv'},loc:1,no:i+1}));BESS.forEach((u,i)=>all.push({u:{...u,kind:'bess'},loc:1,no:i+1}));
 if(L2){INV2.forEach((u,i)=>all.push({u:{...u,kind:'inv'},loc:2,no:i+1}));BESS2.forEach((u,i)=>all.push({u:{...u,kind:'bess'},loc:2,no:i+1}))}
 const it=all[Math.max(0,Math.min(all.length-1,+sel||0))];if(!it)return page('');
-const u=it.u,B=u.kind=='bess',wp=+g('modWp')||0,locN=it.loc==2?(V.loc2name||'Location 2'):'',
+const u=it.u,B=u.kind=='bess',wp=UW(u),locN=it.loc==2?(V.loc2name||'Location 2'):'',
  utag=(B?'BESS PCS ':'INVERTER ')+it.no+(L2?` (${it.loc==2?locN:'Location 1'})`:''),
  pnl=it.loc==2?`${String(locN).toUpperCase()} SWITCHGEAR PANEL ${V.loc2panel||''}A`:`${L2?'LOCATION 1 — ':''}MAIN SWITCHGEAR PANEL ${g('panel')}A`,bus=it.loc==2?V.loc2bus:g('bus');
 const dcIso=!!g('dcIso'),dcSpd=!!g('dcSpd'),hasBat=!B&&u.hybrid&&+u.battKwh>0,gp=!B&&md()=='hy'&&it.loc==1&&u.hybrid&&u.gp;
@@ -1089,7 +1092,7 @@ if(S&&!hideS){const tx=1200,tw=360,ty=400,cw=[0.18,0.17,0.25,0.2,0.2],hd=['MPPT'
  const sum=grp.reduce((a,g0)=>a+g0.n*g0.k,0);if(sum!=+u.mods)T(tx,ty+rh*(m+2)+14,`Note: the strings add up to ${sum} modules, the inverter card says ${u.mods}.`,8.5,'start','bold')}
 s.unshift('<g data-layer="DIAGRAM">');s.push('</g>');
 s.push(`<rect x="4" y="4" width="${W-8}" height="${A4H-8}" fill="none" stroke="#000" stroke-width="2"/>`);s.push(FRAME(W));
-const qty=ALLI().reduce((a,i)=>a+i.mods,0),kwp=(qty*wp/1000).toFixed(2);
+const qty=ALLI().reduce((a,i)=>a+i.mods,0),kwp=KWP().toFixed(2);
 TB(s,W,wp,qty,kwp,TITLE(kwp),'SINGLE LINE DIAGRAM — '+utag+' DETAIL',B?`${u.kw} kW PCS · ${u.kwh} kWh`:`${u.name} · ${u.kw} kW · ${hideS?'':S+' strings / '}${m} MPPT${m>1?'s':''}`);
 return page(s.join(''))}
 // list of units for the inverter-detail picker
