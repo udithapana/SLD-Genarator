@@ -35,7 +35,8 @@
 <label>Enclosure (IP rating)<select id="ipMain">${IPOPT}</select></label>
 <label>Earth fault relay (EFR)<select id="efrMain">${YN('Not fitted', 'EFR fitted — CBCT + relay trips main breaker')}</select></label>
 <label>EFR setting <span class="tag">optional</span><input id="efrMainSet" placeholder="e.g. 0.3 A / 0.1 s"></label>
-<label>Indicators<select id="indMain">${YN('None', 'Phase indicator lamps (R-Y-B)')}</select></label></div>
+<label>Indicators<select id="indMain">${YN('None', 'Phase indicator lamps (R-Y-B)')}</select></label>
+<label>Power analyser<select id="paMain">${YN('Not fitted', 'Power analyser with CTs on the main incomer')}</select></label></div>
 <div class="sub"><b id="isoPanelTitle">Isolation panel</b>
 <label>Enclosure (IP rating)<select id="ipIso">${IPOPT}</select></label>
 <label>Earth fault relay (EFR)<select id="efrIso">${YN('Not fitted', 'EFR fitted — CBCT + relay trips isolator (off-grid: trips the ATS)')}</select></label>
@@ -108,7 +109,8 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
 <label class="gpL">Grid port current (A) <span class="tag">hybrid mode</span><input data-a="gp" type="number" min="0" step="any" value="${esc(s.gp || '')}" placeholder="${D[s.m].gpI || D[s.m].current} = from data sheet (change if different)"></label>
 <label class="gpL">Grid port cable <span class="tag">editable</span><input data-a="gpAc" value="${esc(s.gpAc || autoGp(s, S.info(D[s.m])).ac)}" placeholder="clear = data-sheet cable"></label>` : ''}
 <label>Breaker override (A) — blank = auto<input data-a="ov" value="${esc(s.ov)}"></label>
-<label>Inverter AC cable <span class="tag">editable</span><input data-a="acOv" value="${esc(s.acOv || S.info(D[s.m]).ac)}" placeholder="clear = data-sheet cable"></label><div class="inf"></div></div>`; };
+<label>Inverter AC cable <span class="tag">editable</span><input data-a="acOv" value="${esc(s.acOv || S.info(D[s.m]).ac)}" placeholder="clear = data-sheet cable"></label>
+<label>Inverter earth cable <span class="tag">editable</span><input data-a="earthOv" value="${esc(s.earthOv || S.info(D[s.m]).earth)}" placeholder="clear = data-sheet earth cable"></label><div class="inf"></div></div>`; };
   const bessCard = (s, i) => `<div class="inv" data-i="${i}"><div class="ih"><b>BESS ${i + 1}</b><button type="button" class="ic" data-a="rm" title="Remove battery" aria-label="Remove BESS ${i + 1}">${RM}</button></div>
 <div class="two"><label>Capacity (kWh)<input data-a="kwh" type="number" min="0" value="${s.kwh}"></label><label>PCS rating (kW)<input data-a="kw" type="number" min="0" value="${s.kw}"></label></div>
 <label>Model<input data-a="model" value="${esc(s.model)}"></label>
@@ -132,7 +134,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   }
   $('invList').addEventListener('input', e => {
     const a = e.target.dataset.a, i = +e.target.closest('.inv').dataset.i;
-    if (a == 'b' || a == 'm') { INVS[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS[i].acOv = ''; INVS[i].gpAc = ''; INVS[i].gp = ''; drawInvs(); } else { INVS[i][a] = e.target.value; if (a == 'gp' && !INVS[i].gpAc) { const g = e.target.closest('.inv').querySelector('[data-a=gpAc]'); if (g) g.value = autoGp(INVS[i], S.info(D[INVS[i].m])).ac; } }
+    if (a == 'b' || a == 'm') { INVS[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS[i].acOv = ''; INVS[i].earthOv = ''; INVS[i].gpAc = ''; INVS[i].gp = ''; drawInvs(); } else { INVS[i][a] = e.target.value; if (a == 'gp' && !INVS[i].gpAc) { const g = e.target.closest('.inv').querySelector('[data-a=gpAc]'); if (g) g.value = autoGp(INVS[i], S.info(D[INVS[i].m])).ac; } }
     update();
   });
   $('invList').addEventListener('click', e => { const b = e.target.closest('[data-a=rm]'); if (b) { INVS.splice(+b.closest('.inv').dataset.i, 1); drawInvs(); update(); } });
@@ -159,7 +161,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     if (e.target.id == 'loc2PvEarth') { LOC2.pvEarthOv = e.target.value; update(); return; }
     const card = e.target.closest('.inv'); if (!card || !a) return;
     const i = +card.dataset.i;
-    if (e.target.closest('#invList2')) { if (a == 'b' || a == 'm') { INVS2[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS2[i].acOv = ''; INVS2[i].gpAc = ''; INVS2[i].gp = ''; drawInvs2(); } else INVS2[i][a] = e.target.value; update(); }
+    if (e.target.closest('#invList2')) { if (a == 'b' || a == 'm') { INVS2[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS2[i].acOv = ''; INVS2[i].earthOv = ''; INVS2[i].gpAc = ''; INVS2[i].gp = ''; drawInvs2(); } else INVS2[i][a] = e.target.value; update(); }
     else if (e.target.closest('#bessList2')) { BESSU2[i][a] = e.target.value; update(); }
   });
   $('loc2Body').addEventListener('click', e => {
@@ -174,7 +176,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { MODE = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x == b)); if (LOC2.on) drawLoc2Shell(); update(); });
   $('rst').onclick = () => { manual.clear(); update(); };
   $('form').addEventListener('input', e => { if (AUTO.has(e.target.id)) manual.add(e.target.id); if (e.target.id == 'supply') { manual.delete('supBrk'); manual.delete('supCable'); } update(); });
-  function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: (s.acOv || '').trim() || x.ac, acOverridden: !!(s.acOv || '').trim() && s.acOv.trim() != x.ac, wp: $('modMix').value && +s.wp > 0 ? +s.wp : +$('modWp').value || 0, battKwh: +s.battKwh || 0, battDc: s.battDc, gp: x.hybrid ? (g => Object.assign(g, (s.gpAc || '').trim() ? { ac: s.gpAc.trim() } : {}))(autoGp(s, x)) : null }; }); }
+  function mkInvInfos(list) { return list.map(s => { const e = D[s.m], x = S.info(e), o = parseFloat(s.ov); return { ...x, mods: +s.mods || 0, cfg: s.cfg, dc: s.dc, strs: S.strCount(s.cfg), mccb: o > 0 ? o : x.mccb, ac: (s.acOv || '').trim() || x.ac, earth: (s.earthOv || '').trim() || x.earth, acOverridden: !!(s.acOv || '').trim() && s.acOv.trim() != x.ac, wp: $('modMix').value && +s.wp > 0 ? +s.wp : +$('modWp').value || 0, battKwh: +s.battKwh || 0, battDc: s.battDc, gp: x.hybrid ? (g => Object.assign(g, (s.gpAc || '').trim() ? { ac: s.gpAc.trim() } : {}))(autoGp(s, x)) : null }; }); }
   function mkBessInfos(list) { return list.map(s => { const x = S.bessInfo(+s.kw || 0), o = parseFloat(s.ov); return { ...x, kwh: +s.kwh || 0, kw: +s.kw || 0, model: s.model, dc: s.dc, mccb: o > 0 ? o : x.mccb, ac: s.acOv || x.ac, acOverridden: !!s.acOv }; }); }
   let recT = 0, restoring = false; const recSoon = () => { if (restoring || typeof recNow != 'function') return; clearTimeout(recT); recT = setTimeout(() => recNow(), 500); };
   function update() {
