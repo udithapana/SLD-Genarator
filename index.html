@@ -2395,7 +2395,8 @@ if(GPC){const av=PL-486-6,sp=U1[GPR[0]].gp.ac,f=Math.min(9,Math.max(fH,7)),ls=['
 U2.forEach((u,k)=>row(u,posL[k],k,INV2.length,BESS2.length,PVX2,pv2));
 let GFC='';const yc0=yy(posM[0],45),yL=yy(posM[n1-1],45),ym=(yc0+yL)/2;
 const pTop=Math.max(yc0-75-(efrM&&indM?14:0)-(efrM&&GPB&&GPR.length>1?34:0),50),pBot=Math.max(yL+(toMain?95:50),GPB?GBot+40:0,g('paMain')?ym+80:0),peY=pTop+15,trunkTop=Math.min(yy(posM[0],105),peY);
-bx(PL,pTop,PR-PL,pBot-pTop,'8 4');t(PL,pTop-6,`${L2?'LOCATION 1 — ':''}MAIN SWITCHGEAR PANEL ${g('panel')}A`,12,'start','bold');t(PR-8,pBot-8,ipT('ipMain'),10,'end','bold'); // enclosure rating badge: bottom-right inside the panel outline
+const paB=!!g('paMain'),sepB=mvRM&&EFTB=='main',PRm=PR+(sepB?(efrM?70:0)+(paB?70:0):0); // MV without isolation panel: main panel widened for the EFR / power-analyser CTs
+bx(PL,pTop,PRm-PL,pBot-pTop,'8 4');t(PL,pTop-6,`${L2?'LOCATION 1 — ':''}MAIN SWITCHGEAR PANEL ${g('panel')}A`,12,'start','bold');t(PRm-8,pBot-8,ipT('ipMain'),10,'end','bold'); // enclosure rating badge: bottom-right inside the panel outline
 ln(PL,peY,300,peY,GR,1.5,'5 3');t(450,peY-6,L2?'Location 1 panel earth':'Switchgear panel earth',9,'middle');
 ln(bx0,yc0-30,bx0,yL+30+(toMain?45:0),'#000',6);{const lx=GPB?bx0:bx0-(efrM||indM?16:0),fz0=GPB?9:10;t(lx,yc0-57,'COMMON COUPLING',fz0);t(lx,yc0-45,`BUSBAR ${g('bus')}A`,fz0)}
 if(GPB){const top=Math.min(...GYs); // grid-supply side (hybrid): 2+ units -> busbar + feeder breaker; 1 unit -> the cable simply continues
@@ -2408,11 +2409,16 @@ const hl=(md()=='nm'||md()=='na')&&!mvg,og=md()=='og'||md()=='hy',ix=1160;
 const SGL=U1.length==1&&!toMain;
 ln(bx0,ym,BK,ym);if(SGL)ln(BK,ym,BK+70,ym);else{bx(BK,ym-20,70,40);t(BK+35,ym-3,`4P ${g('panel')}A`,11);t(BK+35,ym+12,(q=>/ADJ/.test(q)?q:'MAIN '+q)(BT(g('panel'),V.panelI)),9)}
 const bset=k=>mvRM?(efrM?'50N/51N+':'')+MVRF():efrSet(k),bttl=mvRM?'PROT. RELAY':'EFR';
-if(EFTB=='main'){efrBox(BK+16,ym-48,bset('efrMainSet'),bttl);ln(BK+49,ym-24,BK+49,ym-20,'#000',1.5,'3 2')} // earth-fault relay trips the main breaker (short dashed link)
+if(EFTB=='main'&&!sepB){efrBox(BK+16,ym-48,bset('efrMainSet'),bttl);ln(BK+49,ym-24,BK+49,ym-20,'#000',1.5,'3 2')}
+if(sepB){ // as on the main SLD: protection relay under the main breaker (dashed trip); EFR and power analyser each with a CT on the incomer, boxes linked by solid lines
+ efrBox(BK+2,ym+32,MVRF(),'PROT. RELAY');ln(BK+35,ym+20,BK+35,ym+32,'#000',1.5,'3 2');
+ if(efrM){const cx=PR+8;s.push(`<circle cx="${cx}" cy="${ym}" r="6" fill="#fff" stroke="#000" stroke-width="1.3"/>`);ln(cx,ym-6,cx,ym-34,'#000',1.2);efrBox(cx-33,ym-58,efrSet('efrMainSet'),'EFR');ln(cx-33,ym-46,BK+56,ym-46,'#000',1.2,'3 2');ln(BK+56,ym-46,BK+56,ym-20,'#000',1.2,'3 2')}
+ if(paB){const cx=PR+8+(efrM?70:0);s.push(`<circle cx="${cx}" cy="${ym}" r="6" fill="#fff" stroke="#000" stroke-width="1.3"/>`);ln(cx,ym+6,cx,ym+32,'#000',1.2);bx(cx-36,ym+32,72,24);t(cx,ym+42,'POWER',7.5,'middle','bold');t(cx,ym+52,'ANALYZER',7.5,'middle','bold')}} // earth-fault relay trips the main breaker (short dashed link)
 if(EFTB=='unit'){const bh=Math.max(40*sv,11),yt=yc0-bh/2;efrBox(MB-3,yt-30,bset('efrMainSet'),bttl);ln(MB+30,yt-6,MB+30,yt,'#000',1.5,'3 2')} // one unit: trips its own breaker
-if(indM)lampBox(BK+16,ym-(EFTB=='main'?76:48));
-if(g('paMain')){bx(BK+2,ym+30,66,24);t(BK+35,ym+40,'POWER',7.5,'middle','bold');t(BK+35,ym+50,'ANALYSER',7.5,'middle','bold');ln(BK+35,ym+20,BK+35,ym+30,'#000',1.2,'3 2')} // power analyser (CTs on the main incomer)
-ln(BK+70,ym,mvRM?1326:1010,ym);t2((PR+ISL+5)/2,ym-27,g('mainCable'));
+if(indM){const top=ym-yc0>80,bot=yL-ym>80,ly=top?yc0-26:bot?yL+2:null; // indicator lamps tapped off the common busbar (right of it, clear of the main breaker)
+ if(ly!=null){ln(bx0,ly+12,bx0+14,ly+12,'#000',1.2);lampBox(bx0+14,ly)}else lampBox(BK+16,ym-(EFTB=='main'&&!sepB?76:48))}
+if(paB&&!sepB){const cx=BK+80;s.push(`<circle cx="${cx}" cy="${ym}" r="6" fill="#fff" stroke="#000" stroke-width="1.3"/>`);ln(cx,ym+6,cx,ym+42,'#000',1.2);ln(cx,ym+42,BK+68,ym+42,'#000',1.2);bx(BK+2,ym+30,66,24);t(BK+35,ym+40,'POWER',7.5,'middle','bold');t(BK+35,ym+50,'ANALYZER',7.5,'middle','bold')} // power analyser: CT on the main incomer right of the breaker, box below
+ln(BK+70,ym,mvRM?1326:1010,ym);t2(mvRM?(PRm+1326)/2:(PR+ISL+5)/2,ym-27,g('mainCable'));
 const TX=1104,ipEx=isIso?-10:0; // TX: where Location 2's feeder taps the isolation panel
 const src=HYB?(g('hySrc')=='both'?'both':'grid'):og?String(g('ogSrc')||''):'';
 const wrap=(str,n)=>{const out=[];let cur='';String(str).split(' ').forEach(w=>{if(cur&&(cur+' '+w).length>n){out.push(cur);cur=w}else cur=cur?cur+' '+w:w});if(cur)out.push(cur);return out};
@@ -3023,9 +3029,9 @@ const swH=(x,y,col,lbs)=>{ // gantry switch: ABS = disconnector (blade + bar at 
 const arH=(x,y,col)=>{L(x-30,y,x-18,y,col);R(x-18,y-18,36,36,BK,1.5);L(x-10,y+10,x+10,y-10,BK,1.6);C(x-10,y+10,2,BK,1.1,'#fff');L(x+18,y,x+30,y,col)}; // auto recloser: breaker in a box
 const ctpt=(x,y,col)=>{L(x-24,y,x+24,y,col);C(x-7,y,7,BK,1.4,'#fff');C(x+7,y,7,BK,1.4,'#fff');L(x-14,y,x+14,y,col)}; // metering CT / PT
 // ---- geometry ----
-const yTop=78,yBot=FB-8,list=M.list.length?M.list:[{src:'LV panel',kva:'1000',brk:'',lvc:'',mvc:'',len:'',ddlo:'DDLO '+kv+' kV'}];
+const yTop=78,yBot=680,list=M.list.length?M.list:[{src:'LV panel',kva:'1000',brk:'',lvc:'',mvc:'',len:'',ddlo:'DDLO '+kv+' kV'}];
 const AV=yBot-yTop-60,P=Math.min(250,AV/n),k=Math.min(1,P/215),off=(AV-P*n)/2,rowY=i=>yTop+50+off+P*(i+0.5); // rows centred in the window
-const X={bus:56,cb:120,ct:196,lvOut:350,tx:540,node:604,c0:646,c1:800,dd:850,gx0:892,gb:924,sw:990,od:1062,gx1:1104,ed:1168,ar:1242,ld:1262,eb:1304,cp:1348,cd:1424,ceb:1462},XM=468,UT=M.util||'EDL',nvdOn=M.nvdOn!==false;
+const X={bus:56,cb:120,ct:196,lvOut:360,tx:580,node:660,c0:704,c1:912,dd:970,gx0:1020,gb:1056,sw:1140,od:1230,gx1:1290,xD:1530,ed:1470,ar:1385,eb:1310,ld:1340,cp:1240,cd:1160,ceb:1000},XM=492,yE=780, /* utility (EDL) scope on a lower line, right -> left */UT=M.util||'EDL',nvdOn=M.nvdOn!==false;
 // scope boxes
 const y0=Math.max(yTop+6,rowY(0)-P/2-30),y1=Math.min(yBot,rowY(n-1)+P/2+20); // scope boxes wrap the rows
 const G=26;R(X.gx0,y0+G,X.gx1-X.gx0,y1-y0-2*G,GR,1.4,'6 4');T(X.gx0+8,y0+G+16,(M.gantry||'Medium voltage gantry').toUpperCase(),10,'start','bold');
@@ -3047,10 +3053,10 @@ list.forEach((r,i)=>{const y=rowY(i),hv=k;
  // LV cable to the transformer
  const lv=wr(r.lvc||'LV cable',Math.floor((XM-X.lvOut-12)/(0.56*8)));lv.forEach((q,j)=>T((X.lvOut+XM)/2,y-8-(lv.length-1-j)*10,q,8,'middle')); /* between the LV box and the MV-scope border */L(X.lvOut,y,X.tx-32,y,OR);
  // step-up transformer
- tx(X.tx,y);L(X.tx+32,y,X.node,y,MV);[`STEP-UP TRANSFORMER`,`${r.kva} kVA · 0.4/${kv} kV`,M.vg||'Dyn11'].forEach((q,j)=>T(X.tx,y-58*hv+j*11,q,j?8.5:8.5,'middle',j?'normal':'bold'));
+ tx(X.tx,y);L(X.tx+32,y,X.node,y,MV);[`STEP-UP TRANSFORMER`,`${r.kva} kVA · 0.4/${kv} kV`,M.vg||'Dyn11'].forEach((q,j)=>T(X.tx,y-48+j*11,q,8.5,'middle',j?'normal':'bold')); /* fixed offsets: always clear of the transformer circles */
  // NVD VT (up) + surge arrester (down) at the transformer HV terminal
- if(nvdOn){L(X.node,y,X.node,y-26*hv,MV);vt(X.node,y-26*hv-8);T(X.node+14,y-26*hv-14,'NVD TRANSFORMER (VT)',7.5,'start','bold');T(X.node+14,y-26*hv-4,M.nvd||kv+'/0.11 kV',7.5,'start');
- const sig=y-106*hv; /* NVD signal well above the LV panel outline (box top at y-86) */L(X.node,y-26*hv-28,X.node,sig,BK,1,'4 3');L(X.node,sig,pr[0]+70,sig,BK,1,'4 3');L(pr[0]+70,sig,pr[0]+70,ry,BK,1,'4 3')} // VT -> protection relay
+ if(nvdOn){L(X.node,y,X.node,y-26,MV);vt(X.node,y-34);T(X.node+14,y-40,'NVD TRANSFORMER (VT)',7.5,'start','bold');T(X.node+14,y-30,M.nvd||kv+'/0.11 kV',7.5,'start');
+ const sig=y-Math.max(106*hv,62); /* NVD signal well above the LV panel outline (box top at y-86) */L(X.node,y-54,X.node,sig,BK,1,'4 3');L(X.node,sig,pr[0]+70,sig,BK,1,'4 3');L(pr[0]+70,sig,pr[0]+70,ry,BK,1,'4 3')} // VT -> protection relay
  L(X.node,y,X.node,y+14*hv,MV);sa(X.node,y+14*hv);L(X.node,y+14*hv+24,X.node,y+14*hv+30,GR,1.3);earth(X.node,y+14*hv+30);T(X.node+12,y+14*hv+16,(M.sa||kv+' kV surge arrester').toUpperCase(),7.5,'start','bold');
  // MV cable with sealing ends
  L(X.node,y,X.c0,y,MV);se(X.c0,y,1);L(X.c0+10,y,X.c1-10,y,MV,2.2);se(X.c1,y,-1);L(X.c1,y,X.dd-30,y,MV);
@@ -3061,20 +3067,23 @@ list.forEach((r,i)=>{const y=rowY(i),hv=k;
 });
 // outgoing (gantry): busbar -> LBS / ABS -> DDLO | utility scope: auto recloser -> utility busbar (site load via DDLO) -> CT / PT metering -> DDLO -> utility network
 L(X.gb,yO,X.sw-24,yO,MV);C(X.gb,yO,2.6,MV,1,MV);if(M.sw=='none')L(X.sw-24,yO,X.sw+24,yO,MV);else{swH(X.sw,yO,MV,M.sw!='abs');T(X.sw,yO+16,M.swL||((M.sw=='abs'?'ABS ':'LBS ')+kv+' kV'),8,'middle','bold')}
-L(X.sw+24,yO,X.od-30,yO,MV);if(M.gd!==false){ddlo(X.od,yO,MV);T(X.od,yO+16,'DDLO '+kv+' kV',8,'middle','bold')}else L(X.od-30,yO,X.od+30,yO,MV);L(X.od+30,yO,X.ed-30,yO,MV);
-ddlo(X.ed,yO,MV);T(X.ed,yO+16,'DDLO '+kv+' kV',8,'middle','bold');T(X.ed,yO+27,'('+UT+')',8,'middle','bold');L(X.ed+30,yO,X.ar-30,yO,MV); // utility-side DDLO ahead of its auto recloser
-arH(X.ar,yO,MV);T(X.ar,yO+30,'AUTO',8,'middle','bold');T(X.ar,yO+40,'RECLOSER',8,'middle','bold');L(X.ar+30,yO,X.eb,yO,MV);
-const ebT=M.load?yO-56:yO-34;L(X.eb,ebT,X.eb,yO+34,MV,5);C(X.eb,yO,2.6,MV,1,MV);T(X.eb-20,ebT-8,UT.toUpperCase()+' '+kv+' kV BUSBAR',8,'start','bold');
-if(M.load){const yL=yO-46;L(X.eb,yL,X.ld+30,yL,MV);C(X.eb,yL,2.6,MV,1,MV);ddlo(X.ld,yL,MV);T(X.ld,yL+16,M.loadDdlo||('DDLO '+kv+' kV'),8,'middle','bold');L(X.ld-30,yL,X.ld-42,yL,MV);
- PG([[X.ld-56,yL],[X.ld-42,yL-7],[X.ld-42,yL+7]],BK,BK,1);T(X.ld-49,yL-12,String(M.load).toUpperCase(),8.5,'middle','bold')} // site load, fed from the utility gantry
-L(X.eb,yO,X.cp-24,yO,MV);ctpt(X.cp,yO,MV);T(X.cp,yO+20,'CT / PT',8,'middle','bold');T(X.cp,yO+31,'('+UT.toUpperCase()+' METERING)',7.5,'middle');L(X.cp+24,yO,X.cd-30,yO,MV);
-ddlo(X.cd,yO,MV);T(X.cd,yO+16,M.cebDdlo||('DDLO '+kv+' kV ('+UT+')'),8,'middle','bold');L(X.cd+30,yO,X.ceb,yO,MV);
-R(X.ceb,yO-26,104,52,BK,1.6);R(X.ed-34,yO-86,X.ceb+112-(X.ed-34),140,BK,1.4,'10 5');T(X.ed-34,yO+72,UT.toUpperCase()+' SCOPE',11,'start','bold'); /* utility scope box, title under it */
-const cw=wrw(M.ceb||(UT+' '+kv+' kV network'),11);cw.forEach((q,j)=>T(X.ceb+52,yO-(cw.length-1)*6+4+j*12,q.toUpperCase(),10,'middle','bold'));
-// legend + transformer schedule (right side)
+L(X.sw+24,yO,X.od-30,yO,MV);if(M.gd!==false){ddlo(X.od,yO,MV);T(X.od,yO+16,'DDLO '+kv+' kV',8,'middle','bold')}else L(X.od-30,yO,X.od+30,yO,MV);
+// utility scope on the lower line (right -> left): drop at X.xD, utility DDLO -> auto recloser -> utility busbar (site load via DDLO, down) -> CT / PT metering -> DDLO -> network
+L(X.od+30,yO,X.xD,yO,MV);L(X.xD,yO,X.xD,yE,MV);L(X.xD,yE,X.ed+30,yE,MV);
+ddlo(X.ed,yE,MV);T(X.ed,yE+16,'DDLO '+kv+' kV',8,'middle','bold');T(X.ed,yE+27,'('+UT+')',8,'middle','bold');L(X.ed-30,yE,X.ar+30,yE,MV);
+arH(X.ar,yE,MV);T(X.ar,yE+30,'AUTO',8,'middle','bold');T(X.ar,yE+40,'RECLOSER',8,'middle','bold');L(X.ar-30,yE,X.eb,yE,MV);
+L(X.eb,yE-40,X.eb,yE+40,MV,5);C(X.eb,yE,2.6,MV,1,MV);T(X.eb,yE-48,UT.toUpperCase()+' '+kv+' kV BUSBAR',8,'middle','bold');
+if(M.load){const yL=yE+28,yd=yE+80;L(X.eb,yL,X.ld,yL,MV);C(X.eb,yL,2.6,MV,1,MV);L(X.ld,yL,X.ld,yd-30,MV);
+ L(X.ld,yd-30,X.ld,yd-14,MV);C(X.ld,yd-14,2.2,BK,1.2,'#fff');{const a=(90-28)*Math.PI/180,ux=Math.cos(a),uy=Math.sin(a),p=(t,o)=>[X.ld+ux*t-uy*o,yd-14+uy*t+ux*o];L(X.ld,yd-14,...p(30,0),BK,1.5);PG([p(8,-4),p(22,-4),p(22,4),p(8,4)],BK,'#fff',1.3);L(...p(10,0),...p(20,0),BK,1)}L(X.ld,yd+14,X.ld,yd+30,MV);L(X.ld,yd+14,X.ld-7,yd+14,BK,1.4); // load DDLO (vertical, downward)
+ T(X.ld+16,yd+4,M.loadDdlo||('DDLO '+kv+' kV'),8,'start','bold');L(X.ld,yd+30,X.ld,yd+38,MV);PG([[X.ld,yd+54],[X.ld-7,yd+38],[X.ld+7,yd+38]],BK,BK,1);T(X.ld+14,yd+52,String(M.load).toUpperCase(),8.5,'start','bold')} // site load, fed from the utility busbar
+L(X.eb,yE,X.cp+24,yE,MV);ctpt(X.cp,yE,MV);T(X.cp,yE+20,'CT / PT',8,'middle','bold');T(X.cp,yE+31,'('+UT.toUpperCase()+' METERING)',7.5,'middle');L(X.cp-24,yE,X.cd+30,yE,MV);
+ddlo(X.cd,yE,MV);T(X.cd,yE+16,M.cebDdlo||('DDLO '+kv+' kV ('+UT+')'),8,'middle','bold');L(X.cd-30,yE,X.ceb+112,yE,MV);
+R(X.ceb,yE-26,112,52,BK,1.6);const cw=wrw(M.ceb||(UT+' '+kv+' kV network'),11);cw.forEach((q,j)=>T(X.ceb+56,yE-(cw.length-1)*6+4+j*12,q.toUpperCase(),10,'middle','bold'));
+R(X.ceb-14,yE-66,X.xD+20-(X.ceb-14),216,BK,1.4,'10 5');T(X.ceb-14,yE+168,UT.toUpperCase()+' SCOPE',11,'start','bold'); /* utility scope box, title under it */
+// legend (top) + transformer schedule (bottom-left)
 const LG=[[OR,'LV AC (0.4 kV)',''],[MV,`MV AC (${kv} kV)`,''],[BK,'Protection / signal','4 3'],[GR,'Earthing','']];
-const lx=1376,ly=96;LG.forEach(([c,l,d],j)=>{L(lx,ly+j*16,lx+40,ly+j*16,c,2,d);T(lx+50,ly+4+j*16,l,10)});
-const tx0=1236,ty0=Math.max(yO+96,ly+90),cols=[26,150,50,50,52],hd=['No','LV source','kVA','LV A','MV A'],rh=15;
+const lx=620,ly=60;LG.forEach(([c,l,d],j)=>{L(lx+j*190,ly,lx+j*190+36,ly,c,2,d);T(lx+j*190+44,ly+4,l,10)}); // legend: one line along the top
+const tx0=24,ty0=yBot+48, /* schedule bottom-left, under the LV scope */cols=[26,150,50,50,52],hd=['No','LV source','kVA','LV A','MV A'],rh=15;
 T(tx0,ty0-6,'TRANSFORMER SCHEDULE',10,'start','bold');R(tx0,ty0,cols.reduce((a,b)=>a+b,0),rh*(list.length+1),BK,1);
 let cx=tx0;cols.forEach((w,j)=>{if(j)L(cx,ty0,cx,ty0+rh*(list.length+1),BK,0.8);T(cx+4,ty0+11,hd[j],8,'start','bold');cx+=w});L(tx0,ty0+rh,tx0+cols.reduce((a,b)=>a+b,0),ty0+rh,BK,1);
 list.forEach((r,i)=>{let cx=tx0;const yy=ty0+rh*(i+2)-4,src=String(r.src||'');[String(i+1),src.length>26?src.slice(0,25)+'…':src,r.kva,(+r.lvI||0).toFixed(0),(+r.hvI||0).toFixed(1)].forEach((q,j)=>{T(cx+4,yy,q,8);cx+=cols[j]});if(i)L(tx0,ty0+rh*(i+1),tx0+cols.reduce((a,b)=>a+b,0),ty0+rh*(i+1),BK,0.4)});
@@ -3317,7 +3326,7 @@ if(S){cols.forEach(c=>{const x=c.x,yb=Y.mod+3*mh+22;
   if(dcIso){L(x,Y.mod,x,Y.iso+24,BL);isoV(x,Y.iso);L(x,Y.iso-24,x,Y.bot,BL)}else L(x,Y.mod,x,Y.bot,BL);
   if(dcSpd){spdR(x,Y.spd);L(x+12.5,Y.spd+7,x+12.5,Y.spe,GR,1)}});
  const e0=cols[0].x-mw/2-5-24,e1=cols[S-1].x-mw/2-5;L(e0-22,Y.ebus,Math.max(e1,e0)+0.01,Y.ebus,GR,1.4);es(e0-22,Y.ebus);
- T(e0-30,Y.ebus+8,'PV frame earth',8,'end');T(e0-30,Y.ebus+21,g('pvEarth')||'4mm² Cu',8,'end');
+ T(e0-46,Y.ebus+8,'PV frame earth',8,'end');T(e0-46,Y.ebus+21,g('pvEarth')||'4mm² Cu',8,'end');
  if(dcSpd){const b=cols[S-1].x+12.5,xa=cols[0].x-30;L(xa,Y.spe,b,Y.spe,GR,1.4);L(xa,Y.spe,xa,Y.spe+6,GR,1.4);es(xa,Y.spe+6,GR,0.8);T(xa-12,Y.spe+14,'DC SPD earth',8,'end')}}
 // ---- inverter / PCS enclosure ----
 R(bL,Y.top,bR-bL,Y.bot-Y.top,BK,1.6);T(hasBat?bL+72:bL+8,Y.top+18,utag,10.5,'start','bold');T(hasBat?bL+72:bL+8,Y.top+33,B?(u.model||'BESS PCS'):u.name,9.5,'start');T(bR-8,Y.top+18,`${u.kw} kW · ${(+u.I).toFixed(1)} A AC`,10,'end','bold');
