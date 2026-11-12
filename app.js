@@ -277,6 +277,42 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     } catch (err) { alert('CAD export failed (' + err.message + ').'); }
   };
 
+  // ---- Download every drawing of the project as one .zip (PDF + DXF each, plus one combined PDF). Small built-in zip writer (stored, no compression library needed).
+  const CRCT = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRCT[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function makeZip(files) { /* files: [{name, data:Uint8Array}] */
+    const enc = new TextEncoder(), parts = [], cent = []; let off = 0; const d = new Date();
+    const dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF, dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+    files.forEach(f => { const nm = enc.encode(f.name), c = crc32(f.data), sz = f.data.length;
+      const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, c, true); h.setUint32(18, sz, true); h.setUint32(22, sz, true); h.setUint16(26, nm.length, true); h.setUint16(28, 0, true);
+      parts.push(new Uint8Array(h.buffer), nm, f.data);
+      const e = new DataView(new ArrayBuffer(46)); e.setUint32(0, 0x02014b50, true); e.setUint16(4, 20, true); e.setUint16(6, 20, true); e.setUint16(8, 0x0800, true); e.setUint16(10, 0, true); e.setUint16(12, dt, true); e.setUint16(14, dd, true); e.setUint32(16, c, true); e.setUint32(20, sz, true); e.setUint32(24, sz, true); e.setUint16(28, nm.length, true); e.setUint32(42, off, true);
+      cent.push(new Uint8Array(e.buffer), nm); off += 30 + nm.length + sz; });
+    const cs = cent.reduce((a, b) => a + b.length, 0), z = new DataView(new ArrayBuffer(22)); z.setUint32(0, 0x06054b50, true); z.setUint16(8, files.length, true); z.setUint16(10, files.length, true); z.setUint32(12, cs, true); z.setUint32(16, off, true);
+    return new Blob([...parts, ...cent, new Uint8Array(z.buffer)], { type: 'application/zip' });
+  }
+  const svgPng = svgEl => new Promise((ok, bad) => { const img = new Image(); img.onload = () => { const W = 4134, H = 2925, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, W, H); x.drawImage(img, 0, 0, W, H); ok(cv.toDataURL('image/png')); }; img.onerror = () => bad(new Error('drawing could not be rendered')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svgEl)); });
+  $('zipAll').onclick = async () => {
+    const btn = $('zipAll'); if (btn.disabled) return; btn.disabled = true; const lbl = btn.textContent;
+    const ip = $('invPick'), was = ip.value, base = ($('dno').value || 'SLD').replace(/[\\/:*?"<>|]+/g, '_'), sheets = [];
+    try {
+      [['out2', '_SLD'], ['out', '_block'], ['out4', '_panels_quotation'], ['out5', '_MV_scope']].forEach(([o, sf]) => { const s = $(o).querySelector('svg'); if (s && !(o == 'out5' && $('t5').hidden)) sheets.push({ sf, svg: s.cloneNode(true) }); });
+      for (let i = 0; i < ip.options.length; i++) { const t = ip.options[i].text; ip.value = String(i); update(); const s = $('out6').querySelector('svg');
+        if (s) sheets.push({ sf: '_' + t.split(' — ')[0].replace(/\s+/g, '_') + (/ · /.test(t) ? '_' + t.split(' · ').pop().replace(/\W+/g, '_') : ''), svg: s.cloneNode(true) }); }
+      ip.value = was; update();
+      const enc = new TextEncoder(), files = []; let all = null;
+      for (let i = 0; i < sheets.length; i++) { const sh = sheets[i], nm = base + sh.sf + '_' + MODE; btn.textContent = `Preparing ${i + 1}/${sheets.length}…`;
+        files.push({ name: 'CAD_DXF/' + nm + '.dxf', data: enc.encode(SLD.toDXF(sh.svg)) });
+        if (window.jspdf) { const png = await svgPng(sh.svg), one = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+          one.addImage(png, 'PNG', 0, 0, 297, 210); files.push({ name: 'PDF/' + nm + '.pdf', data: new Uint8Array(one.output('arraybuffer')) });
+          if (!all) all = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true }); else all.addPage('a4', 'landscape'); all.addImage(png, 'PNG', 0, 0, 297, 210); } }
+      if (all) files.unshift({ name: base + '_ALL_drawings_' + MODE + '.pdf', data: new Uint8Array(all.output('arraybuffer')) });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(makeZip(files)); a.download = base + '_' + MODE + '_all_drawings.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      flash(window.jspdf ? `Downloaded ${sheets.length} drawings (PDF + DXF).` : `Downloaded ${sheets.length} drawings as DXF — PDFs skipped (PDF library not loaded, needs internet once).`);
+    } catch (err) { alert('Download all failed (' + err.message + ').'); if (ip.value != was) { ip.value = was; update(); } }
+    btn.textContent = lbl; btn.disabled = false;
+  };
+
   // ---- History: saved revisions kept in this browser (localStorage), so a project's past states can be reopened later ----
   const HKEY = 'sld_history_v1', HMAX = 200;
   const hLoad = () => { try { return JSON.parse(localStorage.getItem(HKEY)) || []; } catch (e) { return []; } };
