@@ -15,8 +15,14 @@ const CFGN = () => ({ nm: 'Net metering', na: 'Net accounting', np: 'Net plus', 
 // the isolation panel is optional and a protection relay (NVD / 27 / 59 / 81) sits in the isolation panel (when included) or else in the main switchgear panel
 const MVG = () => !!(V.mv && V.mv.on) && md() != 'og' && md() != 'hy', MVISO = () => !MVG() || !!V.mv.iso, MVRF = () => V.mv && V.mv.nvdOn === false ? '27/59/81' : 'NVD/27/59/81';
 const UW = u => +u.wp || +g('modWp') || 0; // panel Wp of one inverter (per-inverter module override, else the global panel)
-const KWP = () => ALLI().reduce((a, i) => a + i.mods * UW(i), 0) / 1000; // total DC kWp (handles mixed modules)
-const MODS = () => { const m = new Map(); ALLI().forEach(i => m.set(UW(i), (m.get(UW(i)) || 0) + i.mods)); return [...m].filter(([, n]) => n > 0).map(([w, n]) => `${w} W × ${n} Nos`); };
+// Strings field, one '+' group per MPPT: "18x2+15x2@450+9" — an optional "@Wp" gives that MPPT a different panel (multi-MPPT, mixed modules on one inverter)
+const UG = u => { const d = UW(u); return String(u.cfg || '').split('+').map(q => q.trim()).filter(Boolean).map(q => { const w = q.match(/@\s*(\d+(?:\.\d+)?)/), b = q.replace(/@.*$/, '').trim(), m = b.match(/^(\d+)\s*[x×*]\s*(\d+)$/); return m ? { n: +m[1], k: +m[2], wp: w ? +w[1] : d } : { n: parseInt(b) || 0, k: 1, wp: w ? +w[1] : d }; }).filter(q => q.n > 0 && q.k > 0); };
+const UMX = u => UG(u).some(q => q.wp != UW(u)); /* this inverter has more than one panel type */
+const UPR = u => { const d = UW(u); if (!UMX(u)) return [[d, +u.mods || 0]]; const m = new Map(); let c = 0; UG(u).forEach(q => { m.set(q.wp, (m.get(q.wp) || 0) + q.n * q.k); c += q.n * q.k; }); if (u.mods > c) m.set(d, (m.get(d) || 0) + u.mods - c); return [...m]; };
+const UKW = u => UPR(u).reduce((a, [w, n]) => a + w * n, 0) / 1000; /* kWp of one inverter */
+const UMT = u => UPR(u).map(([w, n]) => `${n} × ${w} Wp`).join(' + '); /* "36 × 550 Wp + 30 × 450 Wp" */
+const KWP = () => ALLI().reduce((a, i) => a + UKW(i), 0); // total DC kWp (handles mixed modules)
+const MODS = () => { const m = new Map(); ALLI().forEach(i => UPR(i).forEach(([w, n]) => m.set(w, (m.get(w) || 0) + n))); return [...m].filter(([, n]) => n > 0).map(([w, n]) => `${w} W × ${n} Nos`); };
 const HS = () => g('strHide') == '1'; // hide module string details (modules per string, string count) on every drawing
 const CFGD = () => CFGN() + ({ nz: ' (export prohibited)', n1: ' (TOU)', ne: ' (TOU, night export)' }[V.mode] || ''); // title-block wording
 const dfmt = iso => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('/') : iso;
@@ -115,10 +121,10 @@ const GYs=GPR.map(k=>yy(posM[k],122)),Yg=GPB?Math.max(yy(posM[0],45)-75-(efrM&&i
 const mainLn=yc=>{if(GPB&&yc>Yg&&yc<GBot){ln(MB+60,yc,XGV-6,yc);s.push(`<path d="M ${XGV-6} ${yc} A 6 6 0 0 1 ${XGV+6} ${yc}" fill="none" stroke="#000" stroke-width="1.5"/>`);ln(XGV+6,yc,bx0,yc)}else ln(MB+60,yc,bx0,yc)}; // hop over the grid vertical: crossing, NOT connected
 const row=(u,i,k,nI,nB,cx,pv)=>{const y0=yy(i,0),yc=yy(i,45),B=u.kind=='bess',Y=(j,n,o)=>sm?y0+(j+1)*90*sv/(n+1)+2.5:yy(i,o);
 bx(40,y0,170,90*sv);
-if(!B&&sm4)t(125,y0+45*sv+2.2,`PV ARRAY · ${u.mods} × ${UW(u)} Wp · ${(u.mods*UW(u)/1000).toFixed(2)} kWp`,6,'middle','bold');
+if(!B&&sm4)t(125,y0+45*sv+2.2,`PV ARRAY · ${UMT(u)} · ${UKW(u).toFixed(2)} kWp`,6,'middle','bold');
 else if(B&&sm4)t(125,y0+45*sv+2.2,`BATTERY (BESS) · ${u.kwh} kWh`,6,'middle','bold');
-else if(!B&&sm3){const kp=(u.mods*UW(u)/1000).toFixed(2)+' kWp';t(125,Y(0,2,24),`PV ARRAY · ${u.mods} × ${UW(u)} Wp`,fz(12),'middle','bold');t(125,Y(1,2,44),HS()?kp:`Strings: ${u.cfg} · ${kp}`,fz(10))}
-else if(!B){const n=sm2?3:4,kp=(u.mods*UW(u)/1000).toFixed(2)+' kWp';t(125,Y(0,n,24),'PV ARRAY',fz(13),'middle','bold');t(125,Y(1,n,44),`${u.mods} × ${UW(u)} Wp`,fz(12));if(HS())t(125,Y(2,n,61),kp,fz(11));else if(sm2)t(125,Y(2,n,61),`Strings: ${u.cfg} · ${kp}`,fz(10));else{t(125,Y(2,n,61),'Strings: '+u.cfg,fz(10));t(125,Y(3,n,78),kp,fz(11))}}
+else if(!B&&sm3){const kp=UKW(u).toFixed(2)+' kWp';t(125,Y(0,2,24),`PV ARRAY · ${UMT(u)}`,fz(12),'middle','bold');t(125,Y(1,2,44),HS()?kp:`Strings: ${u.cfg} · ${kp}`,fz(10))}
+else if(!B){const n=sm2?3:4,kp=UKW(u).toFixed(2)+' kWp';t(125,Y(0,n,24),'PV ARRAY',fz(13),'middle','bold');t(125,Y(1,n,44),`${UMT(u)}`,fz(12));if(HS())t(125,Y(2,n,61),kp,fz(11));else if(sm2)t(125,Y(2,n,61),`Strings: ${u.cfg} · ${kp}`,fz(10));else{t(125,Y(2,n,61),'Strings: '+u.cfg,fz(10));t(125,Y(3,n,78),kp,fz(11))}}
 else if(sm3){t(125,Y(0,2,30),`BATTERY (BESS) · ${u.kwh} kWh`,fz(12),'middle','bold');t(125,Y(1,2,52),u.model,fz(11))}
 else{t(125,Y(0,3,30),'BATTERY (BESS)',fz(13),'middle','bold');t(125,Y(1,3,52),u.kwh+' kWh',fz(12));t(125,Y(2,3,70),u.model,fz(11))}
 {const dcc=B?'#b35a00':'#c00',it=B?[]:[dcIso?['DC','ISOLATOR','#000']:null,dcSpd?['DC','SPD',MG]:null].filter(Boolean),n=it.length,w=38,gp=4,x0=210+(90-(n*w+(n-1)*gp))/2,dh=sm4?10:Math.max(14,24*sv),one=sv<0.65;
@@ -347,9 +353,9 @@ dl.forEach((s,j)=>tc(x-8*sh,492-(dl.length-1-j)*11,s,9,'end'));
 for(let r=0;r<2;r++)for(let c=0;c<3;c++)bx(x-36*sh+c*24*sh,505+DCX+r*20,24*sh,20);
 const st='Strings: '+u.cfg,sw=tight&&st.length*cwid(9)>2*(65*sh-4);
 const pp=Math.max(13,12.5/fy),py=k=>568+DCX+k*pp; // line pitch of the PV array text: never tighter than the text height, however far the sheet is vertically compressed
-tc(x,py(0),'PV ARRAY',11,'middle','bold');tc(x,py(1),`${u.mods} × ${UW(u)} Wp`,10,'middle');
-if(HS())tc(x,py(2),(u.mods*UW(u)/1000).toFixed(2)+' kWp',10,'middle');else if(sw){tc(x,py(2),'Strings:',9,'middle');tc(x,py(3),u.cfg,9,'middle');tc(x,py(4),(u.mods*UW(u)/1000).toFixed(2)+' kWp',10,'middle')}
-else{tc(x,py(2),st,9,'middle');tc(x,py(3),(u.mods*UW(u)/1000).toFixed(2)+' kWp',10,'middle')}
+tc(x,py(0),'PV ARRAY',11,'middle','bold');tc(x,py(1),`${UMT(u)}`,10,'middle');
+if(HS())tc(x,py(2),UKW(u).toFixed(2)+' kWp',10,'middle');else if(sw){tc(x,py(2),'Strings:',9,'middle');tc(x,py(3),u.cfg,9,'middle');tc(x,py(4),UKW(u).toFixed(2)+' kWp',10,'middle')}
+else{tc(x,py(2),st,9,'middle');tc(x,py(3),UKW(u).toFixed(2)+' kWp',10,'middle')}
 ln(x-36*sh,545+DCX,x-65*sh,545+DCX,GR,1.5);ln(x-65*sh,545+DCX,x-65*sh,PVC,GR,1.5);s.push(`<circle cx="${(x-65*sh).toFixed(1)}" cy="${((PVC+DY)*fy).toFixed(1)}" r="2.8" fill="${GR}"/>`);pvx.push(x-65*sh); // module-side earth: solid line to this location's roof earth collector (not to the equipment earth)
 if(hb){const bl=x-125*sh; // battery on the LEFT of the inverter, between the inverter and its earth line: the DC cable never reaches (so never crosses) the earth line; the battery earth joins that line = one common earth to the bus bar
 ln(x-45*sh,458,bl,458,BL,2);ln(bl,458,bl,505,BL,2); // leaves the inverter's left side (below its earth connection), clear of the PV DC-cable label
@@ -965,10 +971,10 @@ const u=it.u,B=u.kind=='bess',wp=UW(u),locN=it.loc==2?(V.loc2name||'Location 2')
  pnl=it.loc==2?`${String(locN).toUpperCase()} SWITCHGEAR PANEL ${V.loc2panel||''}A`:`${L2?'LOCATION 1 — ':''}MAIN SWITCHGEAR PANEL ${g('panel')}A`,bus=it.loc==2?V.loc2bus:g('bus');
 const dcIso=!!g('dcIso'),dcSpd=!!g('dcSpd'),hasBat=!B&&u.hybrid&&+u.battKwh>0,gp=!B&&md()=='hy'&&it.loc==1&&u.hybrid&&u.gp;
 // ---- MPPTs / strings ----
-let grp=B?[]:String(u.cfg||'').split('+').map(q=>q.trim()).filter(Boolean).map(q=>{const m=q.match(/^(\d+)\s*[x×*]\s*(\d+)$/);return m?{n:+m[1],k:+m[2]}:{n:parseInt(q)||0,k:1}}).filter(q=>q.n>0&&q.k>0);
-if(!B&&!grp.length&&+u.mods>0)grp=[{n:+u.mods,k:1}];
-const hideS=HS();if(hideS)grp=grp.map(q=>({n:q.n*q.k,k:1})); // string details hidden: one PV array per MPPT, no per-string module counts
-const rows=[];grp.forEach((q,mi)=>{for(let j=0;j<q.k;j++)rows.push({mi,j,n:q.n})});
+let grp=B?[]:UG(u);const mixW=!B&&UMX(u);
+if(!B&&!grp.length&&+u.mods>0)grp=[{n:+u.mods,k:1,wp}];
+const hideS=HS();if(hideS)grp=grp.map(q=>({n:q.n*q.k,k:1,wp:q.wp})); // string details hidden: one PV array per MPPT, no per-string module counts
+const rows=[];grp.forEach((q,mi)=>{for(let j=0;j<q.k;j++)rows.push({mi,j,n:q.n,w:q.wp})});
 const m=grp.length,S=rows.length,yA=150,yB=hasBat?730:850,un=Math.max(1,S+(m-1)*0.6),p=Math.min(64,(yB-yA)/un),fs=Math.min(1.25,p/34);
 const y0=(yA+yB)/2-p*un/2+p/2;rows.forEach((r,k)=>r.y=y0+(k+r.mi*0.6)*p);
 const ym=grp.map((q,mi)=>{const rr=rows.filter(r=>r.mi==mi);return (rr[0].y+rr[rr.length-1].y)/2});
@@ -980,7 +986,7 @@ const top=S?Math.min(rows[0].y-50,yc-90):yc-90,bot=Math.max(S?rows[S-1].y+30:0,y
 // ---- header ----
 s.push(`<text xml:space="preserve" x="28" y="42" font-size="15" text-anchor="start" font-weight="bold" fill="#000">${esc('SINGLE LINE DIAGRAM — '+utag+' DETAIL — '+g('opt'))}</text>`);
 const LG=[[BL,'DC (PV / battery)',''],[OR,'AC (0.4 kV)',''],[MG,'Surge protection (SPD)',''],[GR,'Earthing','']];LG.forEach(([c,l,d],j)=>{L(1390,34+j*15,1428,34+j*15,c,2,d);T(1436,38+j*15,l,9.5)});
-if(S){T(XM,yA-44,'PV STRINGS',11,'start','bold');T(XM,yA-30,`${u.mods} × ${wp} Wp · ${(u.mods*wp/1000).toFixed(2)} kWp`,9.5);T(XM,yA-18,hideS?`${m} MPPT${m>1?'s':''}`:`${S} string${S>1?'s':''} on ${m} MPPT${m>1?'s':''}`,9.5);
+if(S){T(XM,yA-44,'PV STRINGS',11,'start','bold');T(XM,yA-30,`${UMT(u)} · ${UKW(u).toFixed(2)} kWp`,9.5);T(XM,yA-18,hideS?`${m} MPPT${m>1?'s':''}`:`${S} string${S>1?'s':''} on ${m} MPPT${m>1?'s':''}`,9.5);
  T(XD,yA-44,hideS?'DC CABLE':'DC CABLE (each string)',11,'start','bold');wrw(u.dc||'DC cable',24).forEach((q,j)=>T(XD,yA-30+j*12,q,9.5));
  if(dcIso){T(XI,yA-44,'DC ISOLATOR',11,'middle','bold');T(XI,yA-30,g('dcIsoTxt')||'',9.5,'middle')}
  if(dcSpd){T(XS+8,yA-44,'DC SPD',11,'middle','bold');T(XS+8,yA-30,g('dcSpdTxt')||'',9.5,'middle')}}
@@ -990,7 +996,7 @@ const isoH=(x,y)=>{L(x-14,y,x-10,y,BL,1.5);C(x-10,y,2,BK,1.1,'#fff');L(x-10,y,x+
 const spdD=(x,y,h,col=MG)=>{dot(x,y,BL);L(x,y,x,y+3,col,1.2);R(x-5,y+3,10,h,col,1.2);L(x-2.5,y+3+h*0.3,x+2.5,y+3+h*0.5,col,1);L(x+2.5,y+3+h*0.5,x-2.5,y+3+h*0.7,col,1)};
 if(S){const mh=Math.min(22,p*0.5);
  rows.forEach((r,k)=>{const y=r.y;mod(XM,y,mh);L(XM+26,y,XM+32,y,BL,1.2);mod(XM+32,y,mh);T(XM+64+8,y+3,'…',10,'middle','bold');mod(XM+80,y,mh);L(XM+58,y,XM+62,y,BL,1.2);L(XM+76,y,XM+80,y,BL,1.2);
-  T(XM,y-mh/2-4,hideS?`PV ARRAY ${r.mi+1}`:`S${r.mi+1}.${r.j+1}`,9*Math.max(0.85,fs),'start','bold');T(XM+(hideS?62:30)*Math.max(1,fs),y-mh/2-4,hideS?`${(r.n*wp/1000).toFixed(2)} kWp`:`${r.n} × ${wp} Wp · ${(r.n*wp/1000).toFixed(2)} kWp`,8.5*Math.max(0.85,fs),'start');
+  T(XM,y-mh/2-4,hideS?`PV ARRAY ${r.mi+1}`:`S${r.mi+1}.${r.j+1}`,9*Math.max(0.85,fs),'start','bold');T(XM+(hideS?62:30)*Math.max(1,fs),y-mh/2-4,hideS?`${(r.n*r.w/1000).toFixed(2)} kWp`:`${r.n} × ${r.w} Wp · ${(r.n*r.w/1000).toFixed(2)} kWp`,8.5*Math.max(0.85,fs),'start');
   L(XE,y+mh/2-3,XM,y+mh/2-3,GR,1,'4 2'); // module frame earth
   const xs=XM+106;if(dcIso){L(xs,y,XI-14,y,BL);isoH(XI,y);L(XI+14,y,X1,y,BL)}else L(xs,y,X1,y,BL);
   if(dcSpd){const h=Math.max(7,Math.min(14,p-17));spdD(XS,y,h);L(XS,y+3+h,XS,y+5+h,MG,1.2);L(XS,y+5+h,XSE,y+5+h,GR,1)}});
@@ -1023,9 +1029,9 @@ if(gp){L(X2,gpY,XC-24,gpY,OR,2);cbH(XC,gpY);T(XC,gpY+18,`${u.poles||'4P'} ${u.gp
 // earthing: inverter PE -> panel earth bar -> earth pit
 L(X2,yE,PX1+60,yE,GR,1.5,'5 3');T((X2+PX1)/2,yE-5,u.earth||'Earth cable',8.5,'middle');L(PX1+16,yE,PX1+84,yE,GR,3);T(PX1+16,yE-6,'PANEL EARTH BAR',7.5,'start','bold');L(PX1+50,yE,PX1+50,pBot+14,GR,1.5);es(PX1+50,pBot+14);
 // ---- MPPT schedule ----
-if(S&&!hideS){const tx=PX1,tw=PX2-PX1,ty=pBot+62,cols=[0.18,0.17,0.25,0.2,0.2],hd=['MPPT','Strings','Modules / string','Modules','kWp'],rh=Math.max(11,Math.min(15,(FB-60-ty)/(m+2)));
+if(S&&!hideS){const tx=PX1,tw=PX2-PX1,ty=pBot+62,cols=mixW?[0.13,0.14,0.21,0.17,0.16,0.19]:[0.18,0.17,0.25,0.2,0.2],hd=mixW?['MPPT','Strings','Mod. / string','Panel Wp','Modules','kWp']:['MPPT','Strings','Modules / string','Modules','kWp'],rh=Math.max(11,Math.min(15,(FB-60-ty)/(m+2)));
  T(tx,ty-7,'MPPT / STRING SCHEDULE',10,'start','bold');R(tx,ty,tw,rh*(m+2),BK,1);let cx=tx;cols.forEach((c,j)=>{if(j)L(cx,ty,cx,ty+rh*(m+2),BK,0.7);T(cx+4,ty+rh*0.72,hd[j],8,'start','bold');cx+=c*tw});L(tx,ty+rh,tx+tw,ty+rh,BK,1);
- grp.concat([{tot:1}]).forEach((q,i)=>{const yy=ty+rh*(i+1);if(i)L(tx,yy,tx+tw,yy,BK,q.tot?1:0.4);let c2=tx;const v=q.tot?['Total',String(S),'—',String(u.mods),(u.mods*wp/1000).toFixed(2)]:[String(i+1),String(q.k),String(q.n),String(q.n*q.k),(q.n*q.k*wp/1000).toFixed(2)];
+ grp.concat([{tot:1}]).forEach((q,i)=>{const yy=ty+rh*(i+1);if(i)L(tx,yy,tx+tw,yy,BK,q.tot?1:0.4);let c2=tx;const v=q.tot?['Total',String(S),'—',...(mixW?['mixed']:[]),String(u.mods),UKW(u).toFixed(2)]:[String(i+1),String(q.k),String(q.n),...(mixW?[String(q.wp)]:[]),String(q.n*q.k),(q.n*q.k*q.wp/1000).toFixed(2)];
   v.forEach((z,j)=>{T(c2+4,yy+rh*0.72,z,8,'start',q.tot?'bold':'normal');c2+=cols[j]*tw})});
  const sum=grp.reduce((a,q)=>a+q.n*q.k,0);if(sum!=+u.mods)T(tx,ty+rh*(m+2)+14,`Note: the strings add up to ${sum} modules, the inverter card says ${u.mods}.`,8.5,'start','bold')}
 // ---- sheet ----
@@ -1053,10 +1059,10 @@ const u=it.u,B=u.kind=='bess',wp=UW(u),locN=it.loc==2?(V.loc2name||'Location 2')
  utag=(B?'BESS PCS ':'INVERTER ')+it.no+(L2?` (${it.loc==2?locN:'Location 1'})`:''),
  pnl=it.loc==2?`${String(locN).toUpperCase()} SWITCHGEAR PANEL ${V.loc2panel||''}A`:`${L2?'LOCATION 1 — ':''}MAIN SWITCHGEAR PANEL ${g('panel')}A`,bus=it.loc==2?V.loc2bus:g('bus');
 const dcIso=!!g('dcIso'),dcSpd=!!g('dcSpd'),hasBat=!B&&u.hybrid&&+u.battKwh>0,gp=!B&&md()=='hy'&&it.loc==1&&u.hybrid&&u.gp;
-let grp=B?[]:String(u.cfg||'').split('+').map(q=>q.trim()).filter(Boolean).map(q=>{const m=q.match(/^(\d+)\s*[x×*]\s*(\d+)$/);return m?{n:+m[1],k:+m[2]}:{n:parseInt(q)||0,k:1}}).filter(q=>q.n>0&&q.k>0);
-if(!B&&!grp.length&&+u.mods>0)grp=[{n:+u.mods,k:1}];
-const hideS=HS();if(hideS)grp=grp.map(q=>({n:q.n*q.k,k:1})); // string details hidden: one PV array per MPPT, no per-string module counts
-const cols=[];grp.forEach((q,mi)=>{for(let j=0;j<q.k;j++)cols.push({mi,j,n:q.n})});
+let grp=B?[]:UG(u);const mixW=!B&&UMX(u);
+if(!B&&!grp.length&&+u.mods>0)grp=[{n:+u.mods,k:1,wp}];
+const hideS=HS();if(hideS)grp=grp.map(q=>({n:q.n*q.k,k:1,wp:q.wp})); // string details hidden: one PV array per MPPT, no per-string module counts
+const cols=[];grp.forEach((q,mi)=>{for(let j=0;j<q.k;j++)cols.push({mi,j,n:q.n,w:q.wp})});
 const m=grp.length,S=cols.length,xA=210,xB=S&&!HS()?1150:1430,un=Math.max(1,S+(m-1)*0.6),q=Math.min(110,(xB-xA)/un),fs=Math.min(1.15,q/60);
 const x0=(xA+xB)/2-q*un/2+q/2;cols.forEach((c,k)=>c.x=x0+(k+c.mi*0.6)*q);
 const xm=grp.map((g0,mi)=>{const cc=cols.filter(c=>c.mi==mi);return (cc[0].x+cc[cc.length-1].x)/2});
@@ -1067,7 +1073,7 @@ const bL=Math.min(S?cols[0].x-40:xc-250,xc-250),bR=Math.max(S?cols[S-1].x+40:xc+
 s.push(`<text xml:space="preserve" x="28" y="42" font-size="15" text-anchor="start" font-weight="bold" fill="#000">${esc('SINGLE LINE DIAGRAM — '+utag+' DETAIL — '+g('opt'))}</text>`);
 const LG=[[BL,'DC (PV / battery)',''],[OR,'AC (0.4 kV)',''],[MG,'Surge protection (SPD)',''],[GR,'Earthing','']];LG.forEach(([c,l,d],j)=>{L(1370,32+j*17,1408,32+j*17,c,2,d);T(1416,36+j*17,l,9.5)});
 const LV=(y,a,b)=>{T(28,y,a,10,'start','bold');if(b)wrw(b,18).forEach((z,j)=>T(28,y+15+j*13,z,8.5))};
-if(S){LV(Y.mod+14,hideS?'PV ARRAYS':'PV STRINGS',`${u.mods} × ${wp} Wp · ${(u.mods*wp/1000).toFixed(2)} kWp, ${hideS?'':S+' string'+(S>1?'s':'')+' / '}${m} MPPT${m>1?'s':''}`);LV(Y.dcl-4,'DC CABLE',(u.dc||'DC cable')+(hideS?'':' (each string)'));
+if(S){LV(Y.mod+14,hideS?'PV ARRAYS':'PV STRINGS',`${UMT(u)} · ${UKW(u).toFixed(2)} kWp, ${hideS?'':S+' string'+(S>1?'s':'')+' / '}${m} MPPT${m>1?'s':''}`);LV(Y.dcl-4,'DC CABLE',(u.dc||'DC cable')+(hideS?'':' (each string)'));
  if(dcIso)LV(Y.iso,'DC ISOLATOR',g('dcIsoTxt'));if(dcSpd)LV(Y.spd,'DC SPD',g('dcSpdTxt'));
  LV(Y.sw+4,'DC SWITCH','built-in');LV(Y.ispd+4,'DC SPD','built-in, Type II');LV(Y.mp+4,'MPPT','');LV(Y.link+4,'DC LINK','')}
 LV(Y.br+4,'DC / AC','');
@@ -1079,7 +1085,7 @@ const isoV=(x,y)=>{L(x,y+24,x,y+12,BL,1.5);C(x,y+12,2,BK,1.1,'#fff');L(x,y+12,x+
 const spdR=(x,y,col=MG)=>{dot(x,y,BL);L(x,y,x+8,y,col,1.2);R(x+8,y-7,9,14,col,1.2);L(x+10,y-3,x+15,y,col,1);L(x+15,y,x+10,y+3,col,1)};
 if(S){cols.forEach(c=>{const x=c.x,yb=Y.mod+3*mh+22;
   modV(x,Y.mod);L(x,Y.mod+mh,x,Y.mod+mh+4,BL,1.2);modV(x,Y.mod+mh+4);T(x+0.5,Y.mod+2*mh+17,'⋮',11,'middle','bold');modV(x,Y.mod+2*mh+22);
-  const l1=hideS?`PV ${c.mi+1}`:`S${c.mi+1}.${c.j+1}`,l2=hideS?`${(c.n*wp/1000).toFixed(1)} kWp`:`${c.n} mod.`,z1=Math.min(9*Math.max(0.85,Math.min(1,fs)),(q-10)/(l1.length*0.62*TS)),z2=Math.min(8.5*Math.max(0.85,Math.min(1,fs)),(q-10)/(l2.length*0.58*TS)); // narrow columns: labels shrink to fit between the earth drops
+  const l1=hideS?`PV ${c.mi+1}`:`S${c.mi+1}.${c.j+1}`,l2=hideS?`${(c.n*c.w/1000).toFixed(1)} kWp`:mixW?`${c.n}×${c.w}`:`${c.n} mod.`,z1=Math.min(9*Math.max(0.85,Math.min(1,fs)),(q-10)/(l1.length*0.62*TS)),z2=Math.min(8.5*Math.max(0.85,Math.min(1,fs)),(q-10)/(l2.length*0.58*TS)); // narrow columns: labels shrink to fit between the earth drops
   T(x,Y.lab,l1,z1,'middle','bold');T(x,Y.lab+13,l2,z2,'middle');const xt=x-Math.max(mw/2+5,Math.max(l1.length*0.62*z1,l2.length*0.58*z2)*TS/2+5); // earth drop clear of the string labels
   L(x-mw/2,yb-4,xt,yb-4,GR,1,'3 2');L(xt,yb-4,xt,Y.ebus,GR,1,'3 2'); // module frame earth -> frame-earth bus (below)
   if(dcIso){L(x,Y.mod,x,Y.iso+24,BL);isoV(x,Y.iso);L(x,Y.iso-24,x,Y.bot,BL)}else L(x,Y.mod,x,Y.bot,BL);
@@ -1115,9 +1121,9 @@ if(gp){const yr=Y.pBot+40;L(xc+30,Y.br,xc+60,Y.br,OR);L(xc+60,Y.br,xc+60,yr,OR);
 const xe=Math.min(pL-22,gp?ax-Math.max(...acl.map(z=>z.length),10)*0.58*9*TS-14:1e9),ye=Y.pBot-18; /* earth drop clear of the AC-cable label (left of the line in hybrid mode) */L(xe,Y.top,xe,ye,GR,1.5,'5 3');L(xe,ye,pL+10,ye,GR,1.5);L(pL+10,ye,pL+52,ye,GR,3);T(pL+10,ye-6,'EARTH BAR',7.5,'start','bold');L(xe,ye,xe-30,ye,GR,1.5);es(xe-30,ye);
 {const el=wrw(u.earth||'Earth cable',14);el.forEach((z,j)=>T(xe-6,ye-28-(el.length-1-j)*13,z,8.5,'end'))}
 // ---- MPPT schedule (right) ----
-if(S&&!hideS){const tx=1200,tw=360,ty=400,cw=[0.18,0.17,0.25,0.2,0.2],hd=['MPPT','Strings','Modules / string','Modules','kWp'],rh=Math.max(13,Math.min(19,(FB-30-ty)/(m+2)));
+if(S&&!hideS){const tx=1200,tw=360,ty=400,cw=mixW?[0.13,0.14,0.21,0.17,0.16,0.19]:[0.18,0.17,0.25,0.2,0.2],hd=mixW?['MPPT','Strings','Mod. / string','Panel Wp','Modules','kWp']:['MPPT','Strings','Modules / string','Modules','kWp'],rh=Math.max(13,Math.min(19,(FB-30-ty)/(m+2)));
  T(tx,ty-7,'MPPT / STRING SCHEDULE',10,'start','bold');R(tx,ty,tw,rh*(m+2),BK,1);let cx=tx;cw.forEach((c,j)=>{if(j)L(cx,ty,cx,ty+rh*(m+2),BK,0.7);T(cx+4,ty+rh*0.72,hd[j],8,'start','bold');cx+=c*tw});L(tx,ty+rh,tx+tw,ty+rh,BK,1);
- grp.concat([{tot:1}]).forEach((g0,i)=>{const yy=ty+rh*(i+1);if(i)L(tx,yy,tx+tw,yy,BK,g0.tot?1:0.4);let c2=tx;const v=g0.tot?['Total',String(S),'—',String(u.mods),(u.mods*wp/1000).toFixed(2)]:[String(i+1),String(g0.k),String(g0.n),String(g0.n*g0.k),(g0.n*g0.k*wp/1000).toFixed(2)];
+ grp.concat([{tot:1}]).forEach((g0,i)=>{const yy=ty+rh*(i+1);if(i)L(tx,yy,tx+tw,yy,BK,g0.tot?1:0.4);let c2=tx;const v=g0.tot?['Total',String(S),'—',...(mixW?['mixed']:[]),String(u.mods),UKW(u).toFixed(2)]:[String(i+1),String(g0.k),String(g0.n),...(mixW?[String(g0.wp)]:[]),String(g0.n*g0.k),(g0.n*g0.k*g0.wp/1000).toFixed(2)];
   v.forEach((z,j)=>{T(c2+4,yy+rh*0.72,z,8,'start',g0.tot?'bold':'normal');c2+=cw[j]*tw})});
  const sum=grp.reduce((a,g0)=>a+g0.n*g0.k,0);if(sum!=+u.mods)T(tx,ty+rh*(m+2)+14,`Note: the strings add up to ${sum} modules, the inverter card says ${u.mods}.`,8.5,'start','bold')}
 s.unshift('<g data-layer="DIAGRAM">');s.push('</g>');
@@ -1129,6 +1135,7 @@ return page(s.join(''))}
 S.invUnits = (v, inv, bess, inv2, bess2) => { const o = [], L2 = !!v.loc2on, t = L2 ? (k => k == 2 ? ' · ' + (v.loc2name || 'Location 2') : ' · Location 1') : () => '';
   (inv || []).forEach((u, i) => o.push(`Inverter ${i + 1} — ${u.name}${t(1)}`)); (bess || []).forEach((u, i) => o.push(`BESS PCS ${i + 1} — ${u.kw} kW${t(1)}`));
   if (L2) { (inv2 || []).forEach((u, i) => o.push(`Inverter ${i + 1} — ${u.name}${t(2)}`)); (bess2 || []).forEach((u, i) => o.push(`BESS PCS ${i + 1} — ${u.kw} kW${t(2)}`)); } return o; };
+S.cfgKwp = (cfg, mods, wp) => UKW({ cfg, mods, wp });
 S.renderInv = (v, inv, bess, inv2, bess2, sel, lay) => { V = v; INV = inv || []; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(lay == 'v' ? renderInvV(sel) : renderInv(sel)); };
 S.renderMV = (v, inv, bess, inv2, bess2) => { V = v; INV = inv || []; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return (v.mv && v.mv.lay == 'v') ? renderMVv() : renderMV(); };
 S.renderPanels = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || []; INV2 = inv2 || []; BESS2 = bess2 || []; return PH1(renderPanels()); };
