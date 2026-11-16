@@ -92,3 +92,6 @@ fieldset>button{margin-top:10px}
 .hfold[open]{padding-bottom:2px}
 
 #invPick,#invLay{max-width:260px;padding:5px 8px;border:1px solid #c9d3df;border-radius:8px;font:inherit;font-size:13px;margin-left:4px;background:#fff}
+/* PV modules field flashes when the Strings field fills it in */
+@keyframes flashOk{from{background:#d8f3dc}to{background:inherit}}
+.flashOk{animation:flashOk 1.2s ease-out}

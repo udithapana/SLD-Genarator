@@ -98,6 +98,9 @@ fieldset>button{margin-top:10px}
 .hfold[open]{padding-bottom:2px}
 
 #invPick,#invLay{max-width:260px;padding:5px 8px;border:1px solid #c9d3df;border-radius:8px;font:inherit;font-size:13px;margin-left:4px;background:#fff}
+/* PV modules field flashes when the Strings field fills it in */
+@keyframes flashOk{from{background:#d8f3dc}to{background:inherit}}
+.flashOk{animation:flashOk 1.2s ease-out}
 </style>
 <script>// Installable-app setup (PWA). Builds the web-app manifest in code so it works even when only
 // index.html is uploaded to GitHub, and gives this app its OWN id so Chrome never confuses it
@@ -3648,7 +3651,7 @@ S.renderSLD = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || 
   const invCard = (s, i, canRemove) => { const b = D[s.m].brand, hyb = D[s.m].type == 'hybrid'; return `<div class="inv" data-i="${i}"><div class="ih"><b>Inverter ${i + 1}</b>${canRemove ? `<button type="button" class="ic" data-a="rm" title="Remove inverter" aria-label="Remove inverter ${i + 1}">${RM}</button>` : ''}</div>
 <label>Brand<select data-a="b">${brands.map(x => `<option${x == b ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
 <label>Model<select data-a="m">${D.map((d, j) => d.brand == b ? `<option value="${j}"${j == s.m ? ' selected' : ''}>${esc(d.model)} (${d.current} A)${d.type == 'hybrid' ? ' — hybrid' : ''}</option>` : '').join('')}</select></label>
-<div class="two"><label>PV modules<input data-a="mods" type="number" min="0" value="${s.mods}"></label><label>Strings<input data-a="cfg" value="${esc(s.cfg)}" title="One + group per MPPT, e.g. 18x2+15x2+9. A different panel on one MPPT: add @Wp, e.g. 18x2+15x2@450+9"></label></div><div class="hint" style="margin-top:2px">Different panel on an MPPT? add @Wp to that group — e.g. 18x2+15x2@450</div>
+<div class="two"><label>PV modules <span class="tag" title="Filled automatically from Strings (you can still type a different number)">auto</span><input data-a="mods" type="number" min="0" value="${s.mods}"></label><label>Strings<input data-a="cfg" value="${esc(s.cfg)}" title="One + group per MPPT, e.g. 18x2+15x2+9. A different panel on one MPPT: add @Wp, e.g. 18x2+15x2@450+9"></label></div><div class="hint" style="margin-top:2px">Different panel on an MPPT? add @Wp to that group — e.g. 18x2+15x2@450</div>
 ${$('modMix').value ? `<label>Panel Wp — this inverter <span class="tag">module override</span><input data-a="wp" type="number" min="0" value="${esc(s.wp || '')}" placeholder="${esc($('modWp').value)} = same as the Solar array panel"></label>` : ''}
 <label>DC cable <span class="tag">site-specific</span><input data-a="dc" value="${esc(s.dc)}" placeholder="depends on array-to-inverter distance"></label>
 ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</span><input data-a="battKwh" type="number" min="0" value="${esc(s.battKwh)}" placeholder="0 = none"></label>
@@ -3679,9 +3682,12 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
 <div class="sub"><b>Battery (BESS) — ${esc(LOC2.name)}</b><div id="bessList2"></div><button type="button" class="alt" id="addBess2">${AD} Add battery</button></div>`;
     drawInvs2(); drawBess2();
   }
+  // Strings typed -> total PV modules filled automatically (sum of modules/string × strings over every MPPT group; '@Wp' ignored). The count can still be overwritten by hand.
+  const modsFromCfg = cfg => { let t = 0, ok = false; String(cfg || '').split('+').forEach(q => { const b = q.replace(/@.*$/, '').trim(); if (!b) return; const m = b.match(/^(\d+)\s*[x×*]\s*(\d+)$/); if (m) { t += m[1] * m[2]; ok = true; } else if (/^\d+$/.test(b)) { t += +b; ok = true; } }); return ok ? t : null; };
+  const autoMods = (U, e) => { const n = modsFromCfg(e.target.value); if (n == null) return; U.mods = n; const f = e.target.closest('.inv').querySelector('[data-a=mods]'); if (f) { f.value = n; f.classList.remove('flashOk'); void f.offsetWidth; f.classList.add('flashOk'); } };
   $('invList').addEventListener('input', e => {
     const a = e.target.dataset.a, i = +e.target.closest('.inv').dataset.i;
-    if (a == 'b' || a == 'm') { INVS[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS[i].acOv = ''; INVS[i].earthOv = ''; INVS[i].gpAc = ''; INVS[i].gp = ''; drawInvs(); } else { INVS[i][a] = e.target.value; if (a == 'gp' && !INVS[i].gpAc) { const g = e.target.closest('.inv').querySelector('[data-a=gpAc]'); if (g) g.value = autoGp(INVS[i], S.info(D[INVS[i].m])).ac; } }
+    if (a == 'b' || a == 'm') { INVS[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS[i].acOv = ''; INVS[i].earthOv = ''; INVS[i].gpAc = ''; INVS[i].gp = ''; drawInvs(); } else { INVS[i][a] = e.target.value; if (a == 'cfg') autoMods(INVS[i], e); if (a == 'gp' && !INVS[i].gpAc) { const g = e.target.closest('.inv').querySelector('[data-a=gpAc]'); if (g) g.value = autoGp(INVS[i], S.info(D[INVS[i].m])).ac; } }
     update();
   });
   $('invList').addEventListener('click', e => { const b = e.target.closest('[data-a=rm]'); if (b) { INVS.splice(+b.closest('.inv').dataset.i, 1); drawInvs(); update(); } });
@@ -3708,7 +3714,7 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
     if (e.target.id == 'loc2PvEarth') { LOC2.pvEarthOv = e.target.value; update(); return; }
     const card = e.target.closest('.inv'); if (!card || !a) return;
     const i = +card.dataset.i;
-    if (e.target.closest('#invList2')) { if (a == 'b' || a == 'm') { INVS2[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS2[i].acOv = ''; INVS2[i].earthOv = ''; INVS2[i].gpAc = ''; INVS2[i].gp = ''; drawInvs2(); } else INVS2[i][a] = e.target.value; update(); }
+    if (e.target.closest('#invList2')) { if (a == 'b' || a == 'm') { INVS2[i].m = a == 'b' ? firstOf(e.target.value) : +e.target.value; INVS2[i].acOv = ''; INVS2[i].earthOv = ''; INVS2[i].gpAc = ''; INVS2[i].gp = ''; drawInvs2(); } else { INVS2[i][a] = e.target.value; if (a == 'cfg') autoMods(INVS2[i], e); } update(); }
     else if (e.target.closest('#bessList2')) { BESSU2[i][a] = e.target.value; update(); }
   });
   $('loc2Body').addEventListener('click', e => {
