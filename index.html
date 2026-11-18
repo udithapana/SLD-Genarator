@@ -2220,6 +2220,19 @@ window.SLD_SUPPLY = [
   // Generic cable size for a given current (used for the load feeder cable, sized from its MCCB rating).
   S.pvEarth = n => `${PVE.find(r => (+n || 1) <= r[0])[1]}mm² Cu`;
   S.cableFor = I => { const c = cabFor(+I || 0); return `${c[1]}mm² 4C/Cu/XLPE/PVC`; };
+  // Cable selection — same tables and method as the user's AC Cable Selection tool (AC-Cable-Select-2.0):
+  // 4-core unarmoured Al, free air (method E) rating × 0.96 installation factor × grouping factor for parallel runs (bunched),
+  // required capacity = load current × (1 + margin); voltage drop % = I × L × mV/A/m / (runs × 4000) must be within the allowed %;
+  // picks the fewest parallel runs, then the smallest size that achieves it.
+  const AL_UA = [[25,'PVC/PVC',97,2.7],[35,'XLPE/PVC',120,1.95],[50,'XLPE/PVC',146,1.45],[70,'XLPE/PVC',187,0.97],[95,'XLPE/PVC',227,0.72],
+                 [120,'XLPE/PVC',263,0.58],[150,'XLPE/PVC',304,0.47],[185,'XLPE/PVC',347,0.39],[240,'XLPE/PVC',409,0.31],[300,'XLPE/PVC',471,0.26]]; // [mm², insulation, free-air A, mV/A/m]
+  const GRP_B = [1, 0.88, 0.82, 0.77, 0.75, 0.73, 0.73, 0.72];
+  S.alSelect = (I, L, marginPct = 10, vdAllow = 3) => {
+    I = +I || 0; L = +L || 0; const req = I * (1 + marginPct / 100), gf = n => GRP_B[Math.min(n, GRP_B.length) - 1];
+    const per = AL_UA.map(c => { let n = 1; while (n <= 60 && n * c[2] * 0.96 * gf(n) < req) n++; if (n > 60) return null; n = Math.max(n, Math.ceil(I * L * c[3] / (vdAllow * 4000) - 1e-9), 1); return n <= 60 ? { c, n } : null; }).filter(Boolean);
+    if (!per.length) return null; const m = Math.min(...per.map(r => r.n)), r = per.find(q => q.n == m);
+    return { label: `${r.c[0]}mm² 4C/Al/${r.c[1]}${r.n > 1 ? ' × ' + r.n : ''}`, runs: r.n, vd: I * L * r.c[3] / (r.n * 4000), req, cap: r.n * r.c[2] * 0.96 * gf(r.n) };
+  };
   // Hybrid mode: a hybrid inverter's GRID port (AC input from the ATS grid-side busbar, used to supply load / charge the battery) — its own current, cable and breaker
   S.portInfo = (I, ac) => { const c = cabFor(+I || 0); return { I: +I || 0, mccb: up(MARGIN * (+I || 0), STD), ac: ac ? fmt(ac) : `${c[1]}mm²/4C/${c[2]}` }; };
   // ...and with 2+ hybrid inverters, the feeder from their separate grid-supply busbar (main switchgear panel) to the ATS grid-side busbar
@@ -2683,7 +2696,7 @@ if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) bu
  const both=src=='both',X1E=both&&!!g('ats1Ext'),X1G=180,A=g('atsA')||g('iso')||g('panel'),efrA=!!g('efrIso'),eset=efrSet('efrIsoSet').slice(0,isIso?8:10),ew=isIso?44:50,x2=isIso?cx+(efrA?70:80):370,xb0=x2+72,xgB=HY?x2+150+(efrA?20:0):0,xb1=HY?Math.max(xgB+10,xb0+90):0,x1=(HY?xb1+60:x2+(efrA?ew+92:100))+(X1E?X1G:0),BEa=HY?(both?x1+(isIso?66:70):xb1+64):Math.max((both?x1:x2)+(efrA?66:75),efrA?x2+64+ew+12:0),tight=isIso&&efrA,yG=both?167:125;GSX=xgB;
  const isoE=X1E?x1-X1G+(HY?6:10):BEa; /* separate customer ATS-1: our panel ends here, the gap carries the interconnecting cable */
  bx(80,92,isoE-80,98,'8 4');tI(85,86,`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`,9,'start','bold');
- if(X1E){const L0=x1-32,tw=`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`.length*5.3;cabLab(isoE,L0,117,SUPC());bx(L0,92,BEa-L0,98,'3 3');const hi=85+tw+12>L0,x0=Math.min(L0,1570-232);tI(x0,hi?74:86,'EXISTING ATS PANEL (CUSTOMER) — NOT IN SCOPE',8,'start','bold')} /* customer's own ATS-1: own dashed box, outside the isolation panel */
+ if(X1E){const L0=x1-32,tw=`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`.length*5.3;cabLab(isoE,L0,117,g('ats1Cable')||SUPC());bx(L0,92,BEa-L0,98,'3 3');const hi=85+tw+12>L0,x0=Math.min(L0,1570-232);tI(x0,hi?74:86,'EXISTING ATS PANEL (CUSTOMER) — NOT IN SCOPE',8,'start','bold')} /* customer's own ATS-1: own dashed box, outside the isolation panel */
  ln(100,125,x2-24,125,OR,4);tI(175,115,`SOLAR BUS ${g('isoBus')||A}A`,9,'middle');ln(x2-24,125,x2,125,OR);if(!isIso)tI(x2-5,120,'SOLAR',7,'end','bold');ln(150,125,150,177,OR);
  if(indI)lamps(225,125);
  atsSym(x2,113,false);tI(x2+30,107,`${both?'ATS-2':'ATS'}  4P ${A}A`,9,'middle','bold');
@@ -2951,13 +2964,13 @@ if(!mvIso){}else if(!ats){
  if(HY){ // grid-side busbar: feeds ATS input II and the hybrid inverters' grid ports
   L(xII,BY,xb1+20,BY,OR,5);T(xII+6,BY+14,'GRID-SIDE BUSBAR',8,'start','bold');L(xII,BY,xII,yA2,OR);
   L(xIn2,BY,xIn2,BY-28,OR);brk(xIn2,BY-80,`4P ${brkG}A`,BT(brkG),0,1);
-  if(!both){L(xIn2,BY-80,xIn2,46,OR);const w=170;R(xIn2-w/2,22,w,22,'','#000',1.2);T(xIn2,37,gridLbl,8.5,'middle','bold');const n=cab(X1E?'Customer\'s existing ATS-1 (grid / DG) output':'Energy meter (utility GRID)',IP+` — incoming ${brkG}A`,SUPC());bubble(xIn2,98,n)}
+  if(!both){L(xIn2,BY-80,xIn2,46,OR);const w=170;R(xIn2-w/2,22,w,22,'','#000',1.2);T(xIn2,37,gridLbl,8.5,'middle','bold');const n=cab(X1E?'Customer\'s existing ATS-1 (grid / DG) output':'Energy meter (utility GRID)',IP+` — incoming ${brkG}A`,X1E?g('ats1Cable')||SUPC():SUPC());bubble(xIn2,98,n)}
   else{const ya=BT0+8;L(xIn2,BY-80,xIn2,ya+46,OR);atsS(xIn2,ya,'ATS-1');T(xIn2+40,ya+52,'(grid / DG)',8,'start');
    [[xIn2-20,'DG',g('dgCable')||g('utilCable'),dgLbl],[xIn2+20,'GRID',SUPC(),'FROM GRID / METER']].forEach(([xx,k,cb,lb],j)=>{const xt=xx+(j?58:0);L(xx,ya,xx,ya-12,OR);L(xx,ya-12,xt,ya-12,OR);L(xt,ya-12,xt,46,OR);
     const w=Math.max(66,lb.length*5.2+12);R(xt-w/2,22,w,22,'','#000',1.2);T(xt,37,lb,8,'middle','bold');const n=cab(k=='DG'?'Diesel generator':'Energy meter (utility GRID)',IP+' — ATS-1 input '+(j?'II':'I'),cb);bubble(xt,104,n)})}
   if(nGP){L(xGO,BY,xGO,YB,OR);T(xGO+6,BY-30,'TO MAIN PANEL',7.5,'start','bold');T(xGO+6,BY-21,'GRID PORT(S)',7.5,'start','bold')}
  }else if(!both){const k=src=='grid'||X1E;L(xII,yA2,xII,46,OR);const lb=k?gridLbl:dgLbl,w=Math.max(80,lb.length*5.4+12);R(xII-w/2+30,22,w,22,'','#000',1.2);T(xII+30,37,lb,8.5,'middle','bold');L(xII,46,xII,44,OR);
-  const n=cab(X1E?'Customer\'s existing ATS-1 (grid / DG) output':k?'Energy meter (utility GRID)':'Diesel generator',IP+' — ATS input II',k?SUPC():(g('dgCable')||g('utilCable')));bubble(xII,98,n)}
+  const n=cab(X1E?'Customer\'s existing ATS-1 (grid / DG) output':k?'Energy meter (utility GRID)':'Diesel generator',IP+' — ATS input II',X1E?g('ats1Cable')||SUPC():k?SUPC():(g('dgCable')||g('utilCable')));bubble(xII,98,n)}
  else{const ya=BT0+8;atsS(x1,ya,'ATS-1');L(x1,ya+46,x1,BY,OR);L(x1,BY,xII,BY,OR);L(xII,BY,xII,yA2,OR);T(x1+40,ya+52,'(grid / DG)',8,'start');
   [[x1-20,'DG',g('dgCable')||g('utilCable'),dgLbl],[x1+20,'GRID',SUPC(),'FROM GRID / METER']].forEach(([xx,k,cb,lb],j)=>{const xt=xx+(j?58:0);L(xx,ya,xx,ya-12,OR);L(xx,ya-12,xt,ya-12,OR);L(xt,ya-12,xt,46,OR);
    const w=Math.max(66,lb.length*5.2+12);R(xt-w/2,22,w,22,'','#000',1.2);T(xt,37,lb,8,'middle','bold');const n=cab(k=='DG'?'Diesel generator':'Energy meter (utility GRID)',IP+' — ATS-1 input '+(j?'II':'I'),cb);bubble(xt,104,n)})}
@@ -3603,11 +3616,13 @@ S.renderSLD = (v, inv, bess, inv2, bess2) => { V = v; INV = inv; BESS = bess || 
 <label>DC surge protection (SPD)<select id="dcSpd">${YN('Not shown (inverter built-in)', 'DC SPD on each PV array DC cable')}</select></label>
 <label>DC SPD rating text<input id="dcSpdTxt" value="Type 2 · 1000V DC"></label></div></fieldset>`;
   // Off-grid backup source(s): automatic transfer switch(es) built into the isolation panel (ATS-1 = DG / grid, ATS-2 = solar / backup)
-  AUTO.add('atsA'); AUTO.add('dgCable');
+  AUTO.add('atsA'); AUTO.add('dgCable'); AUTO.add('ats1Cable');
   const OG_HTML = `<div class="sub" id="ogBox"><b>Backup source — ATS in the isolation panel</b>
 <label>Backup source<select id="ogSrc"><option value="dg" selected>Diesel generator (DG) — one ATS</option><option value="grid">Grid (utility) — one ATS</option><option value="both">DG + grid — two ATS</option><option value="">None — solar / battery only (no ATS)</option></select></label>
 <label id="hySrcL">ATS sources (hybrid)<select id="hySrc"><option value="grid">Grid only — one ATS (inverter output / grid)</option><option value="both">Grid + DG — two ATS (ATS-1 grid / DG → grid-side busbar)</option></select></label>
 <label>ATS-1 (grid / DG) location<select id="ats1Ext"><option value="" selected>In our isolation panel (Regen scope)</option><option value="1">Customer's existing ATS — separate panel, not in our scope</option></select></label>
+<label>Cable: existing ATS-1 → isolation panel <span class="tag">auto</span><input id="ats1Cable" title="Auto: unarmoured Al cable, 10 % current margin, 3 % voltage drop — type to override"></label>
+<label>Cable length: existing ATS-1 → isolation panel (m)<input id="ats1Len" type="number" min="0" value="10" title="Used for the 3 % voltage-drop check"></label>
 <label>ATS rating (A) <span class="tag">auto</span><input id="atsA"></label>
 <label>DG rating (kVA) <span class="tag">optional</span><input id="dgKva" placeholder="e.g. 100"></label>
 <label>DG cable <span class="tag">auto</span><input id="dgCable"></label></div>`;
@@ -3760,11 +3775,15 @@ ${hyb ? `<label>Integrated battery — capacity (kWh) <span class="tag">hybrid</
       d.supCable = SR ? SR.cable : d.utilCable;
       const BF = gps.length > 1 ? S.gridFeeder(gps.reduce((a, x) => a + x.gp.I, 0)) : null; d.bkBrk = BF ? BF.mccb : ''; d.bkCable = BF ? BF.ac : ''; } // backup main = main-panel grid-supply feeder (2+ hybrid grid ports)
     if (SP) ['mainCable', 'utilCable', 'loadCable', 'dgCable', 'supCable', 'bkCable'].forEach(k => { if (typeof d[k] == 'string') d[k] = d[k].replace(/\b4C\b/g, '2C').replace(/\(4 Runs/g, '(2 Runs'); }); // single phase: 2-core cables
+    { /* customer's ATS-1 -> our isolation panel: unarmoured Al per the AC Cable Selection tool — supply current (CEB rating when chosen, else system / grid-feeder current) + 10 %, 3 % voltage drop over the given length */
+      const gpI = BM() == 'hy' ? invInfos.filter(x => x.hybrid && x.gp).reduce((a, x) => a + x.gp.I, 0) : 0, Isup = SR ? +SR.A : Math.max(+d.T || 0, gpI);
+      const L1 = +$('ats1Len').value || 0, sel = S.alSelect(Isup, L1, 10, 3); d.ats1Cable = sel ? sel.label : ''; if (SP) d.ats1Cable = d.ats1Cable.replace(/\b4C\b/, '2C');
+      $('ats1Cable').title = sel ? `Auto (as the AC Cable Selection tool): unarmoured Al, free air — ${Math.round(Isup)} A + 10 % = ${Math.round(sel.req)} A needed, ${Math.round(sel.cap)} A capacity; voltage drop ${sel.vd.toFixed(2)} % over ${L1} m (limit 3 %) — type to override` : 'No cable found within 60 runs — type one'; }
     AUTO.forEach(k => { const el = $(k); if (!manual.has(k)) el.value = d[k]; el.classList.toggle('man', manual.has(k)); });
     $('totalKw').value = (invInfos.concat(LOC2.on ? invInfos2 : []).reduce((a, i) => a + S.cfgKwp(i.cfg, i.mods, i.wp), 0)).toFixed(2); /* per-inverter panel Wp, and per-MPPT '@Wp' in the Strings field */
     const V = { mode: MODE, loc2on: LOC2.on, loc2to: LOC2.to, loc2name: LOC2.name, loc2cable: LOC2.cableOv || (d2 ? d2.utilCable : ''), loc2earth: d2 ? d2.earthMain : '', loc2pvearth: LOC2.pvEarthOv || (LOC2.on ? S.pvEarth(invInfos2.length) : ''), loc2panel: d2 ? d2.panel : 0, loc2panelI: d2 ? d2.T : 0, panelI: d.T, loc2bus: d2 ? d2.bus : 0, sp: SP }; document.querySelectorAll('#form input[id], #form select[id]').forEach(el => V[el.id] = el.value);
     $('modeHint').textContent = HINT[MODE]; ['loadName', 'loadBrk', 'loadCable'].forEach(k => $(k).parentElement.hidden = BM() == 'np' || ((BM() == 'og' || BM() == 'hy') && !(ogSrc && k != 'loadBrk')));
-    $('ogBox').hidden = BM() != 'og' && BM() != 'hy'; $('ogSrc').parentElement.hidden = BM() == 'hy'; $('hySrcL').hidden = BM() != 'hy'; document.querySelectorAll('.gpL').forEach(el => el.hidden = BM() != 'hy'); $('atsA').parentElement.hidden = !ogSrc; $('ats1Ext').parentElement.hidden = ogSrc != 'both'; $('supBrk').parentElement.hidden = BM() != 'hy'; $('utilCable').parentElement.hidden = BM() == 'og' || BM() == 'hy'; /* off-grid / hybrid: the grid cable is the 'Utility supply cable' (one cable, one box) */ $('bkBrk').parentElement.hidden = $('bkCable').parentElement.hidden = !(BM() == 'hy' && invInfos.filter(x => x.hybrid && x.gp).length > 1); $('supCable').parentElement.hidden = !(BM() == 'hy' || ogSrc == 'grid' || ogSrc == 'both'); ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
+    $('ogBox').hidden = BM() != 'og' && BM() != 'hy'; $('ogSrc').parentElement.hidden = BM() == 'hy'; $('hySrcL').hidden = BM() != 'hy'; document.querySelectorAll('.gpL').forEach(el => el.hidden = BM() != 'hy'); $('atsA').parentElement.hidden = !ogSrc; $('ats1Ext').parentElement.hidden = ogSrc != 'both'; $('ats1Cable').parentElement.hidden = $('ats1Len').parentElement.hidden = ogSrc != 'both' || !$('ats1Ext').value; $('supBrk').parentElement.hidden = BM() != 'hy'; $('utilCable').parentElement.hidden = BM() == 'og' || BM() == 'hy'; /* off-grid / hybrid: the grid cable is the 'Utility supply cable' (one cable, one box) */ $('bkBrk').parentElement.hidden = $('bkCable').parentElement.hidden = !(BM() == 'hy' && invInfos.filter(x => x.hybrid && x.gp).length > 1); $('supCable').parentElement.hidden = !(BM() == 'hy' || ogSrc == 'grid' || ogSrc == 'both'); ['dgKva', 'dgCable'].forEach(k => $(k).parentElement.hidden = !(ogSrc == 'dg' || ogSrc == 'both'));
     $('ogBox').querySelector('b').textContent = BM() == 'hy' ? 'ATS in the isolation panel (hybrid)' : 'Backup source — ATS in the isolation panel';
     $('ipL2Box').hidden = !LOC2.on; $('tab_loc2').textContent = LOC2.on ? 'Location 2 ●' : 'Location 2'; $('efrIso').parentElement.hidden = (BM() == 'og' || BM() == 'hy') && !ogSrc; $('isoPanelTitle').textContent = (BM() == 'og' || BM() == 'hy') ? (ogSrc ? 'Isolation panel (ATS)' : 'Load distribution board (Load DB)') : 'Isolation panel';
     $('efrMainSet').parentElement.hidden = !$('efrMain').value; $('efrIsoSet').parentElement.hidden = !$('efrIso').value || ((BM() == 'og' || BM() == 'hy') && !ogSrc);

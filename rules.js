@@ -35,6 +35,19 @@
   // Generic cable size for a given current (used for the load feeder cable, sized from its MCCB rating).
   S.pvEarth = n => `${PVE.find(r => (+n || 1) <= r[0])[1]}mm² Cu`;
   S.cableFor = I => { const c = cabFor(+I || 0); return `${c[1]}mm² 4C/Cu/XLPE/PVC`; };
+  // Cable selection — same tables and method as the user's AC Cable Selection tool (AC-Cable-Select-2.0):
+  // 4-core unarmoured Al, free air (method E) rating × 0.96 installation factor × grouping factor for parallel runs (bunched),
+  // required capacity = load current × (1 + margin); voltage drop % = I × L × mV/A/m / (runs × 4000) must be within the allowed %;
+  // picks the fewest parallel runs, then the smallest size that achieves it.
+  const AL_UA = [[25,'PVC/PVC',97,2.7],[35,'XLPE/PVC',120,1.95],[50,'XLPE/PVC',146,1.45],[70,'XLPE/PVC',187,0.97],[95,'XLPE/PVC',227,0.72],
+                 [120,'XLPE/PVC',263,0.58],[150,'XLPE/PVC',304,0.47],[185,'XLPE/PVC',347,0.39],[240,'XLPE/PVC',409,0.31],[300,'XLPE/PVC',471,0.26]]; // [mm², insulation, free-air A, mV/A/m]
+  const GRP_B = [1, 0.88, 0.82, 0.77, 0.75, 0.73, 0.73, 0.72];
+  S.alSelect = (I, L, marginPct = 10, vdAllow = 3) => {
+    I = +I || 0; L = +L || 0; const req = I * (1 + marginPct / 100), gf = n => GRP_B[Math.min(n, GRP_B.length) - 1];
+    const per = AL_UA.map(c => { let n = 1; while (n <= 60 && n * c[2] * 0.96 * gf(n) < req) n++; if (n > 60) return null; n = Math.max(n, Math.ceil(I * L * c[3] / (vdAllow * 4000) - 1e-9), 1); return n <= 60 ? { c, n } : null; }).filter(Boolean);
+    if (!per.length) return null; const m = Math.min(...per.map(r => r.n)), r = per.find(q => q.n == m);
+    return { label: `${r.c[0]}mm² 4C/Al/${r.c[1]}${r.n > 1 ? ' × ' + r.n : ''}`, runs: r.n, vd: I * L * r.c[3] / (r.n * 4000), req, cap: r.n * r.c[2] * 0.96 * gf(r.n) };
+  };
   // Hybrid mode: a hybrid inverter's GRID port (AC input from the ATS grid-side busbar, used to supply load / charge the battery) — its own current, cable and breaker
   S.portInfo = (I, ac) => { const c = cabFor(+I || 0); return { I: +I || 0, mccb: up(MARGIN * (+I || 0), STD), ac: ac ? fmt(ac) : `${c[1]}mm²/4C/${c[2]}` }; };
   // ...and with 2+ hybrid inverters, the feeder from their separate grid-supply busbar (main switchgear panel) to the ATS grid-side busbar
