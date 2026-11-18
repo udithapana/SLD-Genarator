@@ -436,9 +436,10 @@ const ulab=(L,str)=>{const gp=mx-14-L-14,x=(L+mx-14)/2,w=(q,z)=>q.length*0.56*z;
  let sz=10,ls=[str];if(w(str,10)>gp){sz=9;if(w(str,9)>gp){const q=str.split(' × ');ls=wslash(q[0],Math.max(8,Math.floor(gp/(0.56*9)))).concat(q[1]?['× '+q[1]]:[])}}
  ls.forEach((q,j)=>tI(x,117-(ls.length-1-j)*11,q,sz,'middle'))};
 if(og&&src){ // OFF-GRID with backup source(s): automatic transfer switch(es) built into the isolation panel
- const both=src=='both',X1E=both&&!!g('ats1Ext'),A=g('atsA')||g('iso')||g('panel'),efrA=!!g('efrIso'),eset=efrSet('efrIsoSet').slice(0,isIso?8:10),ew=isIso?44:50,x2=isIso?cx+(efrA?70:80):370,xb0=x2+72,xgB=HY?x2+150+(efrA?20:0):0,xb1=HY?Math.max(xgB+10,xb0+90):0,x1=(HY?xb1+60:x2+(efrA?ew+92:100))+(X1E?40:0),BEa=HY?(both?x1+(isIso?66:70):xb1+64):Math.max((both?x1:x2)+(efrA?66:75),efrA?x2+64+ew+12:0),tight=isIso&&efrA,yG=both?167:125;GSX=xgB;
- bx(80,92,(X1E?x1-30:BEa)-80,98,'8 4');tI(85,86,`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`,9,'start','bold');
- if(X1E){const L0=x1-20,tw=`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`.length*5.3;bx(L0,92,BEa-L0,98,'3 3');const hi=85+tw+12>L0,x0=Math.min(L0,1570-232);tI(x0,hi?74:86,'EXISTING ATS PANEL (CUSTOMER) — NOT IN SCOPE',8,'start','bold')} /* customer's own ATS-1: own dashed box, outside the isolation panel */
+ const both=src=='both',X1E=both&&!!g('ats1Ext'),X1G=180,A=g('atsA')||g('iso')||g('panel'),efrA=!!g('efrIso'),eset=efrSet('efrIsoSet').slice(0,isIso?8:10),ew=isIso?44:50,x2=isIso?cx+(efrA?70:80):370,xb0=x2+72,xgB=HY?x2+150+(efrA?20:0):0,xb1=HY?Math.max(xgB+10,xb0+90):0,x1=(HY?xb1+60:x2+(efrA?ew+92:100))+(X1E?X1G:0),BEa=HY?(both?x1+(isIso?66:70):xb1+64):Math.max((both?x1:x2)+(efrA?66:75),efrA?x2+64+ew+12:0),tight=isIso&&efrA,yG=both?167:125;GSX=xgB;
+ const isoE=X1E?x1-X1G+(HY?6:10):BEa; /* separate customer ATS-1: our panel ends here, the gap carries the interconnecting cable */
+ bx(80,92,isoE-80,98,'8 4');tI(85,86,`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`,9,'start','bold');
+ if(X1E){const L0=x1-32,tw=`ISOLATION PANEL (ATS) — ${ipT('ipIso')}`.length*5.3;cabLab(isoE,L0,117,SUPC());bx(L0,92,BEa-L0,98,'3 3');const hi=85+tw+12>L0,x0=Math.min(L0,1570-232);tI(x0,hi?74:86,'EXISTING ATS PANEL (CUSTOMER) — NOT IN SCOPE',8,'start','bold')} /* customer's own ATS-1: own dashed box, outside the isolation panel */
  ln(100,125,x2-24,125,OR,4);tI(175,115,`SOLAR BUS ${g('isoBus')||A}A`,9,'middle');ln(x2-24,125,x2,125,OR);if(!isIso)tI(x2-5,120,'SOLAR',7,'end','bold');ln(150,125,150,177,OR);
  if(indI)lamps(225,125);
  atsSym(x2,113,false);tI(x2+30,107,`${both?'ATS-2':'ATS'}  4P ${A}A`,9,'middle','bold');
